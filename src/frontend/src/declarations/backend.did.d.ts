@@ -21,6 +21,7 @@ export interface Area {
   'id' : AreaId,
   'name' : string,
   'createdBy' : Principal,
+  'headquarterId' : bigint,
 }
 export type AreaId = bigint;
 export interface Chemist {
@@ -40,6 +41,9 @@ export interface ChemistOrder {
   'chemistId' : ChemistId,
   'quantity' : bigint,
 }
+export type DemandOrderStatus = { 'Approved' : null } |
+  { 'Rejected' : null } |
+  { 'Pending' : null };
 export interface DetailingEntry {
   'doctorId' : DoctorId,
   'productIds' : Array<ProductId>,
@@ -55,12 +59,24 @@ export interface Doctor {
   'qualification' : string,
 }
 export type DoctorId = bigint;
+export interface DoctorInput {
+  'station' : string,
+  'name' : string,
+  'specialization' : string,
+  'areaId' : AreaId,
+  'qualification' : string,
+}
 export interface ExpenseEntry {
   'daAmount' : bigint,
   'date' : string,
   'kmTraveled' : bigint,
   'notes' : string,
   'taAmount' : bigint,
+}
+export interface Headquarter {
+  'id' : bigint,
+  'name' : string,
+  'createdBy' : Principal,
 }
 export interface LeaveEntry {
   'status' : LeaveStatus,
@@ -83,6 +99,14 @@ export interface MRProfile {
   'assignedAreas' : Array<AreaId>,
   'headQuarter' : string,
 }
+export interface ManagerProfile {
+  'managerRole' : ManagerRole,
+  'employeeCode' : string,
+  'name' : string,
+  'headQuarter' : string,
+}
+export type ManagerRole = { 'ASM' : null } |
+  { 'RSM' : null };
 export type OrderStatus = { 'pending' : null } |
   { 'fulfilled' : null };
 export interface Product {
@@ -92,6 +116,30 @@ export interface Product {
   'createdBy' : Principal,
 }
 export type ProductId = bigint;
+export interface SampleAllotment {
+  'id' : bigint,
+  'date' : string,
+  'productId' : ProductId,
+  'targetPrincipal' : Principal,
+  'allocatedBy' : Principal,
+  'quantity' : bigint,
+}
+export interface SampleBalance {
+  'balance' : bigint,
+  'totalDistributed' : bigint,
+  'productId' : ProductId,
+  'productName' : string,
+  'totalAllotted' : bigint,
+}
+export interface SampleDemandOrder {
+  'id' : bigint,
+  'status' : DemandOrderStatus,
+  'mrPrincipal' : Principal,
+  'date' : string,
+  'productId' : ProductId,
+  'requestedQty' : bigint,
+  'notes' : string,
+}
 export interface SampleEntry {
   'doctorId' : DoctorId,
   'date' : string,
@@ -108,7 +156,7 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'addArea' : ActorMethod<[string], AreaId>,
+  'addArea' : ActorMethod<[string, bigint], AreaId>,
   'addChemist' : ActorMethod<[string, AreaId, string, string], ChemistId>,
   'addChemistOrder' : ActorMethod<
     [ChemistId, string, ProductId, bigint, string],
@@ -119,26 +167,51 @@ export interface _SERVICE {
     [string, bigint, bigint, string, [] | [bigint]],
     undefined
   >,
+  'addHeadquarter' : ActorMethod<[string], bigint>,
   'addProduct' : ActorMethod<[string, string], ProductId>,
+  'adminAllotSamples' : ActorMethod<
+    [Principal, ProductId, bigint, string],
+    undefined
+  >,
+  'adminCreateOrUpdateMRProfile' : ActorMethod<
+    [Principal, string, string, Array<AreaId>],
+    undefined
+  >,
+  'adminSaveManagerProfile' : ActorMethod<
+    [Principal, string, string, string, ManagerRole],
+    undefined
+  >,
   'applyLeave' : ActorMethod<
     [LeaveType, string, string, bigint, string],
     undefined
   >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'bulkAddDoctors' : ActorMethod<[Array<DoctorInput>], Array<DoctorId>>,
   'createOrUpdateMRProfile' : ActorMethod<
     [string, string, Array<AreaId>],
     undefined
   >,
+  'deleteDoctor' : ActorMethod<[DoctorId], undefined>,
+  'deleteHeadquarter' : ActorMethod<[bigint], undefined>,
+  'deleteMRProfile' : ActorMethod<[Principal], undefined>,
+  'deleteManagerProfile' : ActorMethod<[Principal], undefined>,
+  'deleteProduct' : ActorMethod<[ProductId], undefined>,
   'getActivitySummary' : ActorMethod<[string], ActivitySummary>,
   'getAllAreas' : ActorMethod<[], Array<Area>>,
   'getAllChemists' : ActorMethod<[], Array<Chemist>>,
   'getAllDoctors' : ActorMethod<[], Array<Doctor>>,
+  'getAllHeadquarters' : ActorMethod<[], Array<Headquarter>>,
   'getAllLeaveApplications' : ActorMethod<
     [],
     Array<[Principal, Array<LeaveEntry>]>
   >,
   'getAllMRProfiles' : ActorMethod<[], Array<[Principal, MRProfile]>>,
+  'getAllManagerProfiles' : ActorMethod<[], Array<[Principal, ManagerProfile]>>,
+  'getAllPendingUsers' : ActorMethod<[], Array<Principal>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,
+  'getAllSampleAllotments' : ActorMethod<[], Array<SampleAllotment>>,
+  'getAllSampleDemandOrders' : ActorMethod<[], Array<SampleDemandOrder>>,
+  'getAllUserProfiles' : ActorMethod<[], Array<[Principal, UserProfile]>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getChemistOrders' : ActorMethod<[], Array<ChemistOrder>>,
@@ -148,14 +221,52 @@ export interface _SERVICE {
   'getExpenseEntries' : ActorMethod<[], Array<ExpenseEntry>>,
   'getLeaveHistory' : ActorMethod<[], Array<LeaveEntry>>,
   'getMRProfile' : ActorMethod<[], MRProfile>,
+  'getManagerProfile' : ActorMethod<[], [] | [ManagerProfile]>,
+  'getMyAllotments' : ActorMethod<[], Array<SampleAllotment>>,
+  'getMySampleBalance' : ActorMethod<[], Array<SampleBalance>>,
+  'getMySampleDemandOrders' : ActorMethod<[], Array<SampleDemandOrder>>,
   'getSampleEntries' : ActorMethod<[], Array<SampleEntry>>,
+  'getTeamDetailingEntries' : ActorMethod<
+    [],
+    Array<[Principal, Array<DetailingEntry>]>
+  >,
+  'getTeamExpenseEntries' : ActorMethod<
+    [],
+    Array<[Principal, Array<ExpenseEntry>]>
+  >,
+  'getTeamLeaveApplications' : ActorMethod<
+    [],
+    Array<[Principal, Array<LeaveEntry>]>
+  >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'logDetailing' : ActorMethod<[DoctorId, string, Array<ProductId>], undefined>,
   'logSample' : ActorMethod<[DoctorId, string, ProductId, bigint], undefined>,
+  'raiseSampleDemandOrder' : ActorMethod<
+    [ProductId, bigint, string, string],
+    undefined
+  >,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveManagerProfile' : ActorMethod<
+    [string, string, string, ManagerRole],
+    undefined
+  >,
+  'updateDoctor' : ActorMethod<
+    [DoctorId, string, string, string, string, AreaId],
+    undefined
+  >,
+  'updateHeadquarter' : ActorMethod<[bigint, string], undefined>,
   'updateLeaveStatus' : ActorMethod<
     [Principal, bigint, LeaveStatus],
+    undefined
+  >,
+  'updateLeaveStatusByManager' : ActorMethod<
+    [Principal, bigint, LeaveStatus],
+    undefined
+  >,
+  'updateProduct' : ActorMethod<[ProductId, string, string], undefined>,
+  'updateSampleDemandOrderStatus' : ActorMethod<
+    [bigint, DemandOrderStatus],
     undefined
   >,
 }

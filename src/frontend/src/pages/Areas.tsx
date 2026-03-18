@@ -1,6 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -10,19 +18,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, MapPin, Plus } from "lucide-react";
+import { Building2, Loader2, MapPin, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Area } from "../backend";
+import type { Area, Headquarter } from "../backend.d";
 import { useActor } from "../hooks/useActor";
 
 export default function Areas() {
   const { actor, isFetching } = useActor();
   const queryClient = useQueryClient();
   const [newAreaName, setNewAreaName] = useState("");
+  const [selectedHQId, setSelectedHQId] = useState("");
   const [showForm, setShowForm] = useState(false);
 
-  const { data: areas = [], isLoading } = useQuery<Area[]>({
+  const { data: areas = [], isLoading: loadingAreas } = useQuery<Area[]>({
     queryKey: ["areas"],
     queryFn: async () => {
       if (!actor) return [];
@@ -31,19 +40,36 @@ export default function Areas() {
     enabled: !!actor && !isFetching,
   });
 
+  const { data: headquarters = [], isLoading: loadingHQ } = useQuery<
+    Headquarter[]
+  >({
+    queryKey: ["headquarters"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllHeadquarters();
+    },
+    enabled: !!actor && !isFetching,
+  });
+
+  const hqMap = new Map(headquarters.map((h) => [h.id.toString(), h.name]));
+
   const addAreaMutation = useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error("No actor");
-      await actor.addArea(newAreaName.trim());
+      await actor.addArea(newAreaName.trim(), BigInt(selectedHQId));
     },
     onSuccess: () => {
       toast.success("Area added successfully");
       setNewAreaName("");
+      setSelectedHQId("");
       setShowForm(false);
       queryClient.invalidateQueries({ queryKey: ["areas"] });
     },
     onError: () => toast.error("Failed to add area"),
   });
+
+  const isLoading = loadingAreas || loadingHQ;
+  const canSubmit = newAreaName.trim() && selectedHQId;
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -69,34 +95,87 @@ export default function Areas() {
         <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
           <CardContent className="p-5">
             <p className="text-sm font-semibold text-gray-700 mb-3">New Area</p>
-            <div className="flex gap-3">
-              <Input
-                data-ocid="areas.input"
-                value={newAreaName}
-                onChange={(e) => setNewAreaName(e.target.value)}
-                placeholder="Enter area name (e.g. Sector 12)"
-                className="border-[#E5EAF2] flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newAreaName.trim())
-                    addAreaMutation.mutate();
-                }}
-              />
-              <Button
-                data-ocid="areas.submit_button"
-                className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
-                onClick={() => addAreaMutation.mutate()}
-                disabled={addAreaMutation.isPending || !newAreaName.trim()}
-              >
-                {addAreaMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Save"
-                )}
-              </Button>
-              <Button variant="outline" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
-            </div>
+            {headquarters.length === 0 && !loadingHQ ? (
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                <Building2 className="w-4 h-4 flex-shrink-0" />
+                Please add a Headquarter first from Admin Portal before creating
+                an area.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <Label
+                    htmlFor="hq-select"
+                    className="text-sm font-medium text-gray-700 mb-1 block"
+                  >
+                    Select Headquarter <span className="text-red-500">*</span>
+                  </Label>
+                  <Select value={selectedHQId} onValueChange={setSelectedHQId}>
+                    <SelectTrigger
+                      id="hq-select"
+                      data-ocid="areas.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue placeholder="Choose a headquarter..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {headquarters.map((hq) => (
+                        <SelectItem
+                          key={hq.id.toString()}
+                          value={hq.id.toString()}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                            {hq.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label
+                    htmlFor="area-name"
+                    className="text-sm font-medium text-gray-700 mb-1 block"
+                  >
+                    Area Name <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="flex gap-3">
+                    <Input
+                      id="area-name"
+                      data-ocid="areas.input"
+                      value={newAreaName}
+                      onChange={(e) => setNewAreaName(e.target.value)}
+                      placeholder="Enter area name (e.g. Sector 12)"
+                      className="border-[#E5EAF2] flex-1"
+                      disabled={!selectedHQId}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && canSubmit)
+                          addAreaMutation.mutate();
+                      }}
+                    />
+                    <Button
+                      data-ocid="areas.submit_button"
+                      className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
+                      onClick={() => addAreaMutation.mutate()}
+                      disabled={addAreaMutation.isPending || !canSubmit}
+                    >
+                      {addAreaMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowForm(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -137,6 +216,9 @@ export default function Areas() {
                     Area Name
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500">
+                    Headquarter
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">
                     Area ID
                   </TableHead>
                 </TableRow>
@@ -158,6 +240,14 @@ export default function Areas() {
                         </div>
                         <span className="text-sm font-medium text-gray-700">
                           {area.name}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="w-3 h-3 text-gray-400" />
+                        <span className="text-xs text-gray-600">
+                          {hqMap.get(area.headquarterId.toString()) ?? "—"}
                         </span>
                       </div>
                     </TableCell>

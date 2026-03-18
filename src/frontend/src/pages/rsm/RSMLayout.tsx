@@ -1,77 +1,36 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
-  Building2,
   CalendarCheck,
-  Copy,
-  FlaskConical,
   LayoutDashboard,
   LogOut,
-  MapPin,
   Menu,
-  Package,
-  Shield,
-  Stethoscope,
+  TrendingUp,
   User,
-  UserCog,
-  Users,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
+import RSMDashboard from "./RSMDashboard";
+import RSMLeaveApprovals from "./RSMLeaveApprovals";
+import RSMTeamReports from "./RSMTeamReports";
 
-import AdminAreas from "./AdminAreas";
-import AdminDashboard from "./AdminDashboard";
-import AdminDoctors from "./AdminDoctors";
-import AdminHeadquarters from "./AdminHeadquarters";
-import AdminProducts from "./AdminProducts";
-import AdminSampleManagement from "./AdminSampleManagement";
-import LeaveApprovals from "./LeaveApprovals";
-import MRManagement from "./MRManagement";
-import UserManagement from "./UserManagement";
+type RSMPage = "dashboard" | "leave-approvals" | "team-reports";
 
-type AdminPage =
-  | "dashboard"
-  | "headquarters"
-  | "mr-management"
-  | "user-management"
-  | "leave-approvals"
-  | "admin-products"
-  | "admin-doctors"
-  | "areas"
-  | "sample-management";
-
-const adminNavItems: {
-  id: AdminPage;
-  label: string;
-  icon: React.ElementType;
-}[] = [
+const navItems: { id: RSMPage; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "headquarters", label: "Headquarters", icon: Building2 },
-  { id: "mr-management", label: "MR Management", icon: Users },
-  { id: "user-management", label: "User Management", icon: UserCog },
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
-  { id: "admin-products", label: "Products", icon: Package },
-  { id: "admin-doctors", label: "Doctors", icon: Stethoscope },
-  { id: "areas", label: "Areas", icon: MapPin },
-  { id: "sample-management", label: "Sample Management", icon: FlaskConical },
+  { id: "team-reports", label: "Team Reports", icon: TrendingUp },
 ];
 
-const pageTitles: Record<AdminPage, string> = {
-  dashboard: "Admin Dashboard",
-  headquarters: "Headquarters",
-  "mr-management": "MR Management",
-  "user-management": "User Management",
+const pageTitles: Record<RSMPage, string> = {
+  dashboard: "RSM Dashboard",
   "leave-approvals": "Leave Approvals",
-  "admin-products": "Product Master",
-  "admin-doctors": "Doctor Management",
-  areas: "Area Management",
-  "sample-management": "Sample Management",
+  "team-reports": "Team Reports",
 };
 
-export default function AdminLayout() {
+export default function RSMLayout() {
   const { identity, clear } = useInternetIdentity();
-  const [currentPage, setCurrentPage] = useState<AdminPage>("dashboard");
+  const [currentPage, setCurrentPage] = useState<RSMPage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const principal = identity?.getPrincipal().toString() ?? "";
@@ -80,33 +39,14 @@ export default function AdminLayout() {
       ? `${principal.slice(0, 8)}...${principal.slice(-4)}`
       : principal;
 
-  const handleCopyPrincipal = () => {
-    if (!principal) return;
-    navigator.clipboard.writeText(principal).then(() => {
-      toast.success("Principal ID copied to clipboard!");
-    });
-  };
-
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <AdminDashboard />;
-      case "headquarters":
-        return <AdminHeadquarters />;
-      case "mr-management":
-        return <MRManagement />;
-      case "user-management":
-        return <UserManagement />;
+        return <RSMDashboard />;
       case "leave-approvals":
-        return <LeaveApprovals />;
-      case "admin-products":
-        return <AdminProducts />;
-      case "admin-doctors":
-        return <AdminDoctors />;
-      case "areas":
-        return <AdminAreas />;
-      case "sample-management":
-        return <AdminSampleManagement />;
+        return <RSMLeaveApprovals />;
+      case "team-reports":
+        return <RSMTeamReports />;
     }
   };
 
@@ -114,9 +54,7 @@ export default function AdminLayout() {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
       <aside
-        className={`flex flex-col flex-shrink-0 transition-all duration-300 ${
-          sidebarOpen ? "w-64" : "w-0 overflow-hidden"
-        }`}
+        className={`flex flex-col flex-shrink-0 transition-all duration-300 ${sidebarOpen ? "w-64" : "w-0 overflow-hidden"}`}
         style={{
           background: "linear-gradient(180deg, #0B2F6B 0%, #06224F 100%)",
         }}
@@ -133,7 +71,7 @@ export default function AdminLayout() {
             </div>
             <div>
               <p className="text-white font-bold text-xs leading-tight tracking-wide uppercase">
-                Admin Portal
+                RSM Portal
               </p>
               <p className="text-white/60 text-xs leading-tight">
                 Krishkar Pharma
@@ -145,16 +83,16 @@ export default function AdminLayout() {
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <p className="text-white/40 text-xs font-semibold uppercase tracking-widest px-2 mb-3">
-            Admin Menu
+            RSM Menu
           </p>
-          {adminNavItems.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
-                data-ocid={`admin_nav.${item.id}.link`}
+                data-ocid={`rsm_nav.${item.id}.link`}
                 onClick={() => setCurrentPage(item.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium transition-all ${
                   isActive
@@ -169,43 +107,26 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        {/* Footer */}
+        {/* User */}
         <div className="px-4 py-4 border-t border-white/10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
               <User className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-white text-xs font-semibold truncate">
-                  Administrator
+                  RSM User
                 </p>
-                <span className="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
-                  ADMIN
+                <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
+                  RSM
                 </span>
               </div>
+              <p className="text-white/50 text-xs truncate">{shortPrincipal}</p>
             </div>
           </div>
-          {/* Principal ID with copy button */}
-          <div className="flex items-center gap-1.5 mb-3 bg-white/10 rounded-md px-2 py-1.5">
-            <p
-              className="text-white/60 text-xs truncate flex-1 font-mono"
-              title={principal}
-            >
-              {shortPrincipal || "Loading..."}
-            </p>
-            <button
-              type="button"
-              data-ocid="admin_sidebar.copy_principal_button"
-              onClick={handleCopyPrincipal}
-              className="flex-shrink-0 text-white/50 hover:text-white transition-colors"
-              title="Copy full Principal ID"
-            >
-              <Copy size={12} />
-            </button>
-          </div>
           <Button
-            data-ocid="admin_logout.button"
+            data-ocid="rsm_logout.button"
             variant="ghost"
             size="sm"
             className="w-full text-white/70 hover:text-white hover:bg-white/10 justify-start gap-2 text-xs"
@@ -218,7 +139,6 @@ export default function AdminLayout() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-[#E5EAF2] px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <button
@@ -234,13 +154,13 @@ export default function AdminLayout() {
                 {pageTitles[currentPage]}
               </h1>
               <p className="text-xs text-gray-400">
-                Krishkar Pharmaceuticals · Admin Panel
+                Krishkar Pharmaceuticals · RSM Portal
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
-              <Shield size={14} /> Admin Portal
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
+              📊 RSM Portal
             </span>
             <p className="text-xs text-gray-400 hidden md:block">
               {new Date().toLocaleDateString("en-IN", {
@@ -253,10 +173,8 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
 
-        {/* Footer */}
         <footer className="bg-white border-t border-[#E5EAF2] px-6 py-3 flex-shrink-0">
           <p className="text-xs text-gray-400 text-center">
             © {new Date().getFullYear()}. Built with ❤️ using{" "}

@@ -12,6 +12,7 @@ export const AreaId = IDL.Nat;
 export const ChemistId = IDL.Nat;
 export const ProductId = IDL.Nat;
 export const DoctorId = IDL.Nat;
+export const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
 export const LeaveType = IDL.Variant({
   'WithoutPayLeave' : IDL.Null,
   'CasualLeave' : IDL.Null,
@@ -24,6 +25,13 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const DoctorInput = IDL.Record({
+  'station' : IDL.Text,
+  'name' : IDL.Text,
+  'specialization' : IDL.Text,
+  'areaId' : AreaId,
+  'qualification' : IDL.Text,
+});
 export const ActivitySummary = IDL.Record({
   'leaveBalance' : IDL.Vec(IDL.Tuple(LeaveType, IDL.Nat)),
   'samplesGiven' : IDL.Nat,
@@ -35,6 +43,7 @@ export const Area = IDL.Record({
   'id' : AreaId,
   'name' : IDL.Text,
   'createdBy' : IDL.Principal,
+  'headquarterId' : IDL.Nat,
 });
 export const Chemist = IDL.Record({
   'id' : ChemistId,
@@ -52,6 +61,11 @@ export const Doctor = IDL.Record({
   'specialization' : IDL.Text,
   'areaId' : AreaId,
   'qualification' : IDL.Text,
+});
+export const Headquarter = IDL.Record({
+  'id' : IDL.Nat,
+  'name' : IDL.Text,
+  'createdBy' : IDL.Principal,
 });
 export const LeaveStatus = IDL.Variant({
   'Approved' : IDL.Null,
@@ -71,11 +85,39 @@ export const MRProfile = IDL.Record({
   'assignedAreas' : IDL.Vec(AreaId),
   'headQuarter' : IDL.Text,
 });
+export const ManagerProfile = IDL.Record({
+  'managerRole' : ManagerRole,
+  'employeeCode' : IDL.Text,
+  'name' : IDL.Text,
+  'headQuarter' : IDL.Text,
+});
 export const Product = IDL.Record({
   'id' : ProductId,
   'code' : IDL.Text,
   'name' : IDL.Text,
   'createdBy' : IDL.Principal,
+});
+export const SampleAllotment = IDL.Record({
+  'id' : IDL.Nat,
+  'date' : IDL.Text,
+  'productId' : ProductId,
+  'targetPrincipal' : IDL.Principal,
+  'allocatedBy' : IDL.Principal,
+  'quantity' : IDL.Nat,
+});
+export const DemandOrderStatus = IDL.Variant({
+  'Approved' : IDL.Null,
+  'Rejected' : IDL.Null,
+  'Pending' : IDL.Null,
+});
+export const SampleDemandOrder = IDL.Record({
+  'id' : IDL.Nat,
+  'status' : DemandOrderStatus,
+  'mrPrincipal' : IDL.Principal,
+  'date' : IDL.Text,
+  'productId' : ProductId,
+  'requestedQty' : IDL.Nat,
+  'notes' : IDL.Text,
 });
 export const UserProfile = IDL.Record({
   'employeeCode' : IDL.Text,
@@ -106,6 +148,13 @@ export const ExpenseEntry = IDL.Record({
   'notes' : IDL.Text,
   'taAmount' : IDL.Nat,
 });
+export const SampleBalance = IDL.Record({
+  'balance' : IDL.Nat,
+  'totalDistributed' : IDL.Nat,
+  'productId' : ProductId,
+  'productName' : IDL.Text,
+  'totalAllotted' : IDL.Nat,
+});
 export const SampleEntry = IDL.Record({
   'doctorId' : DoctorId,
   'date' : IDL.Text,
@@ -115,7 +164,7 @@ export const SampleEntry = IDL.Record({
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'addArea' : IDL.Func([IDL.Text], [AreaId], []),
+  'addArea' : IDL.Func([IDL.Text, IDL.Nat], [AreaId], []),
   'addChemist' : IDL.Func(
       [IDL.Text, AreaId, IDL.Text, IDL.Text],
       [ChemistId],
@@ -136,22 +185,45 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
   'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
+  'adminAllotSamples' : IDL.Func(
+      [IDL.Principal, ProductId, IDL.Nat, IDL.Text],
+      [],
+      [],
+    ),
+  'adminCreateOrUpdateMRProfile' : IDL.Func(
+      [IDL.Principal, IDL.Text, IDL.Text, IDL.Vec(AreaId)],
+      [],
+      [],
+    ),
+  'adminSaveManagerProfile' : IDL.Func(
+      [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
+      [],
+      [],
+    ),
   'applyLeave' : IDL.Func(
       [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
       [],
       [],
     ),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'bulkAddDoctors' : IDL.Func([IDL.Vec(DoctorInput)], [IDL.Vec(DoctorId)], []),
   'createOrUpdateMRProfile' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Vec(AreaId)],
       [],
       [],
     ),
+  'deleteDoctor' : IDL.Func([DoctorId], [], []),
+  'deleteHeadquarter' : IDL.Func([IDL.Nat], [], []),
+  'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
+  'deleteManagerProfile' : IDL.Func([IDL.Principal], [], []),
+  'deleteProduct' : IDL.Func([ProductId], [], []),
   'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
   'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
   'getAllChemists' : IDL.Func([], [IDL.Vec(Chemist)], ['query']),
   'getAllDoctors' : IDL.Func([], [IDL.Vec(Doctor)], ['query']),
+  'getAllHeadquarters' : IDL.Func([], [IDL.Vec(Headquarter)], ['query']),
   'getAllLeaveApplications' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(LeaveEntry)))],
@@ -162,7 +234,28 @@ export const idlService = IDL.Service({
       [IDL.Vec(IDL.Tuple(IDL.Principal, MRProfile))],
       ['query'],
     ),
+  'getAllManagerProfiles' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, ManagerProfile))],
+      ['query'],
+    ),
+  'getAllPendingUsers' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getAllSampleAllotments' : IDL.Func(
+      [],
+      [IDL.Vec(SampleAllotment)],
+      ['query'],
+    ),
+  'getAllSampleDemandOrders' : IDL.Func(
+      [],
+      [IDL.Vec(SampleDemandOrder)],
+      ['query'],
+    ),
+  'getAllUserProfiles' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+      ['query'],
+    ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getChemistOrders' : IDL.Func([], [IDL.Vec(ChemistOrder)], ['query']),
@@ -172,7 +265,30 @@ export const idlService = IDL.Service({
   'getExpenseEntries' : IDL.Func([], [IDL.Vec(ExpenseEntry)], ['query']),
   'getLeaveHistory' : IDL.Func([], [IDL.Vec(LeaveEntry)], ['query']),
   'getMRProfile' : IDL.Func([], [MRProfile], ['query']),
+  'getManagerProfile' : IDL.Func([], [IDL.Opt(ManagerProfile)], ['query']),
+  'getMyAllotments' : IDL.Func([], [IDL.Vec(SampleAllotment)], ['query']),
+  'getMySampleBalance' : IDL.Func([], [IDL.Vec(SampleBalance)], ['query']),
+  'getMySampleDemandOrders' : IDL.Func(
+      [],
+      [IDL.Vec(SampleDemandOrder)],
+      ['query'],
+    ),
   'getSampleEntries' : IDL.Func([], [IDL.Vec(SampleEntry)], ['query']),
+  'getTeamDetailingEntries' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(DetailingEntry)))],
+      ['query'],
+    ),
+  'getTeamExpenseEntries' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(ExpenseEntry)))],
+      ['query'],
+    ),
+  'getTeamLeaveApplications' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(LeaveEntry)))],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -181,8 +297,35 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
   'logSample' : IDL.Func([DoctorId, IDL.Text, ProductId, IDL.Nat], [], []),
+  'raiseSampleDemandOrder' : IDL.Func(
+      [ProductId, IDL.Nat, IDL.Text, IDL.Text],
+      [],
+      [],
+    ),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'saveManagerProfile' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, ManagerRole],
+      [],
+      [],
+    ),
+  'updateDoctor' : IDL.Func(
+      [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
+      [],
+      [],
+    ),
+  'updateHeadquarter' : IDL.Func([IDL.Nat, IDL.Text], [], []),
   'updateLeaveStatus' : IDL.Func([IDL.Principal, IDL.Nat, LeaveStatus], [], []),
+  'updateLeaveStatusByManager' : IDL.Func(
+      [IDL.Principal, IDL.Nat, LeaveStatus],
+      [],
+      [],
+    ),
+  'updateProduct' : IDL.Func([ProductId, IDL.Text, IDL.Text], [], []),
+  'updateSampleDemandOrderStatus' : IDL.Func(
+      [IDL.Nat, DemandOrderStatus],
+      [],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -192,6 +335,7 @@ export const idlFactory = ({ IDL }) => {
   const ChemistId = IDL.Nat;
   const ProductId = IDL.Nat;
   const DoctorId = IDL.Nat;
+  const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
   const LeaveType = IDL.Variant({
     'WithoutPayLeave' : IDL.Null,
     'CasualLeave' : IDL.Null,
@@ -204,6 +348,13 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const DoctorInput = IDL.Record({
+    'station' : IDL.Text,
+    'name' : IDL.Text,
+    'specialization' : IDL.Text,
+    'areaId' : AreaId,
+    'qualification' : IDL.Text,
+  });
   const ActivitySummary = IDL.Record({
     'leaveBalance' : IDL.Vec(IDL.Tuple(LeaveType, IDL.Nat)),
     'samplesGiven' : IDL.Nat,
@@ -215,6 +366,7 @@ export const idlFactory = ({ IDL }) => {
     'id' : AreaId,
     'name' : IDL.Text,
     'createdBy' : IDL.Principal,
+    'headquarterId' : IDL.Nat,
   });
   const Chemist = IDL.Record({
     'id' : ChemistId,
@@ -232,6 +384,11 @@ export const idlFactory = ({ IDL }) => {
     'specialization' : IDL.Text,
     'areaId' : AreaId,
     'qualification' : IDL.Text,
+  });
+  const Headquarter = IDL.Record({
+    'id' : IDL.Nat,
+    'name' : IDL.Text,
+    'createdBy' : IDL.Principal,
   });
   const LeaveStatus = IDL.Variant({
     'Approved' : IDL.Null,
@@ -251,11 +408,39 @@ export const idlFactory = ({ IDL }) => {
     'assignedAreas' : IDL.Vec(AreaId),
     'headQuarter' : IDL.Text,
   });
+  const ManagerProfile = IDL.Record({
+    'managerRole' : ManagerRole,
+    'employeeCode' : IDL.Text,
+    'name' : IDL.Text,
+    'headQuarter' : IDL.Text,
+  });
   const Product = IDL.Record({
     'id' : ProductId,
     'code' : IDL.Text,
     'name' : IDL.Text,
     'createdBy' : IDL.Principal,
+  });
+  const SampleAllotment = IDL.Record({
+    'id' : IDL.Nat,
+    'date' : IDL.Text,
+    'productId' : ProductId,
+    'targetPrincipal' : IDL.Principal,
+    'allocatedBy' : IDL.Principal,
+    'quantity' : IDL.Nat,
+  });
+  const DemandOrderStatus = IDL.Variant({
+    'Approved' : IDL.Null,
+    'Rejected' : IDL.Null,
+    'Pending' : IDL.Null,
+  });
+  const SampleDemandOrder = IDL.Record({
+    'id' : IDL.Nat,
+    'status' : DemandOrderStatus,
+    'mrPrincipal' : IDL.Principal,
+    'date' : IDL.Text,
+    'productId' : ProductId,
+    'requestedQty' : IDL.Nat,
+    'notes' : IDL.Text,
   });
   const UserProfile = IDL.Record({
     'employeeCode' : IDL.Text,
@@ -286,6 +471,13 @@ export const idlFactory = ({ IDL }) => {
     'notes' : IDL.Text,
     'taAmount' : IDL.Nat,
   });
+  const SampleBalance = IDL.Record({
+    'balance' : IDL.Nat,
+    'totalDistributed' : IDL.Nat,
+    'productId' : ProductId,
+    'productName' : IDL.Text,
+    'totalAllotted' : IDL.Nat,
+  });
   const SampleEntry = IDL.Record({
     'doctorId' : DoctorId,
     'date' : IDL.Text,
@@ -295,7 +487,7 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'addArea' : IDL.Func([IDL.Text], [AreaId], []),
+    'addArea' : IDL.Func([IDL.Text, IDL.Nat], [AreaId], []),
     'addChemist' : IDL.Func(
         [IDL.Text, AreaId, IDL.Text, IDL.Text],
         [ChemistId],
@@ -316,22 +508,49 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
     'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
+    'adminAllotSamples' : IDL.Func(
+        [IDL.Principal, ProductId, IDL.Nat, IDL.Text],
+        [],
+        [],
+      ),
+    'adminCreateOrUpdateMRProfile' : IDL.Func(
+        [IDL.Principal, IDL.Text, IDL.Text, IDL.Vec(AreaId)],
+        [],
+        [],
+      ),
+    'adminSaveManagerProfile' : IDL.Func(
+        [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
+        [],
+        [],
+      ),
     'applyLeave' : IDL.Func(
         [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
         [],
         [],
       ),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'bulkAddDoctors' : IDL.Func(
+        [IDL.Vec(DoctorInput)],
+        [IDL.Vec(DoctorId)],
+        [],
+      ),
     'createOrUpdateMRProfile' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Vec(AreaId)],
         [],
         [],
       ),
+    'deleteDoctor' : IDL.Func([DoctorId], [], []),
+    'deleteHeadquarter' : IDL.Func([IDL.Nat], [], []),
+    'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
+    'deleteManagerProfile' : IDL.Func([IDL.Principal], [], []),
+    'deleteProduct' : IDL.Func([ProductId], [], []),
     'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
     'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
     'getAllChemists' : IDL.Func([], [IDL.Vec(Chemist)], ['query']),
     'getAllDoctors' : IDL.Func([], [IDL.Vec(Doctor)], ['query']),
+    'getAllHeadquarters' : IDL.Func([], [IDL.Vec(Headquarter)], ['query']),
     'getAllLeaveApplications' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(LeaveEntry)))],
@@ -342,7 +561,28 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Principal, MRProfile))],
         ['query'],
       ),
+    'getAllManagerProfiles' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, ManagerProfile))],
+        ['query'],
+      ),
+    'getAllPendingUsers' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getAllSampleAllotments' : IDL.Func(
+        [],
+        [IDL.Vec(SampleAllotment)],
+        ['query'],
+      ),
+    'getAllSampleDemandOrders' : IDL.Func(
+        [],
+        [IDL.Vec(SampleDemandOrder)],
+        ['query'],
+      ),
+    'getAllUserProfiles' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+        ['query'],
+      ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getChemistOrders' : IDL.Func([], [IDL.Vec(ChemistOrder)], ['query']),
@@ -352,7 +592,30 @@ export const idlFactory = ({ IDL }) => {
     'getExpenseEntries' : IDL.Func([], [IDL.Vec(ExpenseEntry)], ['query']),
     'getLeaveHistory' : IDL.Func([], [IDL.Vec(LeaveEntry)], ['query']),
     'getMRProfile' : IDL.Func([], [MRProfile], ['query']),
+    'getManagerProfile' : IDL.Func([], [IDL.Opt(ManagerProfile)], ['query']),
+    'getMyAllotments' : IDL.Func([], [IDL.Vec(SampleAllotment)], ['query']),
+    'getMySampleBalance' : IDL.Func([], [IDL.Vec(SampleBalance)], ['query']),
+    'getMySampleDemandOrders' : IDL.Func(
+        [],
+        [IDL.Vec(SampleDemandOrder)],
+        ['query'],
+      ),
     'getSampleEntries' : IDL.Func([], [IDL.Vec(SampleEntry)], ['query']),
+    'getTeamDetailingEntries' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(DetailingEntry)))],
+        ['query'],
+      ),
+    'getTeamExpenseEntries' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(ExpenseEntry)))],
+        ['query'],
+      ),
+    'getTeamLeaveApplications' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(LeaveEntry)))],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -361,9 +624,36 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
     'logSample' : IDL.Func([DoctorId, IDL.Text, ProductId, IDL.Nat], [], []),
+    'raiseSampleDemandOrder' : IDL.Func(
+        [ProductId, IDL.Nat, IDL.Text, IDL.Text],
+        [],
+        [],
+      ),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'saveManagerProfile' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, ManagerRole],
+        [],
+        [],
+      ),
+    'updateDoctor' : IDL.Func(
+        [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
+        [],
+        [],
+      ),
+    'updateHeadquarter' : IDL.Func([IDL.Nat, IDL.Text], [], []),
     'updateLeaveStatus' : IDL.Func(
         [IDL.Principal, IDL.Nat, LeaveStatus],
+        [],
+        [],
+      ),
+    'updateLeaveStatusByManager' : IDL.Func(
+        [IDL.Principal, IDL.Nat, LeaveStatus],
+        [],
+        [],
+      ),
+    'updateProduct' : IDL.Func([ProductId, IDL.Text, IDL.Text], [], []),
+    'updateSampleDemandOrderStatus' : IDL.Func(
+        [IDL.Nat, DemandOrderStatus],
         [],
         [],
       ),

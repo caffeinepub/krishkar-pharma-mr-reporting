@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
-  Building2,
   CalendarOff,
+  FlaskConical,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -26,7 +26,10 @@ import Expenses from "./pages/Expenses";
 import Leaves from "./pages/Leaves";
 import MRProfile from "./pages/MRProfile";
 import Products from "./pages/Products";
+import Samples from "./pages/Samples";
 import AdminLayout from "./pages/admin/AdminLayout";
+import ASMLayout from "./pages/asm/ASMLayout";
+import RSMLayout from "./pages/rsm/RSMLayout";
 
 type Page =
   | "dashboard"
@@ -36,7 +39,8 @@ type Page =
   | "chemists"
   | "products"
   | "expenses"
-  | "leaves";
+  | "leaves"
+  | "samples";
 
 const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -47,6 +51,7 @@ const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
   { id: "products", label: "Products", icon: Package },
   { id: "expenses", label: "Expenses", icon: Receipt },
   { id: "leaves", label: "Leaves", icon: CalendarOff },
+  { id: "samples", label: "Samples", icon: FlaskConical },
 ];
 
 const pageTitles: Record<Page, string> = {
@@ -58,6 +63,7 @@ const pageTitles: Record<Page, string> = {
   products: "Product Master",
   expenses: "TA & DA Expenses",
   leaves: "Leave Management",
+  samples: "Sample Management",
 };
 
 function LoginScreen() {
@@ -71,23 +77,26 @@ function LoginScreen() {
     >
       <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-sm w-full mx-4 text-center">
         <div className="flex items-center justify-center gap-3 mb-2">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, #0B2F6B 0%, #0D5BA6 100%)",
-            }}
-          >
-            <Building2 className="w-6 h-6 text-white" />
-          </div>
+          <img
+            src="/assets/generated/krishkar-logo-transparent.dim_200x200.png"
+            alt="Krishkar Pharmaceuticals"
+            className="w-12 h-12 object-contain"
+          />
         </div>
         <h1 className="text-xl font-bold text-gray-900 mt-3">
           Krishkar Pharmaceuticals
         </h1>
         <p className="text-sm text-gray-500 mt-1 mb-2">MR Reporting System</p>
 
-        <div className="flex gap-2 justify-center mb-6 mt-4">
+        <div className="flex gap-2 justify-center mb-6 mt-4 flex-wrap">
           <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
             <User size={11} /> MR Login
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full font-medium">
+            📊 RSM Login
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-full font-medium">
+            🗂 ASM Login
           </span>
           <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
             🛡 Admin Login
@@ -109,7 +118,8 @@ function LoginScreen() {
           )}
         </Button>
         <p className="text-xs text-gray-400 mt-4">
-          Your role (MR or Admin) will be detected automatically after login.
+          Your role (MR, ASM, RSM or Admin) will be detected automatically after
+          login.
         </p>
       </div>
     </div>
@@ -145,6 +155,8 @@ function MRLayout() {
         return <Expenses />;
       case "leaves":
         return <Leaves />;
+      case "samples":
+        return <Samples />;
     }
   };
 
@@ -160,8 +172,12 @@ function MRLayout() {
         {/* Brand */}
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0 p-1">
+              <img
+                src="/assets/generated/krishkar-logo-transparent.dim_200x200.png"
+                alt="Krishkar"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <p className="text-white font-bold text-xs leading-tight tracking-wide uppercase">
@@ -302,13 +318,10 @@ function RoleRouter() {
     );
   }
 
-  if (role === "admin") {
-    return <AdminLayout />;
-  }
-
-  if (role === "user") {
-    return <MRLayout />;
-  }
+  if (role === "admin") return <AdminLayout />;
+  if (role === "rsm") return <RSMLayout />;
+  if (role === "asm") return <ASMLayout />;
+  if (role === "user") return <MRLayout />;
 
   // guest
   return <AccessPendingScreen />;

@@ -4,15 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building, Loader2, MapPin, Save, User } from "lucide-react";
+import { Building, Copy, Loader2, MapPin, Save, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { UserProfile } from "../backend";
 import { useActor } from "../hooks/useActor";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 export default function MRProfile() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
   const queryClient = useQueryClient();
+
+  const principalId = identity?.getPrincipal().toString() ?? "";
 
   const { data: profile, isLoading } = useQuery<UserProfile | null>({
     queryKey: ["user-profile"],
@@ -47,6 +51,11 @@ export default function MRProfile() {
     onError: () => toast.error("Failed to save profile"),
   });
 
+  const copyPrincipal = () => {
+    navigator.clipboard.writeText(principalId);
+    toast.success("Principal ID copied to clipboard");
+  };
+
   if (isLoading) {
     return (
       <div
@@ -60,6 +69,42 @@ export default function MRProfile() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      {/* Principal ID Card */}
+      <Card className="bg-blue-50 border border-blue-200 shadow-sm rounded-xl">
+        <CardHeader className="border-b border-blue-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+              <User className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold text-blue-900">
+                Your Principal ID
+              </CardTitle>
+              <p className="text-xs text-blue-500 mt-0.5">
+                Share this with your Admin to get role access
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5">
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-blue-800 font-mono break-all">
+              {principalId || "Not available"}
+            </code>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyPrincipal}
+              className="flex-shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100"
+              disabled={!principalId}
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Profile Edit Card */}
       <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
         <CardHeader className="border-b border-[#F1F5F9] pb-4">
           <div className="flex items-center gap-3">
