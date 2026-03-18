@@ -148,6 +148,9 @@ export const ExpenseEntry = IDL.Record({
   'notes' : IDL.Text,
   'taAmount' : IDL.Nat,
 });
+export const ManagerAreaAssignment = IDL.Record({
+  'areaIds' : IDL.Vec(AreaId),
+});
 export const SampleBalance = IDL.Record({
   'balance' : IDL.Nat,
   'totalDistributed' : IDL.Nat,
@@ -192,6 +195,11 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'adminAssignManagerAreas' : IDL.Func(
+      [IDL.Principal, IDL.Vec(AreaId)],
+      [],
+      [],
+    ),
   'adminCreateOrUpdateMRProfile' : IDL.Func(
       [IDL.Principal, IDL.Text, IDL.Text, IDL.Vec(AreaId)],
       [],
@@ -214,6 +222,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'deleteArea' : IDL.Func([AreaId], [], []),
   'deleteDoctor' : IDL.Func([DoctorId], [], []),
   'deleteHeadquarter' : IDL.Func([IDL.Nat], [], []),
   'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
@@ -265,6 +274,11 @@ export const idlService = IDL.Service({
   'getExpenseEntries' : IDL.Func([], [IDL.Vec(ExpenseEntry)], ['query']),
   'getLeaveHistory' : IDL.Func([], [IDL.Vec(LeaveEntry)], ['query']),
   'getMRProfile' : IDL.Func([], [MRProfile], ['query']),
+  'getManagerAreas' : IDL.Func(
+      [IDL.Principal],
+      [ManagerAreaAssignment],
+      ['query'],
+    ),
   'getManagerProfile' : IDL.Func([], [IDL.Opt(ManagerProfile)], ['query']),
   'getMyAllotments' : IDL.Func([], [IDL.Vec(SampleAllotment)], ['query']),
   'getMySampleBalance' : IDL.Func([], [IDL.Vec(SampleBalance)], ['query']),
@@ -308,6 +322,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'updateArea' : IDL.Func([AreaId, IDL.Text, IDL.Nat], [], []),
   'updateDoctor' : IDL.Func(
       [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
       [],
@@ -471,6 +486,7 @@ export const idlFactory = ({ IDL }) => {
     'notes' : IDL.Text,
     'taAmount' : IDL.Nat,
   });
+  const ManagerAreaAssignment = IDL.Record({ 'areaIds' : IDL.Vec(AreaId) });
   const SampleBalance = IDL.Record({
     'balance' : IDL.Nat,
     'totalDistributed' : IDL.Nat,
@@ -515,6 +531,11 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'adminAssignManagerAreas' : IDL.Func(
+        [IDL.Principal, IDL.Vec(AreaId)],
+        [],
+        [],
+      ),
     'adminCreateOrUpdateMRProfile' : IDL.Func(
         [IDL.Principal, IDL.Text, IDL.Text, IDL.Vec(AreaId)],
         [],
@@ -541,6 +562,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'deleteArea' : IDL.Func([AreaId], [], []),
     'deleteDoctor' : IDL.Func([DoctorId], [], []),
     'deleteHeadquarter' : IDL.Func([IDL.Nat], [], []),
     'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
@@ -592,6 +614,11 @@ export const idlFactory = ({ IDL }) => {
     'getExpenseEntries' : IDL.Func([], [IDL.Vec(ExpenseEntry)], ['query']),
     'getLeaveHistory' : IDL.Func([], [IDL.Vec(LeaveEntry)], ['query']),
     'getMRProfile' : IDL.Func([], [MRProfile], ['query']),
+    'getManagerAreas' : IDL.Func(
+        [IDL.Principal],
+        [ManagerAreaAssignment],
+        ['query'],
+      ),
     'getManagerProfile' : IDL.Func([], [IDL.Opt(ManagerProfile)], ['query']),
     'getMyAllotments' : IDL.Func([], [IDL.Vec(SampleAllotment)], ['query']),
     'getMySampleBalance' : IDL.Func([], [IDL.Vec(SampleBalance)], ['query']),
@@ -635,6 +662,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'updateArea' : IDL.Func([AreaId, IDL.Text, IDL.Nat], [], []),
     'updateDoctor' : IDL.Func(
         [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
         [],

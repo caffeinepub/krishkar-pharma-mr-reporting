@@ -99,6 +99,7 @@ export interface MRProfile {
   'assignedAreas' : Array<AreaId>,
   'headQuarter' : string,
 }
+export interface ManagerAreaAssignment { 'areaIds' : Array<AreaId> }
 export interface ManagerProfile {
   'managerRole' : ManagerRole,
   'employeeCode' : string,
@@ -173,6 +174,10 @@ export interface _SERVICE {
     [Principal, ProductId, bigint, string],
     undefined
   >,
+  'adminAssignManagerAreas' : ActorMethod<
+    [Principal, Array<AreaId>],
+    undefined
+  >,
   'adminCreateOrUpdateMRProfile' : ActorMethod<
     [Principal, string, string, Array<AreaId>],
     undefined
@@ -191,6 +196,7 @@ export interface _SERVICE {
     [string, string, Array<AreaId>],
     undefined
   >,
+  'deleteArea' : ActorMethod<[AreaId], undefined>,
   'deleteDoctor' : ActorMethod<[DoctorId], undefined>,
   'deleteHeadquarter' : ActorMethod<[bigint], undefined>,
   'deleteMRProfile' : ActorMethod<[Principal], undefined>,
@@ -221,6 +227,7 @@ export interface _SERVICE {
   'getExpenseEntries' : ActorMethod<[], Array<ExpenseEntry>>,
   'getLeaveHistory' : ActorMethod<[], Array<LeaveEntry>>,
   'getMRProfile' : ActorMethod<[], MRProfile>,
+  'getManagerAreas' : ActorMethod<[Principal], ManagerAreaAssignment>,
   'getManagerProfile' : ActorMethod<[], [] | [ManagerProfile]>,
   'getMyAllotments' : ActorMethod<[], Array<SampleAllotment>>,
   'getMySampleBalance' : ActorMethod<[], Array<SampleBalance>>,
@@ -251,6 +258,7 @@ export interface _SERVICE {
     [string, string, string, ManagerRole],
     undefined
   >,
+  'updateArea' : ActorMethod<[AreaId, string, bigint], undefined>,
   'updateDoctor' : ActorMethod<
     [DoctorId, string, string, string, string, AreaId],
     undefined

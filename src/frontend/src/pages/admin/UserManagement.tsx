@@ -27,6 +27,7 @@ import {
 import { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, Trash2, UserCog, Users } from "lucide-react";
+import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ManagerRole, type UserRole } from "../../backend.d";
@@ -38,6 +39,9 @@ export default function UserManagement() {
 
   const [principalInput, setPrincipalInput] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("user");
+  const [selectedManagerPrincipal, setSelectedManagerPrincipal] =
+    useState<string>("");
+  const [managerAreaIds, setManagerAreaIds] = useState<bigint[]>([]);
 
   const { data: mrProfiles, isLoading } = useQuery({
     queryKey: ["admin", "mrProfiles"],
@@ -55,6 +59,41 @@ export default function UserManagement() {
       return actor.getAllManagerProfiles();
     },
     enabled: !!actor && !isFetching,
+  });
+
+  const { data: allAreas = [] } = useQuery({
+    queryKey: ["areas"],
+    queryFn: async () => (actor ? actor.getAllAreas() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const { data: selectedManagerAreas } = useQuery({
+    queryKey: ["admin", "managerAreas", selectedManagerPrincipal],
+    queryFn: async () => {
+      if (!actor || !selectedManagerPrincipal) return null;
+      const principal = Principal.fromText(selectedManagerPrincipal);
+      return actor.getManagerAreas(principal);
+    },
+    enabled: !!actor && !isFetching && !!selectedManagerPrincipal,
+  });
+
+  const assignManagerAreasMutation = useMutation({
+    mutationFn: async ({
+      principalStr,
+      areaIds,
+    }: { principalStr: string; areaIds: bigint[] }) => {
+      if (!actor) throw new Error("Not connected");
+      const principal = Principal.fromText(principalStr);
+      await actor.adminAssignManagerAreas(principal, areaIds);
+    },
+    onSuccess: () => {
+      toast.success("Areas assigned successfully!");
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "managerAreas", selectedManagerPrincipal],
+      });
+    },
+    onError: (err: Error) =>
+      toast.error(`Failed to assign areas: ${err.message}`),
   });
 
   const assignRoleMutation = useMutation({
@@ -485,6 +524,140 @@ export default function UserManagement() {
           )}
         </CardContent>
       </Card>
+      {/* Assign Areas to Manager Staff (ASM/RSM) */}
+      <Card className="border border-[#E5EAF2] shadow-sm mt-6">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <UserCog className="h-5 w-5 text-purple-600" />
+            <div>
+              <CardTitle className="text-base font-semibold text-gray-800">
+                Assign Areas to Manager Staff (ASM/RSM)
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Select a manager and assign the areas they cover
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="manager-select">Select Manager</Label>
+              <Select
+                value={selectedManagerPrincipal}
+                onValueChange={(val) => {
+                  setSelectedManagerPrincipal(val);
+                  setManagerAreaIds([]);
+                }}
+              >
+                <SelectTrigger
+                  id="manager-select"
+                  data-ocid="user_management.select"
+                  className="mt-1.5"
+                >
+                  <SelectValue placeholder="Choose a manager..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {(managerProfiles as Array<[any, any]>).map(
+                    ([p, profile]) => (
+                      <SelectItem key={p.toString()} value={p.toString()}>
+                        {profile.name || `${p.toString().slice(0, 12)}...`} (
+                        {profile.managerRole === "RSM" ||
+                        (profile.managerRole &&
+                          profile.managerRole.RSM !== undefined)
+                          ? "RSM"
+                          : "ASM"}
+                        )
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedManagerPrincipal && (
+              <>
+                <div>
+                  <Label>Assign Areas</Label>
+                  <ManagerAreaCheckboxes
+                    allAreas={allAreas as Array<{ id: bigint; name: string }>}
+                    currentAreas={selectedManagerAreas}
+                    managerAreaIds={managerAreaIds}
+                    setManagerAreaIds={setManagerAreaIds}
+                  />
+                </div>
+                <Button
+                  data-ocid="user_management.save_button"
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  disabled={assignManagerAreasMutation.isPending}
+                  onClick={() =>
+                    assignManagerAreasMutation.mutate({
+                      principalStr: selectedManagerPrincipal,
+                      areaIds: managerAreaIds,
+                    })
+                  }
+                >
+                  {assignManagerAreasMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Save Area Assignments
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ManagerAreaCheckboxes({
+  allAreas,
+  currentAreas,
+  managerAreaIds,
+  setManagerAreaIds,
+}: {
+  allAreas: Array<{ id: bigint; name: string }>;
+  currentAreas: { areaIds: bigint[] } | null | undefined;
+  managerAreaIds: bigint[];
+  setManagerAreaIds: React.Dispatch<React.SetStateAction<bigint[]>>;
+}) {
+  // Initialize from currentAreas if managerAreaIds is empty
+  const effectiveIds =
+    managerAreaIds.length > 0 ? managerAreaIds : (currentAreas?.areaIds ?? []);
+
+  return (
+    <div className="space-y-1 max-h-48 overflow-y-auto border rounded p-2 mt-1">
+      {allAreas.length === 0 ? (
+        <p className="text-xs text-gray-400 py-2 text-center">
+          No areas available
+        </p>
+      ) : (
+        allAreas.map((area) => (
+          <label
+            key={area.id.toString()}
+            className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded"
+          >
+            <input
+              type="checkbox"
+              checked={effectiveIds.some(
+                (id) => id.toString() === area.id.toString(),
+              )}
+              onChange={(e) => {
+                const base =
+                  managerAreaIds.length > 0
+                    ? managerAreaIds
+                    : (currentAreas?.areaIds ?? []);
+                const updated = e.target.checked
+                  ? [...base, area.id]
+                  : base.filter((id) => id.toString() !== area.id.toString());
+                setManagerAreaIds(updated);
+              }}
+            />
+            {area.name}
+          </label>
+        ))
+      )}
     </div>
   );
 }

@@ -116,6 +116,9 @@ export interface SampleDemandOrder {
     requestedQty: bigint;
     notes: string;
 }
+export interface ManagerAreaAssignment {
+    areaIds: Array<AreaId>;
+}
 export interface Doctor {
     id: DoctorId;
     station: string;
@@ -250,12 +253,14 @@ export interface backendInterface {
     addHeadquarter(name: string): Promise<bigint>;
     addProduct(name: string, code: string): Promise<ProductId>;
     adminAllotSamples(target: Principal, productId: ProductId, quantity: bigint, date: string): Promise<void>;
+    adminAssignManagerAreas(target: Principal, areaIds: Array<AreaId>): Promise<void>;
     adminCreateOrUpdateMRProfile(mrPrincipal: Principal, employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkAddDoctors(doctorsInput: Array<DoctorInput>): Promise<Array<DoctorId>>;
     createOrUpdateMRProfile(employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
+    deleteArea(id: AreaId): Promise<void>;
     deleteDoctor(id: DoctorId): Promise<void>;
     deleteHeadquarter(id: bigint): Promise<void>;
     deleteMRProfile(mrPrincipal: Principal): Promise<void>;
@@ -283,6 +288,7 @@ export interface backendInterface {
     getExpenseEntries(): Promise<Array<ExpenseEntry>>;
     getLeaveHistory(): Promise<Array<LeaveEntry>>;
     getMRProfile(): Promise<MRProfile>;
+    getManagerAreas(target: Principal): Promise<ManagerAreaAssignment>;
     getManagerProfile(): Promise<ManagerProfile | null>;
     getMyAllotments(): Promise<Array<SampleAllotment>>;
     getMySampleBalance(): Promise<Array<SampleBalance>>;
@@ -298,6 +304,7 @@ export interface backendInterface {
     raiseSampleDemandOrder(productId: ProductId, requestedQty: bigint, date: string, notes: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveManagerProfile(name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
+    updateArea(id: AreaId, name: string, headquarterId: bigint): Promise<void>;
     updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId): Promise<void>;
     updateHeadquarter(id: bigint, name: string): Promise<void>;
     updateLeaveStatus(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;
@@ -434,6 +441,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async adminAssignManagerAreas(arg0: Principal, arg1: Array<AreaId>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminAssignManagerAreas(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminAssignManagerAreas(arg0, arg1);
+            return result;
+        }
+    }
     async adminCreateOrUpdateMRProfile(arg0: Principal, arg1: string, arg2: string, arg3: Array<AreaId>): Promise<void> {
         if (this.processError) {
             try {
@@ -515,6 +536,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.createOrUpdateMRProfile(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async deleteArea(arg0: AreaId): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteArea(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteArea(arg0);
             return result;
         }
     }
@@ -896,6 +931,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getManagerAreas(arg0: Principal): Promise<ManagerAreaAssignment> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getManagerAreas(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getManagerAreas(arg0);
+            return result;
+        }
+    }
     async getManagerProfile(): Promise<ManagerProfile | null> {
         if (this.processError) {
             try {
@@ -1103,6 +1152,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveManagerProfile(arg0, arg1, arg2, to_candid_ManagerRole_n2(this._uploadFile, this._downloadFile, arg3));
+            return result;
+        }
+    }
+    async updateArea(arg0: AreaId, arg1: string, arg2: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateArea(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateArea(arg0, arg1, arg2);
             return result;
         }
     }

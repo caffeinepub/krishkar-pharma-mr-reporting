@@ -3,13 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ClipboardList, DollarSign, Users, X } from "lucide-react";
+import {
+  Check,
+  ClipboardList,
+  DollarSign,
+  MapPin,
+  Users,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { LeaveStatus } from "../../backend.d";
 import { useActor } from "../../hooks/useActor";
+import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 export default function RSMDashboard() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
   const queryClient = useQueryClient();
 
   const { data: teamLeaves = [], isLoading: loadingLeaves } = useQuery({
@@ -48,6 +57,24 @@ export default function RSMDashboard() {
     enabled: !!actor && !isFetching,
   });
 
+  const { data: allAreas = [] } = useQuery({
+    queryKey: ["rsm", "allAreas"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllAreas();
+    },
+    enabled: !!actor && !isFetching,
+  });
+
+  const { data: managerAreas } = useQuery({
+    queryKey: ["rsm", "managerAreas"],
+    queryFn: async () => {
+      if (!actor || !identity) return null;
+      return actor.getManagerAreas(identity.getPrincipal());
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
+
   const { mutate: updateLeaveStatus } = useMutation({
     mutationFn: async ({
       principal,
@@ -81,6 +108,17 @@ export default function RSMDashboard() {
     return `${principalStr.slice(0, 8)}...`;
   };
 
+  const areaMap = new Map(
+    (allAreas as Array<{ id: bigint; name: string }>).map((a) => [
+      a.id.toString(),
+      a.name,
+    ]),
+  );
+
+  const assignedAreaNames: string[] = (managerAreas?.areaIds ?? []).map(
+    (id: bigint) => areaMap.get(id.toString()) ?? `Area #${id}`,
+  );
+
   const totalMembers = (teamDetailing as Array<[any, any[]]>).length;
   const totalVisits = (teamDetailing as Array<[any, any[]]>).reduce(
     (sum, [, entries]) => sum + entries.length,
@@ -112,6 +150,34 @@ export default function RSMDashboard() {
           Regional overview — team performance and leave requests
         </p>
       </div>
+
+      {/* Assigned Areas */}
+      <Card className="border border-[#E5EAF2] shadow-sm mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-blue-600" />
+            My Assigned Areas ({assignedAreaNames.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {assignedAreaNames.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              No areas assigned yet. Contact Admin to assign areas.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {assignedAreaNames.map((name) => (
+                <Badge
+                  key={name}
+                  className="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 text-xs font-medium"
+                >
+                  {name}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

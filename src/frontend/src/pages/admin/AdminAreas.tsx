@@ -96,11 +96,7 @@ export default function AdminAreas() {
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!actor || !editingArea) throw new Error("Not connected");
-      await (actor as any).updateArea(
-        editingArea.id,
-        editName.trim(),
-        BigInt(editHQId),
-      );
+      await actor.updateArea(editingArea.id, editName.trim(), BigInt(editHQId));
     },
     onSuccess: () => {
       toast.success("Area updated successfully!");
@@ -113,7 +109,7 @@ export default function AdminAreas() {
   const deleteMutation = useMutation({
     mutationFn: async (id: bigint) => {
       if (!actor) throw new Error("Not connected");
-      await (actor as any).deleteArea(id);
+      await actor.deleteArea(id);
     },
     onSuccess: () => {
       toast.success("Area deleted successfully!");

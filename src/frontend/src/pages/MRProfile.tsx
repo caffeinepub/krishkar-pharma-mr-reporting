@@ -4,7 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building, Copy, Loader2, MapPin, Save, User } from "lucide-react";
+import {
+  Building,
+  Copy,
+  Loader2,
+  Lock,
+  MapPin,
+  Save,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { UserProfile } from "../backend";
@@ -38,6 +46,17 @@ export default function MRProfile() {
       setHeadQuarter(profile.headQuarter);
     }
   }, [profile]);
+
+  // Auto-generate employee code for new signups
+  useEffect(() => {
+    if (!isLoading && !profile && !employeeCode) {
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(2);
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      setEmployeeCode(`KP-${yy}${mm}-${rand}`);
+    }
+  }, [isLoading, profile, employeeCode]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -149,11 +168,18 @@ export default function MRProfile() {
                   id="empCode"
                   data-ocid="profile.employeecode.input"
                   value={employeeCode}
-                  onChange={(e) => setEmployeeCode(e.target.value)}
-                  placeholder="e.g. KP-001"
-                  className="pl-9 border-[#E5EAF2]"
+                  readOnly
+                  disabled
+                  placeholder="Auto-generating..."
+                  className="pl-9 pr-9 border-[#E5EAF2] bg-gray-50 text-gray-500 cursor-not-allowed"
                 />
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
               </div>
+              <p className="text-xs text-gray-400 mt-1">
+                {profile
+                  ? "System-assigned — cannot be changed"
+                  : "Auto-generated on first save"}
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="hq" className="text-sm font-medium text-gray-700">

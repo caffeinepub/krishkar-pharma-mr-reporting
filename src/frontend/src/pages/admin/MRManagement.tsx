@@ -64,12 +64,14 @@ interface MRProfileForm {
   principalStr: string;
   employeeCode: string;
   headQuarter: string;
+  assignedAreas: bigint[];
 }
 
 const emptyMRForm: MRProfileForm = {
   principalStr: "",
   employeeCode: "",
   headQuarter: "",
+  assignedAreas: [],
 };
 
 export default function MRManagement() {
@@ -100,6 +102,12 @@ export default function MRManagement() {
       if (!actor) return [];
       return actor.getAllPendingUsers();
     },
+    enabled: !!actor && !isFetching,
+  });
+
+  const { data: allAreas = [] } = useQuery({
+    queryKey: ["areas"],
+    queryFn: async () => (actor ? actor.getAllAreas() : []),
     enabled: !!actor && !isFetching,
   });
 
@@ -150,16 +158,11 @@ export default function MRManagement() {
       form,
     }: { principal: Principal; form: MRProfileForm }) => {
       if (!actor) throw new Error("Not connected");
-      // Get current assigned areas for this MR to preserve them
-      const existing = mrProfiles?.find(
-        ([p]) => p.toString() === principal.toString(),
-      );
-      const areas = existing ? existing[1].assignedAreas : [];
       await actor.adminCreateOrUpdateMRProfile(
         principal,
         form.employeeCode,
         form.headQuarter,
-        areas,
+        form.assignedAreas ?? [],
       );
     },
     onSuccess: () => {
@@ -208,7 +211,11 @@ export default function MRManagement() {
 
   const openEditMR = (
     principal: Principal,
-    profile: { employeeCode: string; headQuarter: string },
+    profile: {
+      employeeCode: string;
+      headQuarter: string;
+      assignedAreas: bigint[];
+    },
   ) => {
     setEditingMR({
       principal,
@@ -216,6 +223,7 @@ export default function MRManagement() {
         principalStr: principal.toString(),
         employeeCode: profile.employeeCode,
         headQuarter: profile.headQuarter,
+        assignedAreas: profile.assignedAreas ?? [],
       },
     });
   };
@@ -668,6 +676,51 @@ export default function MRManagement() {
                 }
                 className="mt-1"
               />
+            </div>
+            <div>
+              <Label>Assign Areas</Label>
+              <div className="space-y-1 max-h-48 overflow-y-auto border rounded p-2 mt-1">
+                {allAreas.length === 0 ? (
+                  <p className="text-xs text-gray-400 py-2 text-center">
+                    No areas available
+                  </p>
+                ) : (
+                  (allAreas as Array<{ id: bigint; name: string }>).map(
+                    (area) => (
+                      <label
+                        key={area.id.toString()}
+                        className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            editingMR?.form.assignedAreas?.some(
+                              (id) => id.toString() === area.id.toString(),
+                            ) ?? false
+                          }
+                          onChange={(e) => {
+                            setEditingMR((prev) => {
+                              if (!prev) return null;
+                              const current = prev.form.assignedAreas ?? [];
+                              const updated = e.target.checked
+                                ? [...current, area.id]
+                                : current.filter(
+                                    (id) =>
+                                      id.toString() !== area.id.toString(),
+                                  );
+                              return {
+                                ...prev,
+                                form: { ...prev.form, assignedAreas: updated },
+                              };
+                            });
+                          }}
+                        />
+                        {area.name}
+                      </label>
+                    ),
+                  )
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>

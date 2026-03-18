@@ -45,6 +45,33 @@ export default function LeaveApprovals() {
     },
   });
 
+  const { data: allUserProfiles = [] } = useQuery({
+    queryKey: ["admin", "allUserProfiles"],
+    queryFn: async () => (actor ? actor.getAllUserProfiles() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const { data: allManagerProfiles = [] } = useQuery({
+    queryKey: ["admin", "allManagerProfiles"],
+    queryFn: async () => (actor ? actor.getAllManagerProfiles() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const profileMap = new Map<string, string>();
+  for (const [p, profile] of allUserProfiles as Array<[any, any]>) {
+    profileMap.set(p.toString(), profile.name);
+  }
+  for (const [p, profile] of allManagerProfiles as Array<[any, any]>) {
+    if (!profileMap.has(p.toString())) {
+      profileMap.set(
+        p.toString(),
+        profile.name || `${p.toString().slice(0, 8)}...`,
+      );
+    }
+  }
+  const getUserName = (principalStr: string) =>
+    profileMap.get(principalStr) || `${principalStr.slice(0, 8)}...`;
+
   const allLeaves =
     leaveApps?.flatMap(([principal, entries]) =>
       entries.map((entry, idx) => ({ principal, entry, idx })),
@@ -96,7 +123,7 @@ export default function LeaveApprovals() {
         <div className="space-y-3">
           {allLeaves.map(({ principal, entry, idx }, listIdx) => {
             const p = principal.toString();
-            const short = `${p.slice(0, 10)}...${p.slice(-6)}`;
+
             const entryIsPending = entry.status === "Pending";
             return (
               <Card
@@ -118,10 +145,10 @@ export default function LeaveApprovals() {
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        <span className="font-medium">MR:</span>{" "}
-                        <code className="bg-gray-100 px-1 rounded">
-                          {short}
-                        </code>
+                        <span className="font-medium">Staff:</span>{" "}
+                        <span className="font-semibold text-gray-800">
+                          {getUserName(p)}
+                        </span>
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         <span className="font-medium">Period:</span>{" "}

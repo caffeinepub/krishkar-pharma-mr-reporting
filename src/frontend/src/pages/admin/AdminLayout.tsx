@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
+  BarChart2,
   Building2,
   CalendarCheck,
   Copy,
@@ -25,6 +26,7 @@ import AdminDashboard from "./AdminDashboard";
 import AdminDoctors from "./AdminDoctors";
 import AdminHeadquarters from "./AdminHeadquarters";
 import AdminProducts from "./AdminProducts";
+import AdminReports from "./AdminReports";
 import AdminSampleManagement from "./AdminSampleManagement";
 import LeaveApprovals from "./LeaveApprovals";
 import MRManagement from "./MRManagement";
@@ -39,6 +41,7 @@ type AdminPage =
   | "admin-products"
   | "admin-doctors"
   | "areas"
+  | "reports"
   | "sample-management";
 
 const adminNavItems: {
@@ -54,6 +57,7 @@ const adminNavItems: {
   { id: "admin-products", label: "Products", icon: Package },
   { id: "admin-doctors", label: "Doctors", icon: Stethoscope },
   { id: "areas", label: "Areas", icon: MapPin },
+  { id: "reports", label: "Reports", icon: BarChart2 },
   { id: "sample-management", label: "Sample Management", icon: FlaskConical },
 ];
 
@@ -66,6 +70,7 @@ const pageTitles: Record<AdminPage, string> = {
   "admin-products": "Product Master",
   "admin-doctors": "Doctor Management",
   areas: "Area Management",
+  reports: "Export Reports",
   "sample-management": "Sample Management",
 };
 
@@ -105,6 +110,8 @@ export default function AdminLayout() {
         return <AdminDoctors />;
       case "areas":
         return <AdminAreas />;
+      case "reports":
+        return <AdminReports />;
       case "sample-management":
         return <AdminSampleManagement />;
     }

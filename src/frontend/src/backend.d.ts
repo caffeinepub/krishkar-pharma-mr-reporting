@@ -34,6 +34,9 @@ export interface SampleDemandOrder {
     requestedQty: bigint;
     notes: string;
 }
+export interface ManagerAreaAssignment {
+    areaIds: Array<AreaId>;
+}
 export interface Doctor {
     id: DoctorId;
     station: string;
@@ -167,12 +170,14 @@ export interface backendInterface {
     addHeadquarter(name: string): Promise<bigint>;
     addProduct(name: string, code: string): Promise<ProductId>;
     adminAllotSamples(target: Principal, productId: ProductId, quantity: bigint, date: string): Promise<void>;
+    adminAssignManagerAreas(target: Principal, areaIds: Array<AreaId>): Promise<void>;
     adminCreateOrUpdateMRProfile(mrPrincipal: Principal, employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkAddDoctors(doctorsInput: Array<DoctorInput>): Promise<Array<DoctorId>>;
     createOrUpdateMRProfile(employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
+    deleteArea(id: AreaId): Promise<void>;
     deleteDoctor(id: DoctorId): Promise<void>;
     deleteHeadquarter(id: bigint): Promise<void>;
     deleteMRProfile(mrPrincipal: Principal): Promise<void>;
@@ -200,6 +205,7 @@ export interface backendInterface {
     getExpenseEntries(): Promise<Array<ExpenseEntry>>;
     getLeaveHistory(): Promise<Array<LeaveEntry>>;
     getMRProfile(): Promise<MRProfile>;
+    getManagerAreas(target: Principal): Promise<ManagerAreaAssignment>;
     getManagerProfile(): Promise<ManagerProfile | null>;
     getMyAllotments(): Promise<Array<SampleAllotment>>;
     getMySampleBalance(): Promise<Array<SampleBalance>>;
@@ -216,7 +222,6 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveManagerProfile(name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     updateArea(id: AreaId, name: string, headquarterId: bigint): Promise<void>;
-    deleteArea(id: AreaId): Promise<void>;
     updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId): Promise<void>;
     updateHeadquarter(id: bigint, name: string): Promise<void>;
     updateLeaveStatus(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   CalendarOff,
+  ClipboardList,
   FlaskConical,
   LayoutDashboard,
   Loader2,
@@ -25,6 +26,7 @@ import Doctors from "./pages/Doctors";
 import Expenses from "./pages/Expenses";
 import Leaves from "./pages/Leaves";
 import MRProfile from "./pages/MRProfile";
+import MRWorkingDetails from "./pages/MRWorkingDetails";
 import Products from "./pages/Products";
 import Samples from "./pages/Samples";
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -33,6 +35,7 @@ import RSMLayout from "./pages/rsm/RSMLayout";
 
 type Page =
   | "dashboard"
+  | "working-details"
   | "profile"
   | "areas"
   | "doctors"
@@ -44,6 +47,7 @@ type Page =
 
 const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "working-details", label: "Working Details", icon: ClipboardList },
   { id: "profile", label: "MR Profile", icon: User },
   { id: "areas", label: "Areas", icon: MapPin },
   { id: "doctors", label: "Doctors", icon: Stethoscope },
@@ -56,6 +60,7 @@ const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
 
 const pageTitles: Record<Page, string> = {
   dashboard: "Dashboard",
+  "working-details": "MR Working Details",
   profile: "MR Profile",
   areas: "Area Management",
   doctors: "Doctor Management",
@@ -140,7 +145,13 @@ function MRLayout() {
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard />;
+        return (
+          <Dashboard
+            onAddWorkingDetails={() => setCurrentPage("working-details")}
+          />
+        );
+      case "working-details":
+        return <MRWorkingDetails />;
       case "profile":
         return <MRProfile />;
       case "areas":

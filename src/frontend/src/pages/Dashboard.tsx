@@ -1,8 +1,10 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   CalendarCheck,
+  ClipboardList,
   FlaskConical,
   Loader2,
   ShoppingBag,
@@ -117,7 +119,9 @@ const legendItems = [
   { color: "#F59E0B", label: "Orders" },
 ];
 
-export default function Dashboard() {
+export default function Dashboard({
+  onAddWorkingDetails,
+}: { onAddWorkingDetails?: () => void }) {
   const { actor, isFetching } = useActor();
   const today = new Date().toISOString().split("T")[0];
 
@@ -136,6 +140,33 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Add Working Details CTA */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-600">
+            Today's Overview
+          </h2>
+          <p className="text-xs text-gray-400">
+            {new Date().toLocaleDateString("en-IN", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
+        </div>
+        {onAddWorkingDetails && (
+          <Button
+            data-ocid="dashboard.add_working_details.primary_button"
+            className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white font-semibold px-5"
+            onClick={onAddWorkingDetails}
+          >
+            <ClipboardList className="mr-2 h-4 w-4" />
+            Add Working Details
+          </Button>
+        )}
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <KPICard
