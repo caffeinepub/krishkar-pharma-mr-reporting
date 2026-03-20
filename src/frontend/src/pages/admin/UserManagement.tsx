@@ -67,6 +67,16 @@ export default function UserManagement() {
     enabled: !!actor && !isFetching,
   });
 
+  const { data: allUserProfiles = [] } = useQuery({
+    queryKey: ["admin", "allUserProfiles"],
+    queryFn: async () => (actor ? actor.getAllUserProfiles() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const nameMap = new Map(
+    allUserProfiles.map(([p, prof]) => [p.toString(), prof.name]),
+  );
+
   const { data: selectedManagerAreas } = useQuery({
     queryKey: ["admin", "managerAreas", selectedManagerPrincipal],
     queryFn: async () => {
@@ -200,6 +210,11 @@ export default function UserManagement() {
                 onChange={(e) => setPrincipalInput(e.target.value)}
                 className="font-mono text-sm bg-white"
               />
+              {principalInput.trim() && nameMap.get(principalInput.trim()) && (
+                <p className="text-xs text-green-600 mt-1 font-medium">
+                  User: {nameMap.get(principalInput.trim())}
+                </p>
+              )}
             </div>
             <div className="w-full sm:w-56">
               <Label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -449,6 +464,7 @@ export default function UserManagement() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>#</TableHead>
+                    <TableHead>Name</TableHead>
                     <TableHead>Principal ID</TableHead>
                     <TableHead>Employee Code</TableHead>
                     <TableHead>Head Quarter</TableHead>
@@ -467,6 +483,9 @@ export default function UserManagement() {
                       >
                         <TableCell className="text-gray-500 text-sm">
                           {idx + 1}
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-800">
+                          {nameMap.get(p) || "—"}
                         </TableCell>
                         <TableCell>
                           <button

@@ -17,7 +17,7 @@ import {
   Stethoscope,
   User,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AccessPendingScreen from "./components/AccessPendingScreen";
 import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
@@ -156,7 +156,8 @@ function MRLayout() {
     setIsRestoring(true);
     setRestoreError(null);
     try {
-      await (actor as any).emergencyRestoreAdmin();
+      if (!actor) throw new Error("Not connected");
+      await actor.emergencyRestoreAdmin();
       await queryClient.invalidateQueries({ queryKey: ["userRole"] });
       window.location.reload();
     } catch (err: any) {
@@ -393,6 +394,36 @@ function MRLayout() {
 
 function RoleRouter() {
   const { role, isLoading } = useUserRole();
+  const [timedOut, setTimedOut] = useState(false);
+  const { clear } = useInternetIdentity();
+
+  useEffect(() => {
+    if (!isLoading && role !== null) return;
+    const t = setTimeout(() => setTimedOut(true), 20000);
+    return () => clearTimeout(t);
+  }, [isLoading, role]);
+
+  if (timedOut && (isLoading || role === null)) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 p-6">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
+          <p className="text-gray-700 font-semibold text-base mb-2">
+            Connection Timeout
+          </p>
+          <p className="text-gray-500 text-sm mb-5">
+            Unable to detect your role. This may be a network issue. Please try
+            logging out and back in.
+          </p>
+          <Button
+            onClick={clear}
+            className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
+          >
+            Logout and Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || role === null) {
     return (

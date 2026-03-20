@@ -263,6 +263,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'emergencyRestoreAdmin' : IDL.Func([], [], []),
   'applyLeave' : IDL.Func(
       [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
       [],
@@ -698,7 +699,8 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
-    'applyLeave' : IDL.Func(
+    'emergencyRestoreAdmin' : IDL.Func([], [], []),
+  'applyLeave' : IDL.Func(
         [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
         [],
         [],

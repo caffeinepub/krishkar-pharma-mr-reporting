@@ -1,8 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -11,8 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Package, Plus } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Product } from "../backend";
@@ -28,9 +25,6 @@ const SEED_PRODUCTS = [
 export default function Products() {
   const { actor, isFetching } = useActor();
   const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
-  const [pName, setPName] = useState("");
-  const [pCode, setPCode] = useState("");
   const [seeded, setSeeded] = useState(false);
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
@@ -56,95 +50,14 @@ export default function Products() {
     }
   }, [actor, isFetching, products, seeded, isLoading, queryClient]);
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error("No actor");
-      await actor.addProduct(pName.trim(), pCode.trim().toUpperCase());
-    },
-    onSuccess: () => {
-      toast.success("Product added");
-      setPName("");
-      setPCode("");
-      setShowForm(false);
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-    },
-    onError: () => toast.error("Failed to add product"),
-  });
-
   return (
     <div className="max-w-3xl space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Product Master
-          </h2>
-          <p className="text-sm text-gray-500">
-            {products.length} products registered
-          </p>
-        </div>
-        <Button
-          data-ocid="products.open_modal_button"
-          className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white gap-2"
-          onClick={() => setShowForm(!showForm)}
-        >
-          <Plus className="w-4 h-4" /> Add Product
-        </Button>
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">Product Master</h2>
+        <p className="text-sm text-gray-500">
+          {products.length} products registered
+        </p>
       </div>
-
-      {showForm && (
-        <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
-          <CardContent className="p-5">
-            <p className="text-sm font-semibold text-gray-700 mb-3">
-              New Product
-            </p>
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-600">
-                  Product Code
-                </Label>
-                <Input
-                  data-ocid="products.code.input"
-                  value={pCode}
-                  onChange={(e) => setPCode(e.target.value)}
-                  placeholder="e.g. KRC5"
-                  className="border-[#E5EAF2]"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-600">
-                  Product Name
-                </Label>
-                <Input
-                  data-ocid="products.name.input"
-                  value={pName}
-                  onChange={(e) => setPName(e.target.value)}
-                  placeholder="e.g. Kriscard-5"
-                  className="border-[#E5EAF2]"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                data-ocid="products.submit_button"
-                className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
-                onClick={() => addMutation.mutate()}
-                disabled={
-                  addMutation.isPending || !pName.trim() || !pCode.trim()
-                }
-              >
-                {addMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Save Product"
-                )}
-              </Button>
-              <Button variant="outline" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
         <CardHeader className="border-b border-[#F1F5F9] pb-3">

@@ -37,13 +37,11 @@ export default function MRProfile() {
 
   const [employeeCode, setEmployeeCode] = useState("");
   const [name, setName] = useState("");
-  const [headQuarter, setHeadQuarter] = useState("");
 
   useEffect(() => {
     if (profile) {
       setEmployeeCode(profile.employeeCode);
       setName(profile.name);
-      setHeadQuarter(profile.headQuarter);
     }
   }, [profile]);
 
@@ -61,7 +59,13 @@ export default function MRProfile() {
   const mutation = useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error("No actor");
-      await actor.saveCallerUserProfile({ employeeCode, name, headQuarter });
+      // Preserve existing headQuarter — do not let user modify it
+      const hq = profile?.headQuarter ?? "";
+      await actor.saveCallerUserProfile({
+        employeeCode,
+        name,
+        headQuarter: hq,
+      });
     },
     onSuccess: () => {
       toast.success("Profile saved successfully");
@@ -154,6 +158,7 @@ export default function MRProfile() {
               className="border-[#E5EAF2]"
             />
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label
@@ -181,21 +186,24 @@ export default function MRProfile() {
                   : "Auto-generated on first save"}
               </p>
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="hq" className="text-sm font-medium text-gray-700">
                 Head Quarter
               </Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="hq"
-                  data-ocid="profile.hq.input"
-                  value={headQuarter}
-                  onChange={(e) => setHeadQuarter(e.target.value)}
-                  placeholder="e.g. New Delhi"
-                  className="pl-9 border-[#E5EAF2]"
-                />
+              <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-[#E5EAF2] bg-gray-50">
+                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                {profile?.headQuarter ? (
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs font-medium">
+                    {profile.headQuarter}
+                  </Badge>
+                ) : (
+                  <span className="text-xs text-gray-400 italic">
+                    Not yet assigned — contact Admin/RSM
+                  </span>
+                )}
               </div>
+              <p className="text-xs text-gray-400">Assigned by Admin or RSM</p>
             </div>
           </div>
 
@@ -208,11 +216,8 @@ export default function MRProfile() {
                 <Badge variant="secondary" className="text-xs">
                   {profile.name || "No name set"}
                 </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  {profile.employeeCode || "No code set"}
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  {profile.headQuarter || "No HQ set"}
+                <Badge variant="secondary" className="text-xs font-mono">
+                  {profile.employeeCode}
                 </Badge>
               </div>
             </div>
@@ -220,31 +225,17 @@ export default function MRProfile() {
 
           <Button
             data-ocid="profile.submit_button"
-            className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white w-full"
+            className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white gap-2"
             onClick={() => mutation.mutate()}
-            disabled={
-              mutation.isPending || !name || !employeeCode || !headQuarter
-            }
+            disabled={mutation.isPending || !name.trim()}
           >
             {mutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-              </>
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" /> Save Profile
-              </>
+              <Save className="w-4 h-4" />
             )}
+            {mutation.isPending ? "Saving..." : "Save Profile"}
           </Button>
-
-          {mutation.isSuccess && (
-            <div
-              data-ocid="profile.success_state"
-              className="text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg text-center"
-            >
-              ✓ Profile updated successfully
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

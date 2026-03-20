@@ -25,28 +25,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FlaskConical, Loader2, Plus, Stethoscope } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { FlaskConical, Loader2, Stethoscope } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Area, Doctor, Product } from "../backend";
+import type { Area, Doctor, MRProfile, Product } from "../backend";
 import { useActor } from "../hooks/useActor";
 
 export default function Doctors() {
   const { actor, isFetching } = useActor();
-  const queryClient = useQueryClient();
 
   const [filterAreaId, setFilterAreaId] = useState<string>("all");
-  const [showAddDoctor, setShowAddDoctor] = useState(false);
   const [showDetailing, setShowDetailing] = useState(false);
   const [showSample, setShowSample] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-
-  const [dName, setDName] = useState("");
-  const [dQual, setDQual] = useState("");
-  const [dStation, setDStation] = useState("");
-  const [dSpec, setDSpec] = useState("");
-  const [dAreaId, setDAreaId] = useState("");
 
   const [detailDate, setDetailDate] = useState(
     new Date().toISOString().split("T")[0],
@@ -61,13 +53,21 @@ export default function Doctors() {
   const [sampleProductId, setSampleProductId] = useState("");
   const [sampleQty, setSampleQty] = useState("1");
 
-  const { data: areas = [] } = useQuery<Area[]>({
+  const enabled = !!actor && !isFetching;
+
+  const { data: allAreas = [] } = useQuery<Area[]>({
     queryKey: ["areas"],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllAreas();
     },
-    enabled: !!actor && !isFetching,
+    enabled,
+  });
+
+  const { data: mrProfile } = useQuery<MRProfile>({
+    queryKey: ["mr-profile"],
+    queryFn: () => actor!.getMRProfile(),
+    enabled,
   });
 
   const { data: allDoctors = [], isLoading } = useQuery<Doctor[]>({
@@ -76,7 +76,7 @@ export default function Doctors() {
       if (!actor) return [];
       return actor.getAllDoctors();
     },
-    enabled: !!actor && !isFetching,
+    enabled,
   });
 
   const { data: products = [] } = useQuery<Product[]>({
@@ -85,31 +85,25 @@ export default function Doctors() {
       if (!actor) return [];
       return actor.getAllProducts();
     },
-    enabled: !!actor && !isFetching,
+    enabled,
   });
+
+  const assignedAreaIds = new Set(
+    (mrProfile?.assignedAreas ?? []).map((id) => String(id)),
+  );
+
+  // Filter areas to only assigned ones
+  const areas = allAreas.filter((a) => assignedAreaIds.has(String(a.id)));
+
+  // Filter doctors to only those in assigned areas
+  const assignedDoctors = allDoctors.filter((d) =>
+    assignedAreaIds.has(String(d.areaId)),
+  );
 
   const filteredDoctors =
     filterAreaId === "all"
-      ? allDoctors
-      : allDoctors.filter((d) => String(d.areaId) === filterAreaId);
-
-  const addDoctorMutation = useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error("No actor");
-      await actor.addDoctor(dName, dQual, dStation, dSpec, BigInt(dAreaId));
-    },
-    onSuccess: () => {
-      toast.success("Doctor added");
-      setShowAddDoctor(false);
-      setDName("");
-      setDQual("");
-      setDStation("");
-      setDSpec("");
-      setDAreaId("");
-      queryClient.invalidateQueries({ queryKey: ["doctors"] });
-    },
-    onError: () => toast.error("Failed to add doctor"),
-  });
+      ? assignedDoctors
+      : assignedDoctors.filter((d) => String(d.areaId) === filterAreaId);
 
   const detailingMutation = useMutation({
     mutationFn: async () => {
@@ -145,7 +139,7 @@ export default function Doctors() {
   });
 
   const getAreaName = (areaId: bigint) =>
-    areas.find((a) => a.id === areaId)?.name ?? String(areaId);
+    allAreas.find((a) => a.id === areaId)?.name ?? String(areaId);
 
   return (
     <div className="space-y-5">
@@ -155,7 +149,7 @@ export default function Doctors() {
             Doctor Management
           </h2>
           <p className="text-sm text-gray-500">
-            {filteredDoctors.length} doctors found
+            {filteredDoctors.length} doctors in allotted areas
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -167,7 +161,7 @@ export default function Doctors() {
               <SelectValue placeholder="Filter by area" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Areas</SelectItem>
+              <SelectItem value="all">All Assigned Areas</SelectItem>
               {areas.map((a) => (
                 <SelectItem key={String(a.id)} value={String(a.id)}>
                   {a.name}
@@ -175,13 +169,6 @@ export default function Doctors() {
               ))}
             </SelectContent>
           </Select>
-          <Button
-            data-ocid="doctors.open_modal_button"
-            className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white gap-2"
-            onClick={() => setShowAddDoctor(true)}
-          >
-            <Plus className="w-4 h-4" /> Add Doctor
-          </Button>
         </div>
       </div>
 
@@ -198,6 +185,11 @@ export default function Doctors() {
             <div data-ocid="doctors.empty_state" className="text-center py-12">
               <Stethoscope className="w-10 h-10 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">No doctors found</p>
+              <p className="text-gray-400 text-sm mt-1">
+                {assignedAreaIds.size === 0
+                  ? "No areas assigned — contact your Admin or RSM"
+                  : "No doctors in your assigned areas"}
+              </p>
             </div>
           ) : (
             <Table>
@@ -289,110 +281,6 @@ export default function Doctors() {
           )}
         </CardContent>
       </Card>
-
-      {/* Add Doctor Dialog */}
-      <Dialog open={showAddDoctor} onOpenChange={setShowAddDoctor}>
-        <DialogContent className="sm:max-w-md" data-ocid="doctors.dialog">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold">
-              Add New Doctor
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-600">
-                  Full Name
-                </Label>
-                <Input
-                  data-ocid="doctors.name.input"
-                  value={dName}
-                  onChange={(e) => setDName(e.target.value)}
-                  placeholder="Dr. Ramesh Sharma"
-                  className="border-[#E5EAF2]"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-600">
-                  Qualification
-                </Label>
-                <Input
-                  data-ocid="doctors.qual.input"
-                  value={dQual}
-                  onChange={(e) => setDQual(e.target.value)}
-                  placeholder="MBBS, MD"
-                  className="border-[#E5EAF2]"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-600">
-                  Station / Location
-                </Label>
-                <Input
-                  data-ocid="doctors.station.input"
-                  value={dStation}
-                  onChange={(e) => setDStation(e.target.value)}
-                  placeholder="Sector 12"
-                  className="border-[#E5EAF2]"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-600">
-                  Specialization
-                </Label>
-                <Input
-                  data-ocid="doctors.spec.input"
-                  value={dSpec}
-                  onChange={(e) => setDSpec(e.target.value)}
-                  placeholder="Cardiologist"
-                  className="border-[#E5EAF2]"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-gray-600">Area</Label>
-              <Select value={dAreaId} onValueChange={setDAreaId}>
-                <SelectTrigger
-                  data-ocid="doctors.area.select"
-                  className="border-[#E5EAF2]"
-                >
-                  <SelectValue placeholder="Select area" />
-                </SelectTrigger>
-                <SelectContent>
-                  {areas.map((a) => (
-                    <SelectItem key={String(a.id)} value={String(a.id)}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button
-                data-ocid="doctors.submit_button"
-                className="flex-1 bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
-                onClick={() => addDoctorMutation.mutate()}
-                disabled={addDoctorMutation.isPending || !dName || !dAreaId}
-              >
-                {addDoctorMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Add Doctor"
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                data-ocid="doctors.cancel_button"
-                onClick={() => setShowAddDoctor(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Detailing Dialog */}
       <Dialog open={showDetailing} onOpenChange={setShowDetailing}>

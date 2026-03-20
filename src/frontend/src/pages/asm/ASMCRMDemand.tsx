@@ -22,9 +22,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IndianRupee, Loader2, PlusCircle } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../../hooks/useActor";
+import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 function StatusBadge({ status }: { status: string }) {
   const s = String(status);
@@ -49,6 +50,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function ASMCRMDemand() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
 
@@ -61,7 +63,7 @@ export default function ASMCRMDemand() {
 
   const enabled = !!actor && !isFetching;
 
-  const { data: doctors = [], isLoading: loadingDoctors } = useQuery({
+  const { data: allDoctors = [], isLoading: loadingDoctors } = useQuery({
     queryKey: ["all-doctors"],
     queryFn: () => actor!.getAllDoctors(),
     enabled,
@@ -78,6 +80,28 @@ export default function ASMCRMDemand() {
     queryFn: () => actor!.getCallerUserProfile(),
     enabled,
   });
+
+  const { data: managerAreas } = useQuery({
+    queryKey: ["manager-areas"],
+    queryFn: async () => {
+      if (!actor || !identity) return { areaIds: [] };
+      return actor.getManagerAreas(identity.getPrincipal());
+    },
+    enabled: enabled && !!identity,
+  });
+
+  const assignedAreaIds = useMemo(
+    () => new Set((managerAreas?.areaIds ?? []).map((id) => String(id))),
+    [managerAreas],
+  );
+
+  const doctors = useMemo(
+    () =>
+      assignedAreaIds.size > 0
+        ? allDoctors.filter((d) => assignedAreaIds.has(String(d.areaId)))
+        : allDoctors,
+    [allDoctors, assignedAreaIds],
+  );
 
   const raiseMutation = useMutation({
     mutationFn: async () => {

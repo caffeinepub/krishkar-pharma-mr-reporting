@@ -235,6 +235,7 @@ export interface _SERVICE {
     [Principal, string, string, string, ManagerRole],
     undefined
   >,
+  'emergencyRestoreAdmin' : ActorMethod<[], undefined>,
   'applyLeave' : ActorMethod<
     [LeaveType, string, string, bigint, string],
     undefined

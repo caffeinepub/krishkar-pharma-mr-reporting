@@ -105,6 +105,16 @@ export default function MRManagement() {
     enabled: !!actor && !isFetching,
   });
 
+  const { data: allUserProfiles = [] } = useQuery({
+    queryKey: ["admin", "allUserProfiles"],
+    queryFn: async () => (actor ? actor.getAllUserProfiles() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const nameMap = new Map(
+    allUserProfiles.map(([p, prof]) => [p.toString(), prof.name]),
+  );
+
   const { data: allAreas = [] } = useQuery({
     queryKey: ["areas"],
     queryFn: async () => (actor ? actor.getAllAreas() : []),
@@ -282,9 +292,14 @@ export default function MRManagement() {
                       data-ocid={`pending_users.item.${idx + 1}`}
                       className="flex items-center justify-between gap-2 bg-white rounded-lg px-3 py-2 border border-amber-200"
                     >
-                      <code className="text-xs text-gray-600 font-mono flex-1">
-                        {short}
-                      </code>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-gray-800 truncate">
+                          {nameMap.get(pStr) || "Unnamed User"}
+                        </span>
+                        <code className="text-xs text-gray-400 font-mono truncate">
+                          {short}
+                        </code>
+                      </div>
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"

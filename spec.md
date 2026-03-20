@@ -1,35 +1,27 @@
 # Krishkar Pharma MR Reporting
 
 ## Current State
-Multi-role pharma reporting platform with MR, ASM, RSM, and Admin roles. Features: daily working reports (detailing, samples, chemist orders, expenses), leave management, area/doctor/product CRUD, sample allotment and demand orders. No CRM or Gift Distribution features exist.
+- Previous build completed 4 changes: HQ removed from MRProfile signup, Products read-only for MR, Doctor Activity merged tab in Working Details, Areas/Doctors filtered by assigned areas.
+- In MRManagement.tsx and UserManagement.tsx, the Pending Users section shows only truncated Principal IDs.
+- The Role Assignment form requires manual Principal ID entry.
+- Manager profiles table shows names, but Pending Users list does not.
 
 ## Requested Changes (Diff)
 
 ### Add
-- **CRM Demand** (Doctor-wise, in Rupees): ASM and RSM can raise a CRM demand specifying doctor, amount (₹), and notes. Admin approves or rejects with remarks.
-- **Gift Article Catalog**: Admin manages a list of gift articles (name, description).
-- **Gift Distribution Entry**: MR can log gift distribution to a doctor in the daily working report (new tab: Gift Distribution — select doctor, gift article, quantity).
-- **Gift Demand Orders**: MR can raise a demand for gift articles (article, quantity, notes). Admin accepts or rejects.
-- **Admin CRM Approvals page**: Lists all pending/approved/rejected CRM demands, admin can approve/reject each.
-- **Admin Gift Orders page**: Lists all gift demand orders, admin can accept/reject.
-- **Admin Report Downloads**: Buttons to download CRM report and Gift Distribution report as CSV/Excel files.
-- **ASM Portal CRM section**: Form to raise a CRM demand (select doctor from assigned areas, enter amount and notes), plus list of own submitted demands with status.
-- **RSM Portal CRM section**: Same as ASM — raise CRM demand, view own list.
+- Fetch `getAllUserProfiles()` in both MRManagement.tsx and UserManagement.tsx to build a name lookup map (Principal -> name).
 
 ### Modify
-- `MRWorkingDetails.tsx`: Add a 5th tab "Gift Distribution" — select doctor, gift article, quantity, submit.
-- Admin portal navigation: Add "CRM Approvals", "Gift Orders", and "Reports" menu items (Reports may already exist — extend it).
-- ASM/RSM layout navbars: Add "CRM Demand" menu item.
+- **MRManagement.tsx Pending Users list**: Instead of showing truncated Principal ID, show the user's name (from `getAllUserProfiles()` map) as the primary label. Show truncated Principal ID in smaller text below. If no profile name found, show "Unnamed User" + truncated Principal ID.
+- **UserManagement.tsx Pending Users / Role Assignment**: Same as above for any pending users display.
+- **MRManagement.tsx MR Profiles table**: Add a "Name" column derived from `getAllUserProfiles()` or use existing profile name (MRProfile doesn't have name, but UserProfile does from `getAllUserProfiles()`). Cross-reference by Principal to show name in the table.
+- **UserManagement.tsx Manager Profiles table**: Already shows profile.name — keep as is.
+- **UserManagement.tsx "Assign Role" form**: When the principal input field has a value that matches a known user profile, show their name as a helper text below the input (e.g., "User: John Doe").
 
 ### Remove
 - Nothing removed.
 
 ## Implementation Plan
-1. **Backend (main.mo)**: Add types `CrmDemand`, `CrmDemandStatus`, `GiftArticle`, `GiftDemandOrder`, `GiftDemandStatus`, `GiftDistributionEntry`. Add functions: `raiseCrmDemand`, `getMyCrmDemands`, `getAllCrmDemands`, `updateCrmDemandStatus`, `addGiftArticle`, `getAllGiftArticles`, `deleteGiftArticle`, `logGiftDistribution`, `getMyGiftDistributions`, `getAllGiftDistributions`, `raiseGiftDemandOrder`, `getMyGiftDemandOrders`, `getAllGiftDemandOrders`, `updateGiftDemandOrderStatus`.
-2. **Frontend - MRWorkingDetails.tsx**: Add Tab 5 for Gift Distribution (doctor selector, gift article selector, quantity, submit via `logGiftDistribution`).
-3. **Frontend - ASM/RSM CRM page**: New page `CRMDemand.tsx` for both portals with form to raise demand and list of own demands.
-4. **Frontend - Admin CRM Approvals page**: `AdminCRMApprovals.tsx` listing all CRM demands with approve/reject action.
-5. **Frontend - Admin Gift Orders page**: `AdminGiftOrders.tsx` listing all gift demand orders with accept/reject actions.
-6. **Frontend - Admin Reports**: Extend `AdminReports.tsx` with downloadable CRM and Gift Distribution report buttons (download as CSV).
-7. **Frontend - Admin Gift Articles**: `AdminGiftArticles.tsx` for managing the gift article catalog.
-8. **Update navigation**: ASM layout, RSM layout, Admin layout to include new pages.
+1. In MRManagement.tsx: add `getAllUserProfiles()` query. Build a map: `Map<string, string>` (principalStr -> name). Use it in Pending Users list to show name.
+2. In UserManagement.tsx: add `getAllUserProfiles()` query. Build name lookup map. Show name in pending users section. Also show name hint in the role assignment form when principalInput matches a known user.
+3. Ensure MR profiles table in UserManagement shows MR name (from UserProfile, not MRProfile which has employeeCode/headQuarter/assignedAreas but no name).

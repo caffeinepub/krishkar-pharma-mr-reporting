@@ -325,6 +325,7 @@ export interface backendInterface {
     deleteMRProfile(mrPrincipal: Principal): Promise<void>;
     deleteManagerProfile(target: Principal): Promise<void>;
     deleteProduct(id: ProductId): Promise<void>;
+    emergencyRestoreAdmin(): Promise<void>;
     getActivitySummary(date: string): Promise<ActivitySummary>;
     getAllAreas(): Promise<Array<Area>>;
     getAllCRMDemands(): Promise<Array<CRMDemand>>;
@@ -720,6 +721,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteProduct(arg0);
+            return result;
+        }
+    }
+    async emergencyRestoreAdmin(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.emergencyRestoreAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.emergencyRestoreAdmin();
             return result;
         }
     }

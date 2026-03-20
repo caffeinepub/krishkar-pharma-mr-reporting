@@ -4,10 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { Download, FileSpreadsheet } from "lucide-react";
-import * as XLSX from "xlsx";
 import { useActor } from "../../hooks/useActor";
+import { loadXlsx } from "../../lib/xlsxLoader";
 
-function exportToExcel(data: Record<string, unknown>[], filename: string) {
+async function exportToExcel(
+  data: Record<string, unknown>[],
+  filename: string,
+) {
+  const XLSX = await loadXlsx();
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Report");

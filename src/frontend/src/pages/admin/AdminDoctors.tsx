@@ -50,6 +50,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Doctor } from "../../backend.d";
 import { useActor } from "../../hooks/useActor";
+import { loadXlsx } from "../../lib/xlsxLoader";
 
 interface DoctorForm {
   name: string;
@@ -204,7 +205,7 @@ export default function AdminDoctors() {
     if (!file) return;
     setUploadParsing(true);
     try {
-      const XLSX = await import("xlsx");
+      const XLSX = await loadXlsx();
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];

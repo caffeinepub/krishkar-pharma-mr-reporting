@@ -15,7 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  ClipboardList,
   DollarSign,
   FlaskConical,
   Gift,
@@ -25,6 +24,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { MRProfile } from "../backend";
 import { useActor } from "../hooks/useActor";
 
 export default function MRWorkingDetails() {
@@ -35,7 +35,7 @@ export default function MRWorkingDetails() {
   const enabled = !!actor && !isFetching;
 
   // ── Data Queries ──────────────────────────────────────────
-  const { data: areas = [] } = useQuery({
+  const { data: allAreas = [] } = useQuery({
     queryKey: ["areas"],
     queryFn: () => actor!.getAllAreas(),
     enabled,
@@ -65,6 +65,34 @@ export default function MRWorkingDetails() {
     enabled,
   });
 
+  const { data: mrProfile } = useQuery<MRProfile>({
+    queryKey: ["mr-profile"],
+    queryFn: () => actor!.getMRProfile(),
+    enabled,
+  });
+
+  // Assigned area IDs set
+  const assignedAreaIds = useMemo(
+    () => new Set((mrProfile?.assignedAreas ?? []).map((id) => String(id))),
+    [mrProfile],
+  );
+
+  // Filter areas and doctors to assigned only
+  const areas = useMemo(
+    () => allAreas.filter((a) => assignedAreaIds.has(String(a.id))),
+    [allAreas, assignedAreaIds],
+  );
+
+  const assignedDoctors = useMemo(
+    () => allDoctors.filter((d) => assignedAreaIds.has(String(d.areaId))),
+    [allDoctors, assignedAreaIds],
+  );
+
+  const assignedChemists = useMemo(
+    () => allChemists.filter((c) => assignedAreaIds.has(String(c.areaId))),
+    [allChemists, assignedAreaIds],
+  );
+
   // ── Section 1: Doctor Visit ───────────────────────────────
   const [visitAreaId, setVisitAreaId] = useState("");
   const [visitDoctorId, setVisitDoctorId] = useState("");
@@ -75,9 +103,9 @@ export default function MRWorkingDetails() {
   const filteredDoctors = useMemo(
     () =>
       visitAreaId
-        ? allDoctors.filter((d) => String(d.areaId) === visitAreaId)
-        : allDoctors,
-    [allDoctors, visitAreaId],
+        ? assignedDoctors.filter((d) => String(d.areaId) === visitAreaId)
+        : assignedDoctors,
+    [assignedDoctors, visitAreaId],
   );
 
   const detailingMutation = useMutation({
@@ -119,10 +147,19 @@ export default function MRWorkingDetails() {
   });
 
   // ── Section 3: Chemist Order ──────────────────────────────
+  const [orderAreaId, setOrderAreaId] = useState("");
   const [orderChemistId, setOrderChemistId] = useState("");
   const [orderProductId, setOrderProductId] = useState("");
   const [orderQty, setOrderQty] = useState("");
   const [orderScheme, setOrderScheme] = useState("");
+
+  const filteredChemists = useMemo(
+    () =>
+      orderAreaId
+        ? assignedChemists.filter((c) => String(c.areaId) === orderAreaId)
+        : assignedChemists,
+    [assignedChemists, orderAreaId],
+  );
 
   const orderMutation = useMutation({
     mutationFn: async () => {
@@ -247,22 +284,25 @@ export default function MRWorkingDetails() {
     setVisitDoctorId("");
   }, [visitAreaId]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional trigger on orderAreaId change
+  useEffect(() => {
+    setOrderChemistId("");
+  }, [orderAreaId]);
+
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Page header with date picker */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">
-            Daily Working Entry
-          </h2>
+          <h2 className="text-lg font-bold text-gray-900">Working Details</h2>
           <p className="text-sm text-gray-400">
             Log your daily field activities
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Label
             htmlFor="work-date"
-            className="text-sm text-gray-600 font-medium"
+            className="text-sm font-medium text-gray-600"
           >
             Date:
           </Label>
@@ -276,21 +316,14 @@ export default function MRWorkingDetails() {
         </div>
       </div>
 
-      <Tabs defaultValue="detailing">
-        <TabsList className="grid w-full grid-cols-6 bg-[#F8FAFC] border border-[#E5EAF2]">
+      <Tabs defaultValue="doctor-activity">
+        <TabsList className="grid w-full grid-cols-4 bg-[#F8FAFC] border border-[#E5EAF2]">
           <TabsTrigger
-            value="detailing"
-            data-ocid="working_details.detailing.tab"
+            value="doctor-activity"
+            data-ocid="working_details.doctor_activity.tab"
             className="flex items-center gap-1.5 text-xs"
           >
-            <Stethoscope size={14} /> Doctor Visit
-          </TabsTrigger>
-          <TabsTrigger
-            value="samples"
-            data-ocid="working_details.samples.tab"
-            className="flex items-center gap-1.5 text-xs"
-          >
-            <FlaskConical size={14} /> Samples
+            <Stethoscope size={14} /> Doctor Activity
           </TabsTrigger>
           <TabsTrigger
             value="orders"
@@ -307,13 +340,6 @@ export default function MRWorkingDetails() {
             <DollarSign size={14} /> Expenses
           </TabsTrigger>
           <TabsTrigger
-            value="gift-dist"
-            data-ocid="working_details.gift_dist.tab"
-            className="flex items-center gap-1.5 text-xs"
-          >
-            <Gift size={14} /> Gift Dist.
-          </TabsTrigger>
-          <TabsTrigger
             value="gift-demand"
             data-ocid="working_details.gift_demand.tab"
             className="flex items-center gap-1.5 text-xs"
@@ -322,8 +348,9 @@ export default function MRWorkingDetails() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ── Section 1: Doctor Visit & Detailing ── */}
-        <TabsContent value="detailing">
+        {/* ── Doctor Activity Tab (Visit + Sample + Gift Dist merged) ── */}
+        <TabsContent value="doctor-activity" className="space-y-4 mt-4">
+          {/* Sub-section 1: Doctor Visit & Detailing */}
           <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
             <CardHeader className="border-b border-[#F1F5F9] pb-4">
               <div className="flex items-center gap-3">
@@ -398,57 +425,48 @@ export default function MRWorkingDetails() {
                 <Label className="text-sm font-medium text-gray-700">
                   Products Detailed
                 </Label>
-                <div className="grid grid-cols-2 gap-2 p-3 bg-[#F8FAFC] rounded-lg border border-[#E5EAF2]">
-                  {allProducts.length === 0 && (
-                    <p className="text-xs text-gray-400 col-span-2">
-                      No products available
-                    </p>
-                  )}
-                  {allProducts.map((product) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {allProducts.map((p) => (
                     <div
-                      key={String(product.id)}
-                      className="flex items-center gap-2"
+                      key={String(p.id)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#F8FAFC] border border-[#E5EAF2]"
                     >
                       <Checkbox
-                        id={`product-${product.id}`}
+                        id={`wp-${p.id}`}
                         data-ocid="working_details.product.checkbox"
-                        checked={selectedProductIds.has(String(product.id))}
-                        onCheckedChange={() =>
-                          toggleProduct(String(product.id))
-                        }
+                        checked={selectedProductIds.has(String(p.id))}
+                        onCheckedChange={() => toggleProduct(String(p.id))}
                       />
-                      <Label
-                        htmlFor={`product-${product.id}`}
-                        className="text-sm text-gray-700 cursor-pointer"
+                      <label
+                        htmlFor={`wp-${p.id}`}
+                        className="text-xs text-gray-700 cursor-pointer"
                       >
-                        {product.name}
-                        <span className="ml-1 text-xs text-gray-400">
-                          ({product.code})
-                        </span>
-                      </Label>
+                        {p.name}
+                      </label>
                     </div>
                   ))}
                 </div>
-                {selectedProductIds.size > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {Array.from(selectedProductIds).map((id) => {
-                      const p = allProducts.find((x) => String(x.id) === id);
-                      return p ? (
-                        <Badge
-                          key={id}
-                          className="text-xs bg-blue-50 text-blue-700 border border-blue-200"
-                        >
-                          {p.name}
-                        </Badge>
-                      ) : null;
-                    })}
-                  </div>
-                )}
               </div>
+
+              {selectedProductIds.size > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {Array.from(selectedProductIds).map((id) => {
+                    const p = allProducts.find((x) => String(x.id) === id);
+                    return p ? (
+                      <Badge
+                        key={id}
+                        className="bg-blue-100 text-blue-700 border-0 text-xs"
+                      >
+                        {p.name}
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
 
               <Button
                 data-ocid="working_details.detailing.submit_button"
-                className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white w-full"
+                className="bg-blue-600 hover:bg-blue-700 text-white w-full"
                 onClick={() => detailingMutation.mutate()}
                 disabled={
                   detailingMutation.isPending ||
@@ -462,16 +480,14 @@ export default function MRWorkingDetails() {
                   </>
                 ) : (
                   <>
-                    <ClipboardList className="mr-2 h-4 w-4" /> Log Doctor Visit
+                    <Stethoscope className="mr-2 h-4 w-4" /> Log Doctor Visit
                   </>
                 )}
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        {/* ── Section 2: Sample Distribution ── */}
-        <TabsContent value="samples">
+          {/* Sub-section 2: Sample Distribution */}
           <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
             <CardHeader className="border-b border-[#F1F5F9] pb-4">
               <div className="flex items-center gap-3">
@@ -505,7 +521,7 @@ export default function MRWorkingDetails() {
                       <SelectValue placeholder="Select doctor..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {allDoctors.map((doc) => (
+                      {assignedDoctors.map((doc) => (
                         <SelectItem key={String(doc.id)} value={String(doc.id)}>
                           {doc.name}
                         </SelectItem>
@@ -575,6 +591,113 @@ export default function MRWorkingDetails() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Sub-section 3: Gift Distribution */}
+          <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
+            <CardHeader className="border-b border-[#F1F5F9] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold text-gray-900">
+                    Gift Distribution
+                  </CardTitle>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Record gift articles distributed to doctors
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Select Doctor
+                  </Label>
+                  <Select value={giftDoctorId} onValueChange={setGiftDoctorId}>
+                    <SelectTrigger
+                      data-ocid="working_details.gift_doctor.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue placeholder="Select doctor..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assignedDoctors.map((doc) => (
+                        <SelectItem key={String(doc.id)} value={String(doc.id)}>
+                          {doc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Gift Article
+                  </Label>
+                  <Select
+                    value={giftArticleId}
+                    onValueChange={setGiftArticleId}
+                  >
+                    <SelectTrigger
+                      data-ocid="working_details.gift_article.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue placeholder="Select gift article..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {giftArticles.length === 0 ? (
+                        <SelectItem value="__none" disabled>
+                          No articles available
+                        </SelectItem>
+                      ) : (
+                        giftArticles.map((a) => (
+                          <SelectItem key={String(a.id)} value={String(a.id)}>
+                            {a.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700">
+                  Quantity
+                </Label>
+                <Input
+                  type="number"
+                  data-ocid="working_details.gift_qty.input"
+                  value={giftQty}
+                  onChange={(e) => setGiftQty(e.target.value)}
+                  placeholder="Enter quantity"
+                  min="1"
+                  className="border-[#E5EAF2]"
+                />
+              </div>
+              <Button
+                data-ocid="working_details.gift_dist.submit_button"
+                className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+                onClick={() => giftDistMutation.mutate()}
+                disabled={
+                  giftDistMutation.isPending ||
+                  !giftDoctorId ||
+                  !giftArticleId ||
+                  !giftQty
+                }
+              >
+                {giftDistMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging...
+                  </>
+                ) : (
+                  <>
+                    <Gift className="mr-2 h-4 w-4" /> Log Gift Distribution
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ── Section 3: Chemist Order ── */}
@@ -590,13 +713,36 @@ export default function MRWorkingDetails() {
                     Chemist Order
                   </CardTitle>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Record orders placed at chemist shops
+                    Log orders placed with chemists
                   </p>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-5">
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Select Area
+                  </Label>
+                  <Select value={orderAreaId} onValueChange={setOrderAreaId}>
+                    <SelectTrigger
+                      data-ocid="working_details.order_area.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue placeholder="Select area..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {areas.map((area) => (
+                        <SelectItem
+                          key={String(area.id)}
+                          value={String(area.id)}
+                        >
+                          {area.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-gray-700">
                     Select Chemist
@@ -609,10 +755,16 @@ export default function MRWorkingDetails() {
                       data-ocid="working_details.order_chemist.select"
                       className="border-[#E5EAF2]"
                     >
-                      <SelectValue placeholder="Select chemist..." />
+                      <SelectValue
+                        placeholder={
+                          orderAreaId
+                            ? "Select chemist..."
+                            : "Select area first"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {allChemists.map((c) => (
+                      {filteredChemists.map((c) => (
                         <SelectItem key={String(c.id)} value={String(c.id)}>
                           {c.name}
                         </SelectItem>
@@ -620,6 +772,8 @@ export default function MRWorkingDetails() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-gray-700">
                     Select Product
@@ -812,115 +966,6 @@ export default function MRWorkingDetails() {
                 ) : (
                   <>
                     <DollarSign className="mr-2 h-4 w-4" /> Log Daily Expense
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── Section 5: Gift Distribution ── */}
-        <TabsContent value="gift-dist">
-          <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
-            <CardHeader className="border-b border-[#F1F5F9] pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
-                  <Gift className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-base font-semibold text-gray-900">
-                    Gift Distribution
-                  </CardTitle>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Record gift articles distributed to doctors
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Select Doctor
-                  </Label>
-                  <Select value={giftDoctorId} onValueChange={setGiftDoctorId}>
-                    <SelectTrigger
-                      data-ocid="working_details.gift_doctor.select"
-                      className="border-[#E5EAF2]"
-                    >
-                      <SelectValue placeholder="Select doctor..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allDoctors.map((doc) => (
-                        <SelectItem key={String(doc.id)} value={String(doc.id)}>
-                          {doc.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Gift Article
-                  </Label>
-                  <Select
-                    value={giftArticleId}
-                    onValueChange={setGiftArticleId}
-                  >
-                    <SelectTrigger
-                      data-ocid="working_details.gift_article.select"
-                      className="border-[#E5EAF2]"
-                    >
-                      <SelectValue placeholder="Select gift article..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {giftArticles.length === 0 ? (
-                        <SelectItem value="__none" disabled>
-                          No articles available
-                        </SelectItem>
-                      ) : (
-                        giftArticles.map((a) => (
-                          <SelectItem key={String(a.id)} value={String(a.id)}>
-                            {a.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium text-gray-700">
-                  Quantity
-                </Label>
-                <Input
-                  type="number"
-                  data-ocid="working_details.gift_qty.input"
-                  value={giftQty}
-                  onChange={(e) => setGiftQty(e.target.value)}
-                  placeholder="Enter quantity"
-                  min="1"
-                  className="border-[#E5EAF2]"
-                />
-              </div>
-              <Button
-                data-ocid="working_details.gift_dist.submit_button"
-                className="bg-purple-600 hover:bg-purple-700 text-white w-full"
-                onClick={() => giftDistMutation.mutate()}
-                disabled={
-                  giftDistMutation.isPending ||
-                  !giftDoctorId ||
-                  !giftArticleId ||
-                  !giftQty
-                }
-              >
-                {giftDistMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging...
-                  </>
-                ) : (
-                  <>
-                    <Gift className="mr-2 h-4 w-4" /> Log Gift Distribution
                   </>
                 )}
               </Button>
