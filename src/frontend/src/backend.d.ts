@@ -120,11 +120,14 @@ export interface DetailingEntry {
 }
 export interface TADASettings {
     mrTaPerKm: bigint;
-    rsmDaDefault: bigint;
+    mrDaHQ: bigint;
+    mrDaOutStation: bigint;
     rsmTaPerKm: bigint;
-    mrDaDefault: bigint;
+    rsmDaHQ: bigint;
+    rsmDaOutStation: bigint;
     asmTaPerKm: bigint;
-    asmDaDefault: bigint;
+    asmDaHQ: bigint;
+    asmDaOutStation: bigint;
 }
 export interface GiftArticle {
     id: GiftArticleId;
@@ -283,6 +286,7 @@ export interface backendInterface {
     getTeamExpenseEntries(): Promise<Array<[Principal, Array<ExpenseEntry>]>>;
     getTeamLeaveApplications(): Promise<Array<[Principal, Array<LeaveEntry>]>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    isAdminInitialized(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>): Promise<void>;
     logGiftDistribution(doctorId: DoctorId, doctorName: string, giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, date: string): Promise<void>;

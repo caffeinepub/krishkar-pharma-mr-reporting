@@ -202,11 +202,14 @@ export interface DetailingEntry {
 }
 export interface TADASettings {
     mrTaPerKm: bigint;
-    rsmDaDefault: bigint;
+    mrDaHQ: bigint;
+    mrDaOutStation: bigint;
     rsmTaPerKm: bigint;
-    mrDaDefault: bigint;
+    rsmDaHQ: bigint;
+    rsmDaOutStation: bigint;
     asmTaPerKm: bigint;
-    asmDaDefault: bigint;
+    asmDaHQ: bigint;
+    asmDaOutStation: bigint;
 }
 export interface GiftArticle {
     id: GiftArticleId;
@@ -367,6 +370,7 @@ export interface backendInterface {
     getTeamLeaveApplications(): Promise<Array<[Principal, Array<LeaveEntry>]>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    isAdminInitialized(): Promise<boolean>;
     logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>): Promise<void>;
     logGiftDistribution(doctorId: DoctorId, doctorName: string, giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, date: string): Promise<void>;
     logSample(doctorId: DoctorId, date: string, productId: ProductId, quantity: bigint): Promise<void>;
@@ -1341,6 +1345,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.isCallerAdmin();
+            return result;
+        }
+    }
+    async isAdminInitialized(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isAdminInitialized();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isAdminInitialized();
             return result;
         }
     }

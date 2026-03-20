@@ -7,36 +7,54 @@ import { toast } from "sonner";
 import type { TADASettings } from "../../backend.d";
 import { useActor } from "../../hooks/useActor";
 
+const TA_SCALE = 100;
+
 const DEFAULT_FORM = {
-  mrTaPerKm: "8",
-  mrDaDefault: "300",
-  asmTaPerKm: "10",
-  asmDaDefault: "500",
-  rsmTaPerKm: "12",
-  rsmDaDefault: "700",
+  mrTaPerKm: "8.00",
+  mrDaHQ: "300",
+  mrDaOutStation: "400",
+  asmTaPerKm: "10.00",
+  asmDaHQ: "500",
+  asmDaOutStation: "700",
+  rsmTaPerKm: "12.00",
+  rsmDaHQ: "700",
+  rsmDaOutStation: "1000",
 };
 
 type SettingsForm = typeof DEFAULT_FORM;
 
+// taPerKm is stored as Nat * 100 (e.g. 8.75 -> 875). DA fields are in rupees (Nat).
 function toForm(s: TADASettings): SettingsForm {
   return {
-    mrTaPerKm: s.mrTaPerKm.toString(),
-    mrDaDefault: s.mrDaDefault.toString(),
-    asmTaPerKm: s.asmTaPerKm.toString(),
-    asmDaDefault: s.asmDaDefault.toString(),
-    rsmTaPerKm: s.rsmTaPerKm.toString(),
-    rsmDaDefault: s.rsmDaDefault.toString(),
+    mrTaPerKm: (Number(s.mrTaPerKm) / TA_SCALE).toFixed(2),
+    mrDaHQ: s.mrDaHQ.toString(),
+    mrDaOutStation: s.mrDaOutStation.toString(),
+    asmTaPerKm: (Number(s.asmTaPerKm) / TA_SCALE).toFixed(2),
+    asmDaHQ: s.asmDaHQ.toString(),
+    asmDaOutStation: s.asmDaOutStation.toString(),
+    rsmTaPerKm: (Number(s.rsmTaPerKm) / TA_SCALE).toFixed(2),
+    rsmDaHQ: s.rsmDaHQ.toString(),
+    rsmDaOutStation: s.rsmDaOutStation.toString(),
   };
 }
 
 function fromForm(f: SettingsForm): TADASettings {
   return {
-    mrTaPerKm: BigInt(f.mrTaPerKm || "0"),
-    mrDaDefault: BigInt(f.mrDaDefault || "0"),
-    asmTaPerKm: BigInt(f.asmTaPerKm || "0"),
-    asmDaDefault: BigInt(f.asmDaDefault || "0"),
-    rsmTaPerKm: BigInt(f.rsmTaPerKm || "0"),
-    rsmDaDefault: BigInt(f.rsmDaDefault || "0"),
+    mrTaPerKm: BigInt(
+      Math.round(Number.parseFloat(f.mrTaPerKm || "0") * TA_SCALE),
+    ),
+    mrDaHQ: BigInt(Number.parseInt(f.mrDaHQ || "0")),
+    mrDaOutStation: BigInt(Number.parseInt(f.mrDaOutStation || "0")),
+    asmTaPerKm: BigInt(
+      Math.round(Number.parseFloat(f.asmTaPerKm || "0") * TA_SCALE),
+    ),
+    asmDaHQ: BigInt(Number.parseInt(f.asmDaHQ || "0")),
+    asmDaOutStation: BigInt(Number.parseInt(f.asmDaOutStation || "0")),
+    rsmTaPerKm: BigInt(
+      Math.round(Number.parseFloat(f.rsmTaPerKm || "0") * TA_SCALE),
+    ),
+    rsmDaHQ: BigInt(Number.parseInt(f.rsmDaHQ || "0")),
+    rsmDaOutStation: BigInt(Number.parseInt(f.rsmDaOutStation || "0")),
   };
 }
 
@@ -55,7 +73,12 @@ export default function AdminTADASettings() {
       .finally(() => setLoading(false));
   }, [actor, isFetching]);
 
-  const handleChange = (key: keyof SettingsForm, value: string) => {
+  const handleTaChange = (key: keyof SettingsForm, value: string) => {
+    if (value !== "" && !/^\d*\.?\d{0,2}$/.test(value)) return;
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleDaChange = (key: keyof SettingsForm, value: string) => {
     if (value !== "" && !/^\d+$/.test(value)) return;
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -78,19 +101,22 @@ export default function AdminTADASettings() {
       label: "Medical Representative (MR)",
       color: "bg-blue-50 border-blue-200",
       taKey: "mrTaPerKm" as keyof SettingsForm,
-      daKey: "mrDaDefault" as keyof SettingsForm,
+      daHQKey: "mrDaHQ" as keyof SettingsForm,
+      daOutKey: "mrDaOutStation" as keyof SettingsForm,
     },
     {
       label: "Area Sales Manager (ASM)",
       color: "bg-green-50 border-green-200",
       taKey: "asmTaPerKm" as keyof SettingsForm,
-      daKey: "asmDaDefault" as keyof SettingsForm,
+      daHQKey: "asmDaHQ" as keyof SettingsForm,
+      daOutKey: "asmDaOutStation" as keyof SettingsForm,
     },
     {
       label: "Regional Sales Manager (RSM)",
       color: "bg-purple-50 border-purple-200",
       taKey: "rsmTaPerKm" as keyof SettingsForm,
-      daKey: "rsmDaDefault" as keyof SettingsForm,
+      daHQKey: "rsmDaHQ" as keyof SettingsForm,
+      daOutKey: "rsmDaOutStation" as keyof SettingsForm,
     },
   ];
 
@@ -107,9 +133,9 @@ export default function AdminTADASettings() {
       <div>
         <h2 className="text-xl font-semibold">TA / DA Settings</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Set Travel Allowance (TA) per KM and Daily Allowance (DA) default
-          amount separately for each role. These rates apply when calculating
-          expense reimbursements.
+          Set Travel Allowance (TA) per KM (up to 2 decimal places) and Daily
+          Allowance (DA) for Head Quarter and Out Station separately for each
+          role.
         </p>
       </div>
 
@@ -120,27 +146,46 @@ export default function AdminTADASettings() {
               <CardTitle className="text-base">{role.label}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor={role.taKey}>TA Per KM (₹)</Label>
                   <Input
                     id={role.taKey}
                     type="number"
                     min={0}
-                    placeholder="e.g. 8"
+                    step="0.01"
+                    placeholder="e.g. 8.75"
                     value={form[role.taKey]}
-                    onChange={(e) => handleChange(role.taKey, e.target.value)}
+                    onChange={(e) => handleTaChange(role.taKey, e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    2 decimal places
+                  </p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor={role.daKey}>DA Default Amount (₹)</Label>
+                  <Label htmlFor={role.daHQKey}>DA - Head Quarter (₹)</Label>
                   <Input
-                    id={role.daKey}
+                    id={role.daHQKey}
                     type="number"
                     min={0}
                     placeholder="e.g. 300"
-                    value={form[role.daKey]}
-                    onChange={(e) => handleChange(role.daKey, e.target.value)}
+                    value={form[role.daHQKey]}
+                    onChange={(e) =>
+                      handleDaChange(role.daHQKey, e.target.value)
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor={role.daOutKey}>DA - Out Station (₹)</Label>
+                  <Input
+                    id={role.daOutKey}
+                    type="number"
+                    min={0}
+                    placeholder="e.g. 400"
+                    value={form[role.daOutKey]}
+                    onChange={(e) =>
+                      handleDaChange(role.daOutKey, e.target.value)
+                    }
                   />
                 </div>
               </div>

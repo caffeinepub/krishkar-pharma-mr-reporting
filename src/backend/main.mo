@@ -7,9 +7,9 @@ import Principal "mo:core/Principal";
 import Order "mo:core/Order";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   // === Type Definitions ===
   type UserProfile = {
@@ -240,13 +240,26 @@ actor {
   };
 
 
-  type TADASettings = {
+  // Legacy type kept for stable variable migration compatibility
+  type TADASettingsLegacy = {
     mrTaPerKm : Nat;
     mrDaDefault : Nat;
     asmTaPerKm : Nat;
     asmDaDefault : Nat;
     rsmTaPerKm : Nat;
     rsmDaDefault : Nat;
+  };
+
+  type TADASettings = {
+    mrTaPerKm : Nat;
+    mrDaHQ : Nat;
+    mrDaOutStation : Nat;
+    asmTaPerKm : Nat;
+    asmDaHQ : Nat;
+    asmDaOutStation : Nat;
+    rsmTaPerKm : Nat;
+    rsmDaHQ : Nat;
+    rsmDaOutStation : Nat;
   };
 
   // === Persistent Storage ===
@@ -271,13 +284,27 @@ actor {
   let giftDistributions = Map.empty<GiftDistributionId, GiftDistribution>();
   let giftDemandOrders = Map.empty<GiftDemandOrderId, GiftDemandOrder>();
 
-  var tadaSettings : TADASettings = {
+  // Legacy stable variable for migration — do not rename or remove
+  var tadaSettings : TADASettingsLegacy = {
     mrTaPerKm = 8;
     mrDaDefault = 300;
     asmTaPerKm = 10;
     asmDaDefault = 500;
     rsmTaPerKm = 12;
     rsmDaDefault = 700;
+  };
+
+  // New settings variable with HQ/OutStation DA and TA stored as Nat*100
+  var tadaSettingsV2 : TADASettings = {
+    mrTaPerKm = 800;
+    mrDaHQ = 300;
+    mrDaOutStation = 400;
+    asmTaPerKm = 1000;
+    asmDaHQ = 500;
+    asmDaOutStation = 700;
+    rsmTaPerKm = 1200;
+    rsmDaHQ = 700;
+    rsmDaOutStation = 1000;
   };
 
   // === Modules for Ordering ===
@@ -330,6 +357,12 @@ actor {
       case (?_) { true };
       case (null) { false };
     };
+  };
+
+  // === Check if admin has been initialized ===
+  // Public query - no auth required so any user can check before deciding to show the admin setup panel
+  public query func isAdminInitialized() : async Bool {
+    accessControlState.adminAssigned;
   };
 
   // === Emergency Admin Recovery ===
@@ -1299,11 +1332,11 @@ actor {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can update TA/DA settings");
     };
-    tadaSettings := settings;
+    tadaSettingsV2 := settings;
   };
 
   public query func adminGetTADASettings() : async TADASettings {
-    tadaSettings;
+    tadaSettingsV2;
   };
 
   // === ROLES API ===

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
 import { Clock, LogOut, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
@@ -15,6 +15,18 @@ export default function AccessPendingScreen() {
 
   const [adminToken, setAdminToken] = useState("");
   const [isInitializing, setIsInitializing] = useState(false);
+  const [adminAlreadySetup, setAdminAlreadySetup] = useState<boolean | null>(
+    null,
+  );
+
+  // Check if admin is already initialized so we can hide the setup panel for regular users
+  useEffect(() => {
+    if (!actor) return;
+    actor
+      .isAdminInitialized()
+      .then((initialized) => setAdminAlreadySetup(initialized))
+      .catch(() => setAdminAlreadySetup(false)); // If check fails, show the panel just in case
+  }, [actor]);
 
   const handleInitAdmin = async () => {
     if (!actor || !adminToken.trim()) return;
@@ -79,36 +91,38 @@ export default function AccessPendingScreen() {
           <code className="text-xs text-gray-600 break-all">{principal}</code>
         </div>
 
-        {/* Admin initialization — always visible for first-time setup */}
-        <div className="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4 text-left">
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck className="w-4 h-4 text-blue-600" />
-            <span className="text-blue-800 font-semibold text-sm">
-              Initialize as Admin
-            </span>
+        {/* Admin initialization — only shown when no admin has been set up yet */}
+        {adminAlreadySetup === false && (
+          <div className="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4 text-left">
+            <div className="flex items-center gap-2 mb-3">
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+              <span className="text-blue-800 font-semibold text-sm">
+                Initialize as Admin
+              </span>
+            </div>
+            <p className="text-xs text-blue-700 mb-3">
+              If you are the app owner, enter the admin secret token below to
+              claim the Admin role and unlock full access.
+            </p>
+            <Input
+              type="password"
+              placeholder="Enter admin secret token"
+              value={adminToken}
+              onChange={(e) => setAdminToken(e.target.value)}
+              className="mb-3 text-sm"
+              onKeyDown={(e) => e.key === "Enter" && handleInitAdmin()}
+              data-ocid="access_pending.input"
+            />
+            <Button
+              className="w-full bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold"
+              onClick={handleInitAdmin}
+              disabled={isInitializing || !adminToken.trim()}
+              data-ocid="access_pending.submit_button"
+            >
+              {isInitializing ? "Initializing..." : "Claim Admin Role"}
+            </Button>
           </div>
-          <p className="text-xs text-blue-700 mb-3">
-            If you are the app owner, enter the admin secret token below to
-            claim the Admin role and unlock full access.
-          </p>
-          <Input
-            type="password"
-            placeholder="Enter admin secret token"
-            value={adminToken}
-            onChange={(e) => setAdminToken(e.target.value)}
-            className="mb-3 text-sm"
-            onKeyDown={(e) => e.key === "Enter" && handleInitAdmin()}
-            data-ocid="access_pending.input"
-          />
-          <Button
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold"
-            onClick={handleInitAdmin}
-            disabled={isInitializing || !adminToken.trim()}
-            data-ocid="access_pending.submit_button"
-          >
-            {isInitializing ? "Initializing..." : "Claim Admin Role"}
-          </Button>
-        </div>
+        )}
 
         <Button
           data-ocid="access_pending.button"

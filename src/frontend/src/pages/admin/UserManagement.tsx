@@ -39,6 +39,7 @@ export default function UserManagement() {
 
   const [principalInput, setPrincipalInput] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("user");
+  const [selectedHQ, setSelectedHQ] = useState<string>("");
   const [selectedManagerPrincipal, setSelectedManagerPrincipal] =
     useState<string>("");
   const [managerAreaIds, setManagerAreaIds] = useState<bigint[]>([]);
@@ -64,6 +65,12 @@ export default function UserManagement() {
   const { data: allAreas = [] } = useQuery({
     queryKey: ["areas"],
     queryFn: async () => (actor ? actor.getAllAreas() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const { data: allHeadquarters = [] } = useQuery({
+    queryKey: ["headquarters"],
+    queryFn: async () => (actor ? actor.getAllHeadquarters() : []),
     enabled: !!actor && !isFetching,
   });
 
@@ -110,9 +117,11 @@ export default function UserManagement() {
     mutationFn: async ({
       principalStr,
       role,
+      hq,
     }: {
       principalStr: string;
       role: string;
+      hq: string;
     }) => {
       if (!actor) throw new Error("Not connected");
       const principal = Principal.fromText(principalStr.trim());
@@ -122,9 +131,15 @@ export default function UserManagement() {
           principal,
           "",
           "",
-          "",
+          hq,
           role === "rsm" ? ManagerRole.RSM : ManagerRole.ASM,
         );
+      } else if (role === "user") {
+        await actor.assignCallerUserRole(principal, role as UserRole);
+        // Set HQ on the MR profile if HQ was selected
+        if (hq) {
+          await actor.adminCreateOrUpdateMRProfile(principal, "", hq, []);
+        }
       } else {
         await actor.assignCallerUserRole(principal, role as UserRole);
       }
@@ -133,6 +148,7 @@ export default function UserManagement() {
       toast.success("Role assigned successfully!");
       setPrincipalInput("");
       setSelectedRole("user");
+      setSelectedHQ("");
       queryClient.invalidateQueries({ queryKey: ["admin", "mrProfiles"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "managerProfiles"] });
     },
@@ -167,8 +183,11 @@ export default function UserManagement() {
     assignRoleMutation.mutate({
       principalStr: principalInput,
       role: selectedRole,
+      hq: selectedHQ,
     });
   };
+
+  const showHQDropdown = ["user", "asm", "rsm"].includes(selectedRole);
 
   return (
     <div data-ocid="user_management.section">
@@ -194,8 +213,8 @@ export default function UserManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-3 items-end">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div className="lg:col-span-2">
               <Label
                 htmlFor="principal-input"
                 className="text-sm font-medium text-gray-700 mb-1 block"
@@ -216,11 +235,17 @@ export default function UserManagement() {
                 </p>
               )}
             </div>
-            <div className="w-full sm:w-56">
+            <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">
                 Role
               </Label>
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <Select
+                value={selectedRole}
+                onValueChange={(v) => {
+                  setSelectedRole(v);
+                  setSelectedHQ("");
+                }}
+              >
                 <SelectTrigger
                   data-ocid="user_management.select"
                   className="bg-white"
@@ -240,11 +265,35 @@ export default function UserManagement() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* HQ Dropdown — shown for MR, ASM, RSM */}
+            {showHQDropdown && (
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Headquarter
+                </Label>
+                <Select value={selectedHQ} onValueChange={setSelectedHQ}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Select HQ (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allHeadquarters.map((hq) => (
+                      <SelectItem key={hq.id.toString()} value={hq.name}>
+                        {hq.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4">
             <Button
               data-ocid="user_management.submit_button"
               onClick={handleAssignRole}
               disabled={assignRoleMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {assignRoleMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
