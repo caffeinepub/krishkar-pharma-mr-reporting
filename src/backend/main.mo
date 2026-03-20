@@ -4,12 +4,12 @@ import Iter "mo:core/Iter";
 import List "mo:core/List";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
+import Order "mo:core/Order";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Order "mo:core/Order";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   // === Type Definitions ===
   type UserProfile = {
@@ -105,6 +105,8 @@ actor {
     taAmount : Nat;
     daAmount : Nat;
     notes : Text;
+    workingArea : Text;
+    daType : Text;
   };
 
   type LeaveType = {
@@ -237,6 +239,16 @@ actor {
     adminRemarks : Text;
   };
 
+
+  type TADASettings = {
+    mrTaPerKm : Nat;
+    mrDaDefault : Nat;
+    asmTaPerKm : Nat;
+    asmDaDefault : Nat;
+    rsmTaPerKm : Nat;
+    rsmDaDefault : Nat;
+  };
+
   // === Persistent Storage ===
   let userProfiles = Map.empty<Principal, UserProfile>();
   let mrProfiles = Map.empty<Principal, MRProfile>();
@@ -258,6 +270,15 @@ actor {
   let giftArticles = Map.empty<GiftArticleId, GiftArticle>();
   let giftDistributions = Map.empty<GiftDistributionId, GiftDistribution>();
   let giftDemandOrders = Map.empty<GiftDemandOrderId, GiftDemandOrder>();
+
+  var tadaSettings : TADASettings = {
+    mrTaPerKm = 8;
+    mrDaDefault = 300;
+    asmTaPerKm = 10;
+    asmDaDefault = 500;
+    rsmTaPerKm = 12;
+    rsmDaDefault = 700;
+  };
 
   // === Modules for Ordering ===
   module Area {
@@ -969,12 +990,12 @@ actor {
   };
 
   // --- Expense Entry ---
-  public shared ({ caller }) func addExpense(date : Text, kmTraveled : Nat, daAmount : Nat, notes : Text, taAmountOpt : ?Nat) : async () {
+  public shared ({ caller }) func addExpense(date : Text, kmTraveled : Nat, daAmount : Nat, notes : Text, taAmountOpt : ?Nat, workingArea : Text, daType : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add expenses");
     };
     let taAmount = switch (taAmountOpt) { case (null) { 0 }; case (?v) { v } };
-    let entry : ExpenseEntry = { date; kmTraveled; taAmount; daAmount; notes };
+    let entry : ExpenseEntry = { date; kmTraveled; taAmount; daAmount; notes; workingArea; daType };
     let existing = switch (expenseEntries.get(caller)) {
       case (null) { List.empty<ExpenseEntry>() };
       case (?e) { e };
@@ -1271,5 +1292,41 @@ actor {
       },
     );
     doctorIds;
+  };
+
+  // --- TA/DA Settings ---
+  public shared ({ caller }) func adminSetTADASettings(settings : TADASettings) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can update TA/DA settings");
+    };
+    tadaSettings := settings;
+  };
+
+  public query func adminGetTADASettings() : async TADASettings {
+    tadaSettings;
+  };
+
+  // === ROLES API ===
+  // Single call to check both roles
+  public query ({ caller }) func getCallerRoleInfo() : async { baseRole : Text; managerRole : ?Text } {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view roles");
+    };
+    let managerRoleToText = func(role : ManagerRole) : Text {
+      switch (role) {
+        case (#ASM) { "ASM" };
+        case (#RSM) { "RSM" };
+      };
+    };
+    if (AccessControl.isAdmin(accessControlState, caller)) {
+      { baseRole = "admin"; managerRole = null };
+    } else {
+      switch (managerProfiles.get(caller)) {
+        case (?profile) {
+          { baseRole = "mr"; managerRole = ?(managerRoleToText(profile.managerRole)) };
+        };
+        case (null) { { baseRole = "mr"; managerRole = null } };
+      };
+    };
   };
 };

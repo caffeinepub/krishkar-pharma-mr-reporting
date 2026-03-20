@@ -81,10 +81,12 @@ export interface GiftDemandOrder {
     adminRemarks: string;
 }
 export interface ExpenseEntry {
+    daType: string;
     daAmount: bigint;
     date: string;
     kmTraveled: bigint;
     notes: string;
+    workingArea: string;
     taAmount: bigint;
 }
 export interface SampleBalance {
@@ -116,12 +118,20 @@ export interface DetailingEntry {
     productIds: Array<ProductId>;
     date: string;
 }
-export type ChemistId = bigint;
+export interface TADASettings {
+    mrTaPerKm: bigint;
+    rsmDaDefault: bigint;
+    rsmTaPerKm: bigint;
+    mrDaDefault: bigint;
+    asmTaPerKm: bigint;
+    asmDaDefault: bigint;
+}
 export interface GiftArticle {
     id: GiftArticleId;
     name: string;
     description: string;
 }
+export type ChemistId = bigint;
 export interface Headquarter {
     id: bigint;
     name: string;
@@ -178,16 +188,6 @@ export interface Product {
     name: string;
     createdBy: Principal;
 }
-export enum CRMDemandStatus {
-    Pending = "Pending",
-    Approved = "Approved",
-    Rejected = "Rejected"
-}
-export enum GiftDemandOrderStatus {
-    Pending = "Pending",
-    Approved = "Approved",
-    Rejected = "Rejected"
-}
 export enum DemandOrderStatus {
     Approved = "Approved",
     Rejected = "Rejected",
@@ -199,11 +199,6 @@ export enum LeaveType {
     EarnedLeave = "EarnedLeave",
     SickLeave = "SickLeave",
     PrivilegeLeave = "PrivilegeLeave"
-}
-export enum LeaveStatus {
-    Pending = "Pending",
-    Approved = "Approved",
-    Rejected = "Rejected"
 }
 export enum ManagerRole {
     ASM = "ASM",
@@ -223,14 +218,16 @@ export interface backendInterface {
     addChemist(name: string, areaId: AreaId, address: string, contact: string): Promise<ChemistId>;
     addChemistOrder(chemistId: ChemistId, date: string, productId: ProductId, quantity: bigint, scheme: string): Promise<void>;
     addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId): Promise<DoctorId>;
-    addExpense(date: string, kmTraveled: bigint, daAmount: bigint, notes: string, taAmountOpt: bigint | null): Promise<void>;
+    addExpense(date: string, kmTraveled: bigint, daAmount: bigint, notes: string, taAmountOpt: bigint | null, workingArea: string, daType: string): Promise<void>;
     addGiftArticle(name: string, description: string): Promise<GiftArticleId>;
     addHeadquarter(name: string): Promise<bigint>;
     addProduct(name: string, code: string): Promise<ProductId>;
     adminAllotSamples(target: Principal, productId: ProductId, quantity: bigint, date: string): Promise<void>;
     adminAssignManagerAreas(target: Principal, areaIds: Array<AreaId>): Promise<void>;
     adminCreateOrUpdateMRProfile(mrPrincipal: Principal, employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
+    adminGetTADASettings(): Promise<TADASettings>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
+    adminSetTADASettings(settings: TADASettings): Promise<void>;
     applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkAddDoctors(doctorsInput: Array<DoctorInput>): Promise<Array<DoctorId>>;
@@ -260,6 +257,10 @@ export interface backendInterface {
     getAllSampleAllotments(): Promise<Array<SampleAllotment>>;
     getAllSampleDemandOrders(): Promise<Array<SampleDemandOrder>>;
     getAllUserProfiles(): Promise<Array<[Principal, UserProfile]>>;
+    getCallerRoleInfo(): Promise<{
+        managerRole?: string;
+        baseRole: string;
+    }>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getChemistOrders(): Promise<Array<ChemistOrder>>;

@@ -13,6 +13,14 @@ export const ChemistId = IDL.Nat;
 export const ProductId = IDL.Nat;
 export const DoctorId = IDL.Nat;
 export const GiftArticleId = IDL.Nat;
+export const TADASettings = IDL.Record({
+  'mrTaPerKm' : IDL.Nat,
+  'rsmDaDefault' : IDL.Nat,
+  'rsmTaPerKm' : IDL.Nat,
+  'mrDaDefault' : IDL.Nat,
+  'asmTaPerKm' : IDL.Nat,
+  'asmDaDefault' : IDL.Nat,
+});
 export const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
 export const LeaveType = IDL.Variant({
   'WithoutPayLeave' : IDL.Null,
@@ -194,10 +202,12 @@ export const DetailingEntry = IDL.Record({
   'date' : IDL.Text,
 });
 export const ExpenseEntry = IDL.Record({
+  'daType' : IDL.Text,
   'daAmount' : IDL.Nat,
   'date' : IDL.Text,
   'kmTraveled' : IDL.Nat,
   'notes' : IDL.Text,
+  'workingArea' : IDL.Text,
   'taAmount' : IDL.Nat,
 });
 export const ManagerAreaAssignment = IDL.Record({
@@ -236,7 +246,15 @@ export const idlService = IDL.Service({
       [],
     ),
   'addExpense' : IDL.Func(
-      [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text, IDL.Opt(IDL.Nat)],
+      [
+        IDL.Text,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Text,
+        IDL.Opt(IDL.Nat),
+        IDL.Text,
+        IDL.Text,
+      ],
       [],
       [],
     ),
@@ -258,12 +276,13 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'adminGetTADASettings' : IDL.Func([], [TADASettings], ['query']),
   'adminSaveManagerProfile' : IDL.Func(
       [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
       [],
       [],
     ),
-  'emergencyRestoreAdmin' : IDL.Func([], [], []),
+  'adminSetTADASettings' : IDL.Func([TADASettings], [], []),
   'applyLeave' : IDL.Func(
       [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
       [],
@@ -283,6 +302,7 @@ export const idlService = IDL.Service({
   'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
   'deleteManagerProfile' : IDL.Func([IDL.Principal], [], []),
   'deleteProduct' : IDL.Func([ProductId], [], []),
+  'emergencyRestoreAdmin' : IDL.Func([], [], []),
   'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
   'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
   'getAllCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
@@ -330,6 +350,16 @@ export const idlService = IDL.Service({
   'getAllUserProfiles' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+      ['query'],
+    ),
+  'getCallerRoleInfo' : IDL.Func(
+      [],
+      [
+        IDL.Record({
+          'managerRole' : IDL.Opt(IDL.Text),
+          'baseRole' : IDL.Text,
+        }),
+      ],
       ['query'],
     ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
@@ -451,6 +481,14 @@ export const idlFactory = ({ IDL }) => {
   const ProductId = IDL.Nat;
   const DoctorId = IDL.Nat;
   const GiftArticleId = IDL.Nat;
+  const TADASettings = IDL.Record({
+    'mrTaPerKm' : IDL.Nat,
+    'rsmDaDefault' : IDL.Nat,
+    'rsmTaPerKm' : IDL.Nat,
+    'mrDaDefault' : IDL.Nat,
+    'asmTaPerKm' : IDL.Nat,
+    'asmDaDefault' : IDL.Nat,
+  });
   const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
   const LeaveType = IDL.Variant({
     'WithoutPayLeave' : IDL.Null,
@@ -632,10 +670,12 @@ export const idlFactory = ({ IDL }) => {
     'date' : IDL.Text,
   });
   const ExpenseEntry = IDL.Record({
+    'daType' : IDL.Text,
     'daAmount' : IDL.Nat,
     'date' : IDL.Text,
     'kmTraveled' : IDL.Nat,
     'notes' : IDL.Text,
+    'workingArea' : IDL.Text,
     'taAmount' : IDL.Nat,
   });
   const ManagerAreaAssignment = IDL.Record({ 'areaIds' : IDL.Vec(AreaId) });
@@ -672,7 +712,15 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'addExpense' : IDL.Func(
-        [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text, IDL.Opt(IDL.Nat)],
+        [
+          IDL.Text,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Text,
+          IDL.Opt(IDL.Nat),
+          IDL.Text,
+          IDL.Text,
+        ],
         [],
         [],
       ),
@@ -694,13 +742,14 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'adminGetTADASettings' : IDL.Func([], [TADASettings], ['query']),
     'adminSaveManagerProfile' : IDL.Func(
         [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
         [],
         [],
       ),
-    'emergencyRestoreAdmin' : IDL.Func([], [], []),
-  'applyLeave' : IDL.Func(
+    'adminSetTADASettings' : IDL.Func([TADASettings], [], []),
+    'applyLeave' : IDL.Func(
         [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
         [],
         [],
@@ -723,6 +772,7 @@ export const idlFactory = ({ IDL }) => {
     'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
     'deleteManagerProfile' : IDL.Func([IDL.Principal], [], []),
     'deleteProduct' : IDL.Func([ProductId], [], []),
+    'emergencyRestoreAdmin' : IDL.Func([], [], []),
     'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
     'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
     'getAllCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
@@ -770,6 +820,16 @@ export const idlFactory = ({ IDL }) => {
     'getAllUserProfiles' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+        ['query'],
+      ),
+    'getCallerRoleInfo' : IDL.Func(
+        [],
+        [
+          IDL.Record({
+            'managerRole' : IDL.Opt(IDL.Text),
+            'baseRole' : IDL.Text,
+          }),
+        ],
         ['query'],
       ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),

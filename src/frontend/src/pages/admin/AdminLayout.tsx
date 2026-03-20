@@ -34,6 +34,7 @@ import AdminHeadquarters from "./AdminHeadquarters";
 import AdminProducts from "./AdminProducts";
 import AdminReports from "./AdminReports";
 import AdminSampleManagement from "./AdminSampleManagement";
+import AdminTADASettings from "./AdminTADASettings";
 import LeaveApprovals from "./LeaveApprovals";
 import MRManagement from "./MRManagement";
 import UserManagement from "./UserManagement";
@@ -51,7 +52,8 @@ type AdminPage =
   | "sample-management"
   | "crm-approvals"
   | "gift-orders"
-  | "gift-articles";
+  | "gift-articles"
+  | "tada-settings";
 
 const adminNavItems: {
   id: AdminPage;
@@ -71,6 +73,7 @@ const adminNavItems: {
   { id: "crm-approvals", label: "CRM Approvals", icon: IndianRupee },
   { id: "gift-orders", label: "Gift Orders", icon: Gift },
   { id: "gift-articles", label: "Gift Articles", icon: ShoppingBag },
+  { id: "tada-settings", label: "TA/DA Settings", icon: IndianRupee },
 ];
 
 const pageTitles: Record<AdminPage, string> = {
@@ -87,6 +90,7 @@ const pageTitles: Record<AdminPage, string> = {
   "crm-approvals": "CRM Approvals",
   "gift-orders": "Gift Article Orders",
   "gift-articles": "Gift Articles Catalog",
+  "tada-settings": "TA/DA Settings",
 };
 
 export default function AdminLayout() {
@@ -135,6 +139,8 @@ export default function AdminLayout() {
         return <AdminGiftOrders />;
       case "gift-articles":
         return <AdminGiftArticles />;
+      case "tada-settings":
+        return <AdminTADASettings />;
     }
   };
 

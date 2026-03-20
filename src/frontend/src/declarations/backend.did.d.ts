@@ -83,10 +83,12 @@ export interface DoctorInput {
   'qualification' : string,
 }
 export interface ExpenseEntry {
+  'daType' : string,
   'daAmount' : bigint,
   'date' : string,
   'kmTraveled' : bigint,
   'notes' : string,
+  'workingArea' : string,
   'taAmount' : bigint,
 }
 export interface GiftArticle {
@@ -195,6 +197,14 @@ export interface SampleEntry {
   'productId' : ProductId,
   'quantity' : bigint,
 }
+export interface TADASettings {
+  'mrTaPerKm' : bigint,
+  'rsmDaDefault' : bigint,
+  'rsmTaPerKm' : bigint,
+  'mrDaDefault' : bigint,
+  'asmTaPerKm' : bigint,
+  'asmDaDefault' : bigint,
+}
 export interface UserProfile {
   'employeeCode' : string,
   'name' : string,
@@ -213,7 +223,7 @@ export interface _SERVICE {
   >,
   'addDoctor' : ActorMethod<[string, string, string, string, AreaId], DoctorId>,
   'addExpense' : ActorMethod<
-    [string, bigint, bigint, string, [] | [bigint]],
+    [string, bigint, bigint, string, [] | [bigint], string, string],
     undefined
   >,
   'addGiftArticle' : ActorMethod<[string, string], GiftArticleId>,
@@ -231,11 +241,12 @@ export interface _SERVICE {
     [Principal, string, string, Array<AreaId>],
     undefined
   >,
+  'adminGetTADASettings' : ActorMethod<[], TADASettings>,
   'adminSaveManagerProfile' : ActorMethod<
     [Principal, string, string, string, ManagerRole],
     undefined
   >,
-  'emergencyRestoreAdmin' : ActorMethod<[], undefined>,
+  'adminSetTADASettings' : ActorMethod<[TADASettings], undefined>,
   'applyLeave' : ActorMethod<
     [LeaveType, string, string, bigint, string],
     undefined
@@ -253,6 +264,7 @@ export interface _SERVICE {
   'deleteMRProfile' : ActorMethod<[Principal], undefined>,
   'deleteManagerProfile' : ActorMethod<[Principal], undefined>,
   'deleteProduct' : ActorMethod<[ProductId], undefined>,
+  'emergencyRestoreAdmin' : ActorMethod<[], undefined>,
   'getActivitySummary' : ActorMethod<[string], ActivitySummary>,
   'getAllAreas' : ActorMethod<[], Array<Area>>,
   'getAllCRMDemands' : ActorMethod<[], Array<CRMDemand>>,
@@ -273,6 +285,10 @@ export interface _SERVICE {
   'getAllSampleAllotments' : ActorMethod<[], Array<SampleAllotment>>,
   'getAllSampleDemandOrders' : ActorMethod<[], Array<SampleDemandOrder>>,
   'getAllUserProfiles' : ActorMethod<[], Array<[Principal, UserProfile]>>,
+  'getCallerRoleInfo' : ActorMethod<
+    [],
+    { 'managerRole' : [] | [string], 'baseRole' : string }
+  >,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getChemistOrders' : ActorMethod<[], Array<ChemistOrder>>,

@@ -22,9 +22,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CalendarOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { LeaveStatus, LeaveType } from "../backend";
+import { LeaveType } from "../backend";
 import type { LeaveEntry } from "../backend";
 import { useActor } from "../hooks/useActor";
+
+const LeaveStatus = {
+  Pending: "Pending" as const,
+  Approved: "Approved" as const,
+  Rejected: "Rejected" as const,
+};
+type LeaveStatus = (typeof LeaveStatus)[keyof typeof LeaveStatus];
 
 const LEAVE_LABELS: Record<LeaveType, string> = {
   [LeaveType.CasualLeave]: "Casual Leave",
@@ -50,7 +57,7 @@ const BALANCE_LEAVE_TYPES: LeaveType[] = [
 ];
 
 function statusBadge(status: LeaveStatus) {
-  const map: Record<LeaveStatus, string> = {
+  const map: Record<string, string> = {
     [LeaveStatus.Pending]: "bg-yellow-50 text-yellow-700 border-yellow-200",
     [LeaveStatus.Approved]: "bg-green-50 text-green-700 border-green-200",
     [LeaveStatus.Rejected]: "bg-red-50 text-red-700 border-red-200",

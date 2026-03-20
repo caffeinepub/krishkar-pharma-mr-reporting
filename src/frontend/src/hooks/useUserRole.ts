@@ -15,19 +15,13 @@ export function useUserRole() {
     queryFn: async () => {
       if (!actor) return "guest";
       try {
-        const baseRole = await actor.getCallerUserRole();
+        const roleInfo = await actor.getCallerRoleInfo();
+        const { baseRole, managerRole } = roleInfo;
         if (baseRole === "admin") return "admin";
         if (baseRole === "guest") return "guest";
         if (baseRole === "user") {
-          try {
-            const managerProfile = await actor.getManagerProfile();
-            if (managerProfile) {
-              if (managerProfile.managerRole === "RSM") return "rsm";
-              if (managerProfile.managerRole === "ASM") return "asm";
-            }
-          } catch {
-            // If getManagerProfile fails, treat as regular user
-          }
+          if (managerRole === "RSM") return "rsm";
+          if (managerRole === "ASM") return "asm";
           return "user";
         }
         return baseRole as AppRole;
@@ -37,7 +31,7 @@ export function useUserRole() {
     },
     enabled: !!actor && !isFetching,
     staleTime: 1000 * 60 * 5,
-    retry: 2,
+    retry: 1,
   });
 
   return {

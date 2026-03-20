@@ -1,27 +1,33 @@
 # Krishkar Pharma MR Reporting
 
 ## Current State
-- Previous build completed 4 changes: HQ removed from MRProfile signup, Products read-only for MR, Doctor Activity merged tab in Working Details, Areas/Doctors filtered by assigned areas.
-- In MRManagement.tsx and UserManagement.tsx, the Pending Users section shows only truncated Principal IDs.
-- The Role Assignment form requires manual Principal ID entry.
-- Manager profiles table shows names, but Pending Users list does not.
+- `ExpenseEntry` has: date, kmTraveled, taAmount, daAmount, notes
+- `addExpense` accepts: date, kmTraveled, daAmount, notes, taAmountOpt
+- Role detection uses 2 sequential backend calls: `getCallerUserRole` then `getManagerProfile`
+- DA is a single numeric field with no type distinction
 
 ## Requested Changes (Diff)
 
 ### Add
-- Fetch `getAllUserProfiles()` in both MRManagement.tsx and UserManagement.tsx to build a name lookup map (Principal -> name).
+- `workingArea` field (Text) to `ExpenseEntry` — the area where MR worked on that day
+- `daType` field (Text: "HQ" or "OutStation") to `ExpenseEntry` — indicates if DA is for Headquarter or Out Station travel
+- New backend query `getCallerRoleInfo` that returns base role + manager profile in a single call to eliminate double round-trip on login
 
 ### Modify
-- **MRManagement.tsx Pending Users list**: Instead of showing truncated Principal ID, show the user's name (from `getAllUserProfiles()` map) as the primary label. Show truncated Principal ID in smaller text below. If no profile name found, show "Unnamed User" + truncated Principal ID.
-- **UserManagement.tsx Pending Users / Role Assignment**: Same as above for any pending users display.
-- **MRManagement.tsx MR Profiles table**: Add a "Name" column derived from `getAllUserProfiles()` or use existing profile name (MRProfile doesn't have name, but UserProfile does from `getAllUserProfiles()`). Cross-reference by Principal to show name in the table.
-- **UserManagement.tsx Manager Profiles table**: Already shows profile.name — keep as is.
-- **UserManagement.tsx "Assign Role" form**: When the principal input field has a value that matches a known user profile, show their name as a helper text below the input (e.g., "User: John Doe").
+- `addExpense` to accept two new parameters: `workingArea: Text` and `daType: Text`
+- `useUserRole` hook to use the new `getCallerRoleInfo` single-call API (reduces 2 IC calls to 1, fixing the timeout)
+- Expense form UI: add a dropdown for working area (MR's allotted areas) and radio/select for DA Type (HQ / Out Station)
 
 ### Remove
-- Nothing removed.
+- Nothing removed
 
 ## Implementation Plan
-1. In MRManagement.tsx: add `getAllUserProfiles()` query. Build a map: `Map<string, string>` (principalStr -> name). Use it in Pending Users list to show name.
-2. In UserManagement.tsx: add `getAllUserProfiles()` query. Build name lookup map. Show name in pending users section. Also show name hint in the role assignment form when principalInput matches a known user.
-3. Ensure MR profiles table in UserManagement shows MR name (from UserProfile, not MRProfile which has employeeCode/headQuarter/assignedAreas but no name).
+1. Add `workingArea` and `daType` to `ExpenseEntry` type in Motoko
+2. Update `addExpense` signature and implementation
+3. Add `getCallerRoleInfo` query that returns `{baseRole: Text; managerRole: ?Text}` in one call
+4. Regenerate backend bindings
+5. Update `useUserRole.ts` to call `getCallerRoleInfo` instead of 2 separate calls
+6. Update the Expense form (Add Expense dialog/page) to include:
+   - Working Area dropdown (loads MR's allotted areas)
+   - DA Type selector: "Head Quarter" or "Out Station"
+7. Update expense display tables to show working area and DA type columns

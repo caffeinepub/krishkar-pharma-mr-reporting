@@ -5,8 +5,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { LeaveStatus } from "../../backend.d";
 import { useActor } from "../../hooks/useActor";
+
+const LeaveStatus = {
+  Pending: "Pending" as const,
+  Approved: "Approved" as const,
+  Rejected: "Rejected" as const,
+};
+type LeaveStatus = (typeof LeaveStatus)[keyof typeof LeaveStatus];
 
 export default function ASMLeaveApprovals() {
   const { actor, isFetching } = useActor();

@@ -12,9 +12,15 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { LeaveStatus } from "../../backend.d";
 import { useActor } from "../../hooks/useActor";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
+
+const LeaveStatus = {
+  Pending: "Pending" as const,
+  Approved: "Approved" as const,
+  Rejected: "Rejected" as const,
+};
+type LeaveStatus = (typeof LeaveStatus)[keyof typeof LeaveStatus];
 
 export default function ASMDashboard() {
   const { actor, isFetching } = useActor();

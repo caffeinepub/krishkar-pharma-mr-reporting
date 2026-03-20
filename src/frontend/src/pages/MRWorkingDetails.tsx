@@ -19,6 +19,7 @@ import {
   FlaskConical,
   Gift,
   Loader2,
+  MapPin,
   ShoppingBag,
   Stethoscope,
 } from "lucide-react";
@@ -186,6 +187,8 @@ export default function MRWorkingDetails() {
   const [expenseKm, setExpenseKm] = useState("");
   const [expenseDa, setExpenseDa] = useState<"250" | "300">("300");
   const [expenseNotes, setExpenseNotes] = useState("");
+  const [expenseWorkingArea, setExpenseWorkingArea] = useState("");
+  const [expenseDaType, setExpenseDaType] = useState<"HQ" | "OutStation">("HQ");
 
   const taAmount = useMemo(() => {
     const km = Number.parseFloat(expenseKm) || 0;
@@ -201,12 +204,16 @@ export default function MRWorkingDetails() {
         BigInt(expenseDa),
         expenseNotes,
         BigInt(Math.round(Number.parseFloat(taAmount))),
+        expenseWorkingArea,
+        expenseDaType,
       );
     },
     onSuccess: () => {
       toast.success("Expense logged successfully");
       setExpenseKm("");
       setExpenseNotes("");
+      setExpenseWorkingArea("");
+      setExpenseDaType("HQ");
     },
     onError: () => toast.error("Failed to log expense"),
   });
@@ -907,6 +914,57 @@ export default function MRWorkingDetails() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Working Area <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={expenseWorkingArea}
+                    onValueChange={setExpenseWorkingArea}
+                  >
+                    <SelectTrigger
+                      data-ocid="working_details.expense_area.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue placeholder="Select area..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {areas.map((area) => (
+                        <SelectItem key={String(area.id)} value={area.name}>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                            {area.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    DA Type <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={expenseDaType}
+                    onValueChange={(v) =>
+                      setExpenseDaType(v as "HQ" | "OutStation")
+                    }
+                  >
+                    <SelectTrigger
+                      data-ocid="working_details.expense_datype.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="HQ">Head Quarter</SelectItem>
+                      <SelectItem value="OutStation">Out Station</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               {expenseKm && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">
@@ -957,7 +1015,9 @@ export default function MRWorkingDetails() {
                 data-ocid="working_details.expense.submit_button"
                 className="bg-green-600 hover:bg-green-700 text-white w-full"
                 onClick={() => expenseMutation.mutate()}
-                disabled={expenseMutation.isPending || !expenseKm}
+                disabled={
+                  expenseMutation.isPending || !expenseKm || !expenseWorkingArea
+                }
               >
                 {expenseMutation.isPending ? (
                   <>

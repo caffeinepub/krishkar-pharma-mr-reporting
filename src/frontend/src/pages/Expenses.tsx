@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,10 +19,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Car, IndianRupee, Loader2, Receipt } from "lucide-react";
+import { Car, IndianRupee, Loader2, MapPin, Receipt } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { ExpenseEntry } from "../backend";
+import type { Area, ExpenseEntry, MRProfile } from "../backend";
 import { useActor } from "../hooks/useActor";
 
 const TA_RATE = 2.75;
@@ -34,9 +35,38 @@ export default function Expenses() {
   const [km, setKm] = useState("");
   const [da, setDa] = useState<"250" | "300">("300");
   const [notes, setNotes] = useState("");
+  const [workingArea, setWorkingArea] = useState("");
+  const [daType, setDaType] = useState<"HQ" | "OutStation">("HQ");
 
   const ta = km ? Math.round(Number(km) * TA_RATE) : 0;
   const total = ta + Number(da);
+
+  // Fetch user's MR profile to get assigned area IDs
+  const { data: mrProfile } = useQuery<MRProfile>({
+    queryKey: ["mrProfile"],
+    queryFn: async () => {
+      if (!actor) throw new Error("No actor");
+      return actor.getMRProfile();
+    },
+    enabled: !!actor && !isFetching,
+  });
+
+  // Fetch all areas to resolve names from IDs
+  const { data: allAreas = [] } = useQuery<Area[]>({
+    queryKey: ["allAreas"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllAreas();
+    },
+    enabled: !!actor && !isFetching,
+  });
+
+  // Filter to only the MR's assigned areas
+  const assignedAreas = mrProfile?.assignedAreas
+    ? allAreas.filter((a) =>
+        mrProfile.assignedAreas.some((id) => String(id) === String(a.id)),
+      )
+    : allAreas;
 
   const { data: expenses = [], isLoading } = useQuery<ExpenseEntry[]>({
     queryKey: ["expenses"],
@@ -53,13 +83,23 @@ export default function Expenses() {
       const kmBig = BigInt(Math.round(Number(km)));
       const daBig = BigInt(Number(da));
       const taBig = km ? BigInt(Math.round(Number(km) * TA_RATE)) : null;
-      await actor.addExpense(date, kmBig, daBig, notes, taBig);
+      await actor.addExpense(
+        date,
+        kmBig,
+        daBig,
+        notes,
+        taBig,
+        workingArea,
+        daType,
+      );
     },
     onSuccess: () => {
       toast.success("Expense logged successfully");
       setKm("");
       setNotes("");
       setDa("300");
+      setWorkingArea("");
+      setDaType("HQ");
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
     },
     onError: () => toast.error("Failed to log expense"),
@@ -85,7 +125,7 @@ export default function Expenses() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-gray-600">Date</Label>
               <Input
@@ -134,6 +174,49 @@ export default function Expenses() {
               </Select>
             </div>
             <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-gray-600">
+                Working Area <span className="text-red-500">*</span>
+              </Label>
+              <Select value={workingArea} onValueChange={setWorkingArea}>
+                <SelectTrigger
+                  data-ocid="expenses.working_area.select"
+                  className="border-[#E5EAF2]"
+                >
+                  <SelectValue placeholder="Select area..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {assignedAreas.map((area) => (
+                    <SelectItem key={String(area.id)} value={area.name}>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                        {area.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-gray-600">
+                DA Type <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={daType}
+                onValueChange={(v) => setDaType(v as "HQ" | "OutStation")}
+              >
+                <SelectTrigger
+                  data-ocid="expenses.da_type.select"
+                  className="border-[#E5EAF2]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HQ">Head Quarter</SelectItem>
+                  <SelectItem value="OutStation">Out Station</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Label className="text-xs font-medium text-gray-600">Notes</Label>
               <Input
                 data-ocid="expenses.notes.input"
@@ -163,6 +246,9 @@ export default function Expenses() {
                 <p className="text-xl font-bold text-green-700 mt-1">
                   ₹{Number(da).toLocaleString()}
                 </p>
+                <p className="text-xs text-green-400 mt-0.5">
+                  {daType === "HQ" ? "Head Quarter" : "Out Station"}
+                </p>
               </div>
               <div className="bg-purple-50 rounded-lg p-3 text-center">
                 <p className="text-xs text-purple-500 font-medium">Total</p>
@@ -177,7 +263,7 @@ export default function Expenses() {
             data-ocid="expenses.submit_button"
             className="mt-5 bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
             onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !km || !date}
+            disabled={mutation.isPending || !km || !date || !workingArea}
           >
             {mutation.isPending ? (
               <>
@@ -215,61 +301,95 @@ export default function Expenses() {
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-[#F8FAFC]">
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Date
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    KM
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    TA
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    DA
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Total
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Notes
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses.map((e, idx) => (
-                  <TableRow
-                    key={`${e.date}-${idx}`}
-                    data-ocid={`expenses.item.${idx + 1}`}
-                    className="hover:bg-[#F8FAFC]"
-                  >
-                    <TableCell className="text-sm font-medium text-gray-700">
-                      {e.date}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {String(e.kmTraveled)} km
-                    </TableCell>
-                    <TableCell className="text-sm font-medium text-blue-600">
-                      ₹{String(e.taAmount)}
-                    </TableCell>
-                    <TableCell className="text-sm font-medium text-green-600">
-                      ₹{String(e.daAmount)}
-                    </TableCell>
-                    <TableCell className="text-sm font-bold text-purple-600">
-                      ₹
-                      {(
-                        Number(e.taAmount) + Number(e.daAmount)
-                      ).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-500 max-w-xs truncate">
-                      {e.notes || "—"}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-[#F8FAFC]">
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Date
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Working Area
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      DA Type
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      KM
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      TA
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      DA
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Total
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Notes
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {expenses.map((e, idx) => (
+                    <TableRow
+                      key={`${e.date}-${idx}`}
+                      data-ocid={`expenses.item.${idx + 1}`}
+                      className="hover:bg-[#F8FAFC]"
+                    >
+                      <TableCell className="text-sm font-medium text-gray-700">
+                        {e.date}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {e.workingArea ? (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                            {e.workingArea}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {e.daType ? (
+                          <Badge
+                            variant="outline"
+                            className={
+                              e.daType === "HQ"
+                                ? "border-blue-200 text-blue-700 bg-blue-50 text-xs"
+                                : "border-orange-200 text-orange-700 bg-orange-50 text-xs"
+                            }
+                          >
+                            {e.daType === "HQ" ? "Head Quarter" : "Out Station"}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {String(e.kmTraveled)} km
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-blue-600">
+                        ₹{String(e.taAmount)}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-green-600">
+                        ₹{String(e.daAmount)}
+                      </TableCell>
+                      <TableCell className="text-sm font-bold text-purple-600">
+                        ₹
+                        {(
+                          Number(e.taAmount) + Number(e.daAmount)
+                        ).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500 max-w-xs truncate">
+                        {e.notes || "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
