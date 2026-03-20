@@ -242,6 +242,7 @@ export interface backendInterface {
     deleteMRProfile(mrPrincipal: Principal): Promise<void>;
     deleteManagerProfile(target: Principal): Promise<void>;
     deleteProduct(id: ProductId): Promise<void>;
+    emergencyRestoreAdmin(): Promise<void>;
     getActivitySummary(date: string): Promise<ActivitySummary>;
     getAllAreas(): Promise<Array<Area>>;
     getAllCRMDemands(): Promise<Array<CRMDemand>>;

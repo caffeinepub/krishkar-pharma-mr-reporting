@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarOff,
   ClipboardList,
@@ -11,12 +12,14 @@ import {
   Menu,
   Package,
   Receipt,
+  ShieldAlert,
   ShoppingBag,
   Stethoscope,
   User,
 } from "lucide-react";
 import { useState } from "react";
 import AccessPendingScreen from "./components/AccessPendingScreen";
+import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useUserRole } from "./hooks/useUserRole";
 import Areas from "./pages/Areas";
@@ -32,6 +35,9 @@ import Samples from "./pages/Samples";
 import AdminLayout from "./pages/admin/AdminLayout";
 import ASMLayout from "./pages/asm/ASMLayout";
 import RSMLayout from "./pages/rsm/RSMLayout";
+
+const RECOVERY_PRINCIPAL =
+  "grbwb-eomkl-kudk6-gg5mh-ye5qx-b6cqs-7apa2-lus3n-b5lpa-sqbtx-tqe";
 
 type Page =
   | "dashboard"
@@ -135,12 +141,31 @@ function MRLayout() {
   const { identity, clear } = useInternetIdentity();
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isRestoring, setIsRestoring] = useState<boolean>(false);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
 
   const principal = identity?.getPrincipal().toString() ?? "";
   const shortPrincipal =
     principal.length > 12
       ? `${principal.slice(0, 8)}...${principal.slice(-4)}`
       : principal;
+
+  const handleRestoreAdmin = async () => {
+    setIsRestoring(true);
+    setRestoreError(null);
+    try {
+      await (actor as any).emergencyRestoreAdmin();
+      await queryClient.invalidateQueries({ queryKey: ["userRole"] });
+      window.location.reload();
+    } catch (err: any) {
+      setRestoreError(
+        err?.message ?? "Failed to restore admin access. Please try again.",
+      );
+      setIsRestoring(false);
+    }
+  };
 
   const renderPage = () => {
     switch (currentPage) {
@@ -294,7 +319,56 @@ function MRLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          {principal === RECOVERY_PRINCIPAL && (
+            <div
+              data-ocid="admin.recovery.panel"
+              className="mb-6 border border-amber-300 bg-amber-50 rounded-xl p-5 flex flex-col gap-3 shadow-sm"
+            >
+              <div className="flex items-start gap-3">
+                <ShieldAlert
+                  className="text-amber-600 flex-shrink-0 mt-0.5"
+                  size={22}
+                />
+                <div>
+                  <h2 className="text-amber-900 font-bold text-base">
+                    Admin Access Recovery
+                  </h2>
+                  <p className="text-amber-800 text-sm mt-1">
+                    Your account was previously the system Admin. Click the
+                    button below to restore your Admin access.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  data-ocid="admin.recovery.primary_button"
+                  onClick={handleRestoreAdmin}
+                  disabled={isRestoring}
+                  className="self-start bg-amber-600 hover:bg-amber-700 text-white font-semibold px-5 py-2 rounded-lg"
+                >
+                  {isRestoring ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Restoring...
+                    </>
+                  ) : (
+                    "Restore Admin Access"
+                  )}
+                </Button>
+                {restoreError && (
+                  <p
+                    data-ocid="admin.recovery.error_state"
+                    className="text-red-600 text-sm font-medium"
+                  >
+                    {restoreError}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          {renderPage()}
+        </main>
 
         {/* Footer */}
         <footer className="bg-white border-t border-[#E5EAF2] px-6 py-3 flex-shrink-0">

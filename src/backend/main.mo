@@ -7,9 +7,9 @@ import Principal "mo:core/Principal";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import Order "mo:core/Order";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   // === Type Definitions ===
   type UserProfile = {
@@ -309,6 +309,18 @@ actor {
       case (?_) { true };
       case (null) { false };
     };
+  };
+
+  // === Emergency Admin Recovery ===
+  // This function allows the registered admin principal to restore their admin role
+  // if they accidentally changed it. Only callable by the exact registered admin principal.
+  public shared ({ caller }) func emergencyRestoreAdmin() : async () {
+    let registeredAdminPrincipal = Principal.fromText("grbwb-eomkl-kudk6-gg5mh-ye5qx-b6cqs-7apa2-lus3n-b5lpa-sqbtx-tqe");
+    if (caller != registeredAdminPrincipal) {
+      Runtime.trap("Unauthorized: This function is restricted to the registered admin principal");
+    };
+    accessControlState.userRoles.add(caller, #admin);
+    accessControlState.adminAssigned := true;
   };
 
   // === CRM Demand System Functions ===
