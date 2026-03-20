@@ -1,15 +1,17 @@
 import Array "mo:core/Array";
+import Map "mo:core/Map";
 import Iter "mo:core/Iter";
 import List "mo:core/List";
-import Map "mo:core/Map";
-import Order "mo:core/Order";
-import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
+import Principal "mo:core/Principal";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Order "mo:core/Order";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
-  // Type Definitions
+  // === Type Definitions ===
   type UserProfile = {
     name : Text;
     employeeCode : Text;
@@ -22,7 +24,6 @@ actor {
     assignedAreas : [AreaId];
   };
 
-  // RSM / ASM role stored separately
   type ManagerRole = { #RSM; #ASM };
   type ManagerProfile = {
     name : Text;
@@ -140,9 +141,13 @@ actor {
     nextHeadquarterId : Nat;
     nextSampleAllotmentId : Nat;
     nextDemandOrderId : Nat;
+    nextCRMDemandId : Nat;
+    nextGiftArticleId : Nat;
+    nextGiftDistributionId : Nat;
+    nextGiftDemandOrderId : Nat;
   };
 
-  // New Types for Upgraded Features
+  // --- New Types for Upgraded Features ---
   type SampleAllotment = {
     id : Nat;
     targetPrincipal : Principal;
@@ -184,7 +189,55 @@ actor {
     areaIds : [AreaId];
   };
 
-  // Persistent Storage
+  type CRMDemandId = Nat;
+  type CRMDemandStatus = { #Pending; #Approved; #Rejected };
+  type CRMDemand = {
+    id : CRMDemandId;
+    doctorId : DoctorId;
+    doctorName : Text;
+    amount : Nat;
+    notes : Text;
+    status : CRMDemandStatus;
+    adminRemarks : Text;
+    date : Text;
+    raisedBy : Principal;
+    raiserName : Text;
+  };
+
+  type GiftArticleId = Nat;
+  type GiftArticle = {
+    id : GiftArticleId;
+    name : Text;
+    description : Text;
+  };
+
+  type GiftDistributionId = Nat;
+  type GiftDistribution = {
+    id : GiftDistributionId;
+    doctorId : DoctorId;
+    doctorName : Text;
+    giftArticleId : GiftArticleId;
+    giftArticleName : Text;
+    quantity : Nat;
+    date : Text;
+    distributedBy : Principal;
+  };
+
+  type GiftDemandOrderId = Nat;
+  type GiftDemandOrderStatus = { #Pending; #Approved; #Rejected };
+  type GiftDemandOrder = {
+    id : GiftDemandOrderId;
+    mrPrincipal : Principal;
+    giftArticleId : GiftArticleId;
+    giftArticleName : Text;
+    quantity : Nat;
+    notes : Text;
+    date : Text;
+    status : GiftDemandOrderStatus;
+    adminRemarks : Text;
+  };
+
+  // === Persistent Storage ===
   let userProfiles = Map.empty<Principal, UserProfile>();
   let mrProfiles = Map.empty<Principal, MRProfile>();
   let managerProfiles = Map.empty<Principal, ManagerProfile>();
@@ -201,7 +254,12 @@ actor {
   let sampleAllotments = Map.empty<Nat, SampleAllotment>();
   let sampleDemandOrders = Map.empty<Nat, SampleDemandOrder>();
   let managerAreaAssignments = Map.empty<Principal, ManagerAreaAssignment>();
+  let crmDemands = Map.empty<CRMDemandId, CRMDemand>();
+  let giftArticles = Map.empty<GiftArticleId, GiftArticle>();
+  let giftDistributions = Map.empty<GiftDistributionId, GiftDistribution>();
+  let giftDemandOrders = Map.empty<GiftDemandOrderId, GiftDemandOrder>();
 
+  // === Modules for Ordering ===
   module Area {
     public func compare(a : Area, b : Area) : Order.Order {
       a.name.compare(b.name);
@@ -226,7 +284,7 @@ actor {
     };
   };
 
-  // ID Counters
+  // === Id Counters ===
   var idCounters : IdCounters = {
     nextAreaId = 1;
     nextDoctorId = 1;
@@ -235,13 +293,17 @@ actor {
     nextHeadquarterId = 1;
     nextSampleAllotmentId = 1;
     nextDemandOrderId = 1;
+    nextCRMDemandId = 1;
+    nextGiftArticleId = 1;
+    nextGiftDistributionId = 1;
+    nextGiftDemandOrderId = 1;
   };
 
-  // Authorization
+  // === Authorization ===
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  // Helper: check if caller is a manager (RSM or ASM)
+  // === Helper: Manager Check ===
   func isManager(caller : Principal) : Bool {
     switch (managerProfiles.get(caller)) {
       case (?_) { true };
@@ -249,8 +311,219 @@ actor {
     };
   };
 
-  // New: Demand Sample Order APIs
+  // === CRM Demand System Functions ===
+  public shared ({ caller }) func raiseCRMDemand(doctorId : DoctorId, doctorName : Text, amount : Nat, notes : Text, date : Text, raiserName : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can raise CRM demands");
+    };
+    
+    // CRM demands can only be raised by ASM/RSM managers
+    if (not isManager(caller)) {
+      Runtime.trap("Unauthorized: Only ASM/RSM managers can raise CRM demands");
+    };
 
+    let newId = idCounters.nextCRMDemandId;
+    let demand : CRMDemand = {
+      id = newId;
+      doctorId;
+      doctorName;
+      amount;
+      notes;
+      status = #Pending;
+      adminRemarks = "";
+      date;
+      raisedBy = caller;
+      raiserName;
+    };
+
+    crmDemands.add(newId, demand);
+    idCounters := {
+      idCounters with
+      nextCRMDemandId = newId + 1;
+    };
+  };
+
+  public query ({ caller }) func getMyCRMDemands() : async [CRMDemand] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view their CRM demands");
+    };
+
+    crmDemands.values().toArray().filter(func(demand) { demand.raisedBy == caller });
+  };
+
+  public query ({ caller }) func getAllCRMDemands() : async [CRMDemand] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view all CRM demands");
+    };
+    crmDemands.values().toArray();
+  };
+
+  public shared ({ caller }) func updateCRMDemandStatus(demandId : CRMDemandId, newStatus : CRMDemandStatus, adminRemarks : Text) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can update CRM demand status");
+    };
+
+    switch (crmDemands.get(demandId)) {
+      case (null) { Runtime.trap("CRM demand not found") };
+      case (?existing) {
+        let updatedDemand = {
+          existing with
+          status = newStatus;
+          adminRemarks;
+        };
+        crmDemands.add(demandId, updatedDemand);
+      };
+    };
+  };
+
+  // === Gift Article Catalog Functions ===
+  public shared ({ caller }) func addGiftArticle(name : Text, description : Text) : async GiftArticleId {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can add gift articles");
+    };
+
+    let id = idCounters.nextGiftArticleId;
+    let article : GiftArticle = { id; name; description };
+    giftArticles.add(id, article);
+    idCounters := {
+      idCounters with
+      nextGiftArticleId = id + 1;
+    };
+    id;
+  };
+
+  public query ({ caller }) func getAllGiftArticles() : async [GiftArticle] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view gift articles");
+    };
+    giftArticles.values().toArray();
+  };
+
+  public shared ({ caller }) func updateGiftArticle(id : GiftArticleId, name : Text, description : Text) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can update gift articles");
+    };
+
+    switch (giftArticles.get(id)) {
+      case (null) { Runtime.trap("Gift article not found") };
+      case (?existing) {
+        let updatedArticle = { id; name; description };
+        giftArticles.add(id, updatedArticle);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteGiftArticle(id : GiftArticleId) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can delete gift articles");
+    };
+
+    switch (giftArticles.get(id)) {
+      case (null) { Runtime.trap("Gift article not found") };
+      case (?_) { giftArticles.remove(id) };
+    };
+  };
+
+  // === Gift Distribution Functions ===
+  public shared ({ caller }) func logGiftDistribution(doctorId : DoctorId, doctorName : Text, giftArticleId : GiftArticleId, giftArticleName : Text, quantity : Nat, date : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can log gift distributions");
+    };
+
+    let id = idCounters.nextGiftDistributionId;
+    let distribution : GiftDistribution = {
+      id;
+      doctorId;
+      doctorName;
+      giftArticleId;
+      giftArticleName;
+      quantity;
+      date;
+      distributedBy = caller;
+    };
+
+    giftDistributions.add(id, distribution);
+    idCounters := {
+      idCounters with
+      nextGiftDistributionId = id + 1;
+    };
+  };
+
+  public query ({ caller }) func getMyGiftDistributions() : async [GiftDistribution] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view their gift distributions");
+    };
+
+    giftDistributions.values().toArray().filter(func(dist) { dist.distributedBy == caller });
+  };
+
+  public query ({ caller }) func getAllGiftDistributions() : async [GiftDistribution] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view all gift distributions");
+    };
+    giftDistributions.values().toArray();
+  };
+
+  // === Gift Demand Order Functions ===
+  public shared ({ caller }) func raiseGiftDemandOrder(giftArticleId : GiftArticleId, giftArticleName : Text, quantity : Nat, notes : Text, date : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can raise gift demand orders");
+    };
+
+    let id = idCounters.nextGiftDemandOrderId;
+    let order : GiftDemandOrder = {
+      id;
+      mrPrincipal = caller;
+      giftArticleId;
+      giftArticleName;
+      quantity;
+      notes;
+      date;
+      status = #Pending;
+      adminRemarks = "";
+    };
+
+    giftDemandOrders.add(id, order);
+    idCounters := {
+      idCounters with
+      nextGiftDemandOrderId = id + 1;
+    };
+  };
+
+  public query ({ caller }) func getMyGiftDemandOrders() : async [GiftDemandOrder] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view their gift demand orders");
+    };
+
+    giftDemandOrders.values().toArray().filter(func(order) { order.mrPrincipal == caller });
+  };
+
+  public query ({ caller }) func getAllGiftDemandOrders() : async [GiftDemandOrder] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view all gift demand orders");
+    };
+    giftDemandOrders.values().toArray();
+  };
+
+  public shared ({ caller }) func updateGiftDemandOrderStatus(orderId : GiftDemandOrderId, newStatus : GiftDemandOrderStatus, adminRemarks : Text) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can update gift demand order status");
+    };
+
+    switch (giftDemandOrders.get(orderId)) {
+      case (null) { Runtime.trap("Gift demand order not found") };
+      case (?existing) {
+        let updatedOrder = {
+          existing with
+          status = newStatus;
+          adminRemarks;
+        };
+        giftDemandOrders.add(orderId, updatedOrder);
+      };
+    };
+  };
+
+  // === Demand Sample Order APIs ===
   public shared ({ caller }) func raiseSampleDemandOrder(productId : ProductId, requestedQty : Nat, date : Text, notes : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can raise sample demand orders");
@@ -310,7 +583,7 @@ actor {
     };
   };
 
-  // Manager Area Assignment Functions
+  // === Manager Area Assignment Functions ===
   public shared ({ caller }) func adminAssignManagerAreas(target : Principal, areaIds : [AreaId]) : async () {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can assign areas to managers");
@@ -334,7 +607,7 @@ actor {
     };
   };
 
-  // Manager Profile Functions - ADMIN ONLY (removed self-service manager creation)
+  // --- Manager Profile Functions: Admin Only (removed self-service) ---
   public shared ({ caller }) func saveManagerProfile(name : Text, employeeCode : Text, headQuarter : Text, managerRole : ManagerRole) : async () {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can create manager profiles");
@@ -364,7 +637,6 @@ actor {
     managerProfiles.entries().toArray();
   };
 
-  // Admin: delete manager profile
   public shared ({ caller }) func deleteManagerProfile(target : Principal) : async () {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can delete manager profiles");
@@ -372,7 +644,7 @@ actor {
     managerProfiles.remove(target);
   };
 
-  // RSM/ASM: view all leave applications
+  // === RSM/ASM: view all leave applications ===
   public query ({ caller }) func getTeamLeaveApplications() : async [(Principal, [LeaveEntry])] {
     if (not (AccessControl.isAdmin(accessControlState, caller)) and not isManager(caller)) {
       Runtime.trap("Unauthorized: Only admins and managers can view team leave applications");
@@ -426,7 +698,7 @@ actor {
     userProfiles.entries().toArray();
   };
 
-  // User Profile Functions
+  // === User Profile Functions ===
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
@@ -466,7 +738,7 @@ actor {
     };
   };
 
-  // Headquarter Management
+  // --- Headquarter Management ---
   public shared ({ caller }) func addHeadquarter(name : Text) : async Nat {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can add headquarters");
@@ -504,7 +776,7 @@ actor {
     };
   };
 
-  // Area Management
+  // --- Area Management ---
   public shared ({ caller }) func addArea(name : Text, headquarterId : Nat) : async AreaId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add areas");
@@ -544,7 +816,7 @@ actor {
     };
   };
 
-  // Doctor Management
+  // --- Doctor Management ---
   public shared ({ caller }) func addDoctor(name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId) : async DoctorId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add doctors");
@@ -569,7 +841,7 @@ actor {
     doctors.values().toArray().sort();
   };
 
-  // Doctor Detailing
+  // --- Doctor Detailing ---
   public shared ({ caller }) func logDetailing(doctorId : DoctorId, date : Text, productIds : [ProductId]) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can log detailing");
@@ -593,7 +865,7 @@ actor {
     };
   };
 
-  // Doctor Samples
+  // --- Doctor Samples ---
   public shared ({ caller }) func logSample(doctorId : DoctorId, date : Text, productId : ProductId, quantity : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can log samples");
@@ -617,7 +889,7 @@ actor {
     };
   };
 
-  // Chemist Management
+  // --- Chemist Management ---
   public shared ({ caller }) func addChemist(name : Text, areaId : AreaId, address : Text, contact : Text) : async ChemistId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add chemists");
@@ -642,7 +914,7 @@ actor {
     chemists.values().toArray().sort();
   };
 
-  // Chemist Orders
+  // --- Chemist Orders ---
   public shared ({ caller }) func addChemistOrder(chemistId : ChemistId, date : Text, productId : ProductId, quantity : Nat, scheme : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add chemist orders");
@@ -666,7 +938,7 @@ actor {
     };
   };
 
-  // Product Master
+  // --- Product Master ---
   public shared ({ caller }) func addProduct(name : Text, code : Text) : async ProductId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add products");
@@ -684,7 +956,7 @@ actor {
     products.values().toArray().sort();
   };
 
-  // Expense Entry
+  // --- Expense Entry ---
   public shared ({ caller }) func addExpense(date : Text, kmTraveled : Nat, daAmount : Nat, notes : Text, taAmountOpt : ?Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add expenses");
@@ -709,7 +981,7 @@ actor {
     };
   };
 
-  // Leave Applications
+  // --- Leave Applications ---
   public shared ({ caller }) func applyLeave(leaveType : LeaveType, fromDate : Text, toDate : Text, days : Nat, reason : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can apply for leave");
@@ -771,7 +1043,7 @@ actor {
     leaveEntries.entries().map(func((p, list)) : (Principal, [LeaveEntry]) { (p, list.toArray()) }).toArray();
   };
 
-  // Dashboard
+  // --- Dashboard ---
   public query ({ caller }) func getActivitySummary(date : Text) : async ActivitySummary {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view activity summary");
@@ -897,10 +1169,7 @@ actor {
     pending.toArray();
   };
 
-  //
-  // New Sample Allotment Functions
-  //
-
+  // --- Sample Allotment Functions ---
   public shared ({ caller }) func adminAllotSamples(target : Principal, productId : ProductId, quantity : Nat, date : Text) : async () {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can create sample allotments");
@@ -938,10 +1207,8 @@ actor {
       Runtime.trap("Unauthorized: Only users can view their sample balance");
     };
 
-    // Build product index for lookup
     let productIndex = products;
 
-    // Aggregate product-wise data
     let productIdsIter = products.keys();
     let resultList = List.empty<SampleBalance>();
 
@@ -976,9 +1243,7 @@ actor {
     resultList.toArray();
   };
 
-  //
-  // Bulk Doctor Upload
-  //
+  // --- Bulk Doctor Upload ---
   public shared ({ caller }) func bulkAddDoctors(doctorsInput : [DoctorInput]) : async [DoctorId] {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can perform bulk upload");

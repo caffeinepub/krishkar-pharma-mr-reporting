@@ -1,28 +1,35 @@
 # Krishkar Pharma MR Reporting
 
 ## Current State
-Full-stack MR reporting app with MR, ASM, RSM, and Admin roles. Backend has all CRUD for profiles, doctors, areas, products, expenses, leaves, samples, chemist orders. MR portal has nav pages: Dashboard, MR Profile, Areas, Doctors, Chemists, Products, Expenses, Leaves, Samples. Admin portal has: Dashboard, Headquarters, MR Management, User Management, Leave Approvals, Products, Doctors, Areas, Sample Management. Employee code is manually entered in MR Profile page. No Excel export in admin portal.
+Multi-role pharma reporting platform with MR, ASM, RSM, and Admin roles. Features: daily working reports (detailing, samples, chemist orders, expenses), leave management, area/doctor/product CRUD, sample allotment and demand orders. No CRM or Gift Distribution features exist.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `MRWorkingDetails` page: A single-page comprehensive form for MR to log their daily work — doctor visit (select doctor + area), product detailing (checkboxes), sample distribution (product + quantity), chemist order (chemist + product + quantity), and daily expense (KM + DA). All in one page with tabbed sections or accordion. Add nav item "Working Details" to MR sidebar and a prominent CTA button on Dashboard.
-- Auto-generate employee code on MRProfile page: when no profile exists (first signup), auto-generate a code in format `KP-YYMM-XXXX` (e.g. KP-2603-4821) and pre-fill the Employee Code field. The field remains editable in case the MR wants to change it.
-- `AdminReports` page in Admin Portal: new nav item "Reports" with export-to-Excel buttons for: MR Profiles, Leave Applications, Doctor List, Team Detailing Entries, Team Expense Entries. Each section shows a preview count and a download button. Uses xlsx (SheetJS) library.
+- **CRM Demand** (Doctor-wise, in Rupees): ASM and RSM can raise a CRM demand specifying doctor, amount (₹), and notes. Admin approves or rejects with remarks.
+- **Gift Article Catalog**: Admin manages a list of gift articles (name, description).
+- **Gift Distribution Entry**: MR can log gift distribution to a doctor in the daily working report (new tab: Gift Distribution — select doctor, gift article, quantity).
+- **Gift Demand Orders**: MR can raise a demand for gift articles (article, quantity, notes). Admin accepts or rejects.
+- **Admin CRM Approvals page**: Lists all pending/approved/rejected CRM demands, admin can approve/reject each.
+- **Admin Gift Orders page**: Lists all gift demand orders, admin can accept/reject.
+- **Admin Report Downloads**: Buttons to download CRM report and Gift Distribution report as CSV/Excel files.
+- **ASM Portal CRM section**: Form to raise a CRM demand (select doctor from assigned areas, enter amount and notes), plus list of own submitted demands with status.
+- **RSM Portal CRM section**: Same as ASM — raise CRM demand, view own list.
 
 ### Modify
-- `App.tsx` MR layout: add `working-details` page to nav items, page titles, and renderPage switch.
-- `MRProfile.tsx`: auto-generate employee code when `profile` is null on first load.
-- `AdminLayout.tsx`: add `reports` page to nav, page titles, and renderPage switch.
-- `Dashboard.tsx` MR: add a prominent "Add Working Details" button that navigates to the working-details page (via a callback prop or shared state).
+- `MRWorkingDetails.tsx`: Add a 5th tab "Gift Distribution" — select doctor, gift article, quantity, submit.
+- Admin portal navigation: Add "CRM Approvals", "Gift Orders", and "Reports" menu items (Reports may already exist — extend it).
+- ASM/RSM layout navbars: Add "CRM Demand" menu item.
 
 ### Remove
 - Nothing removed.
 
 ## Implementation Plan
-1. Install `xlsx` (SheetJS) if not present: add to package.json dependencies.
-2. Create `src/frontend/src/pages/MRWorkingDetails.tsx` — single-page with sections (Date selector at top, then 4 sections: Doctor Visit/Detailing, Sample Distribution, Chemist Order, Daily Expense). Submit each section independently with its own button.
-3. Update `App.tsx` to add `working-details` nav item (icon: ClipboardList) and route, pass `setCurrentPage` to Dashboard.
-4. Update `MRProfile.tsx` to auto-generate employee code when profile is null.
-5. Create `src/frontend/src/pages/admin/AdminReports.tsx` — page with export cards for each report type, using xlsx to generate and trigger download.
-6. Update `AdminLayout.tsx` to add `reports` nav item and render AdminReports.
+1. **Backend (main.mo)**: Add types `CrmDemand`, `CrmDemandStatus`, `GiftArticle`, `GiftDemandOrder`, `GiftDemandStatus`, `GiftDistributionEntry`. Add functions: `raiseCrmDemand`, `getMyCrmDemands`, `getAllCrmDemands`, `updateCrmDemandStatus`, `addGiftArticle`, `getAllGiftArticles`, `deleteGiftArticle`, `logGiftDistribution`, `getMyGiftDistributions`, `getAllGiftDistributions`, `raiseGiftDemandOrder`, `getMyGiftDemandOrders`, `getAllGiftDemandOrders`, `updateGiftDemandOrderStatus`.
+2. **Frontend - MRWorkingDetails.tsx**: Add Tab 5 for Gift Distribution (doctor selector, gift article selector, quantity, submit via `logGiftDistribution`).
+3. **Frontend - ASM/RSM CRM page**: New page `CRMDemand.tsx` for both portals with form to raise demand and list of own demands.
+4. **Frontend - Admin CRM Approvals page**: `AdminCRMApprovals.tsx` listing all CRM demands with approve/reject action.
+5. **Frontend - Admin Gift Orders page**: `AdminGiftOrders.tsx` listing all gift demand orders with accept/reject actions.
+6. **Frontend - Admin Reports**: Extend `AdminReports.tsx` with downloadable CRM and Gift Distribution report buttons (download as CSV).
+7. **Frontend - Admin Gift Articles**: `AdminGiftArticles.tsx` for managing the gift article catalog.
+8. **Update navigation**: ASM layout, RSM layout, Admin layout to include new pages.

@@ -24,6 +24,22 @@ export interface Area {
   'headquarterId' : bigint,
 }
 export type AreaId = bigint;
+export interface CRMDemand {
+  'id' : CRMDemandId,
+  'status' : CRMDemandStatus,
+  'doctorId' : DoctorId,
+  'date' : string,
+  'notes' : string,
+  'raisedBy' : Principal,
+  'doctorName' : string,
+  'amount' : bigint,
+  'raiserName' : string,
+  'adminRemarks' : string,
+}
+export type CRMDemandId = bigint;
+export type CRMDemandStatus = { 'Approved' : null } |
+  { 'Rejected' : null } |
+  { 'Pending' : null };
 export interface Chemist {
   'id' : ChemistId,
   'contact' : string,
@@ -73,6 +89,38 @@ export interface ExpenseEntry {
   'notes' : string,
   'taAmount' : bigint,
 }
+export interface GiftArticle {
+  'id' : GiftArticleId,
+  'name' : string,
+  'description' : string,
+}
+export type GiftArticleId = bigint;
+export interface GiftDemandOrder {
+  'id' : GiftDemandOrderId,
+  'status' : GiftDemandOrderStatus,
+  'mrPrincipal' : Principal,
+  'date' : string,
+  'giftArticleName' : string,
+  'notes' : string,
+  'giftArticleId' : GiftArticleId,
+  'quantity' : bigint,
+  'adminRemarks' : string,
+}
+export type GiftDemandOrderId = bigint;
+export type GiftDemandOrderStatus = { 'Approved' : null } |
+  { 'Rejected' : null } |
+  { 'Pending' : null };
+export interface GiftDistribution {
+  'id' : GiftDistributionId,
+  'doctorId' : DoctorId,
+  'date' : string,
+  'distributedBy' : Principal,
+  'giftArticleName' : string,
+  'giftArticleId' : GiftArticleId,
+  'quantity' : bigint,
+  'doctorName' : string,
+}
+export type GiftDistributionId = bigint;
 export interface Headquarter {
   'id' : bigint,
   'name' : string,
@@ -168,6 +216,7 @@ export interface _SERVICE {
     [string, bigint, bigint, string, [] | [bigint]],
     undefined
   >,
+  'addGiftArticle' : ActorMethod<[string, string], GiftArticleId>,
   'addHeadquarter' : ActorMethod<[string], bigint>,
   'addProduct' : ActorMethod<[string, string], ProductId>,
   'adminAllotSamples' : ActorMethod<
@@ -198,14 +247,19 @@ export interface _SERVICE {
   >,
   'deleteArea' : ActorMethod<[AreaId], undefined>,
   'deleteDoctor' : ActorMethod<[DoctorId], undefined>,
+  'deleteGiftArticle' : ActorMethod<[GiftArticleId], undefined>,
   'deleteHeadquarter' : ActorMethod<[bigint], undefined>,
   'deleteMRProfile' : ActorMethod<[Principal], undefined>,
   'deleteManagerProfile' : ActorMethod<[Principal], undefined>,
   'deleteProduct' : ActorMethod<[ProductId], undefined>,
   'getActivitySummary' : ActorMethod<[string], ActivitySummary>,
   'getAllAreas' : ActorMethod<[], Array<Area>>,
+  'getAllCRMDemands' : ActorMethod<[], Array<CRMDemand>>,
   'getAllChemists' : ActorMethod<[], Array<Chemist>>,
   'getAllDoctors' : ActorMethod<[], Array<Doctor>>,
+  'getAllGiftArticles' : ActorMethod<[], Array<GiftArticle>>,
+  'getAllGiftDemandOrders' : ActorMethod<[], Array<GiftDemandOrder>>,
+  'getAllGiftDistributions' : ActorMethod<[], Array<GiftDistribution>>,
   'getAllHeadquarters' : ActorMethod<[], Array<Headquarter>>,
   'getAllLeaveApplications' : ActorMethod<
     [],
@@ -230,6 +284,9 @@ export interface _SERVICE {
   'getManagerAreas' : ActorMethod<[Principal], ManagerAreaAssignment>,
   'getManagerProfile' : ActorMethod<[], [] | [ManagerProfile]>,
   'getMyAllotments' : ActorMethod<[], Array<SampleAllotment>>,
+  'getMyCRMDemands' : ActorMethod<[], Array<CRMDemand>>,
+  'getMyGiftDemandOrders' : ActorMethod<[], Array<GiftDemandOrder>>,
+  'getMyGiftDistributions' : ActorMethod<[], Array<GiftDistribution>>,
   'getMySampleBalance' : ActorMethod<[], Array<SampleBalance>>,
   'getMySampleDemandOrders' : ActorMethod<[], Array<SampleDemandOrder>>,
   'getSampleEntries' : ActorMethod<[], Array<SampleEntry>>,
@@ -248,7 +305,19 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'logDetailing' : ActorMethod<[DoctorId, string, Array<ProductId>], undefined>,
+  'logGiftDistribution' : ActorMethod<
+    [DoctorId, string, GiftArticleId, string, bigint, string],
+    undefined
+  >,
   'logSample' : ActorMethod<[DoctorId, string, ProductId, bigint], undefined>,
+  'raiseCRMDemand' : ActorMethod<
+    [DoctorId, string, bigint, string, string, string],
+    undefined
+  >,
+  'raiseGiftDemandOrder' : ActorMethod<
+    [GiftArticleId, string, bigint, string, string],
+    undefined
+  >,
   'raiseSampleDemandOrder' : ActorMethod<
     [ProductId, bigint, string, string],
     undefined
@@ -259,8 +328,17 @@ export interface _SERVICE {
     undefined
   >,
   'updateArea' : ActorMethod<[AreaId, string, bigint], undefined>,
+  'updateCRMDemandStatus' : ActorMethod<
+    [CRMDemandId, CRMDemandStatus, string],
+    undefined
+  >,
   'updateDoctor' : ActorMethod<
     [DoctorId, string, string, string, string, AreaId],
+    undefined
+  >,
+  'updateGiftArticle' : ActorMethod<[GiftArticleId, string, string], undefined>,
+  'updateGiftDemandOrderStatus' : ActorMethod<
+    [GiftDemandOrderId, GiftDemandOrderStatus, string],
     undefined
   >,
   'updateHeadquarter' : ActorMethod<[bigint, string], undefined>,

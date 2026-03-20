@@ -1,18 +1,88 @@
 import Map "mo:core/Map";
-import Nat "mo:core/Nat";
+import List "mo:core/List";
 import Principal "mo:core/Principal";
 
 module {
+  type UserProfile = {
+    name : Text;
+    employeeCode : Text;
+    headQuarter : Text;
+  };
+
+  type ManagerRole = { #RSM; #ASM };
+  type ManagerProfile = {
+    name : Text;
+    employeeCode : Text;
+    headQuarter : Text;
+    managerRole : ManagerRole;
+  };
+
+  type Area = {
+    id : Nat;
+    name : Text;
+    headquarterId : Nat;
+    createdBy : Principal;
+  };
+
+  type Headquarter = {
+    id : Nat;
+    name : Text;
+    createdBy : Principal;
+  };
+
+  type DetailedEntry = {
+    doctorId : Nat;
+    date : Text;
+    productIds : [Nat];
+  };
+
+  type SampleEntry = {
+    doctorId : Nat;
+    date : Text;
+    productId : Nat;
+    quantity : Nat;
+  };
+
+  type ChemistOrder = {
+    chemistId : Nat;
+    date : Text;
+    productId : Nat;
+    quantity : Nat;
+    scheme : Text;
+    status : { #pending; #fulfilled };
+  };
+
+  type ExpenseEntry = {
+    date : Text;
+    kmTraveled : Nat;
+    taAmount : Nat;
+    daAmount : Nat;
+    notes : Text;
+  };
+
+  type LeaveEntry = {
+    leaveType : {
+      #CasualLeave;
+      #SickLeave;
+      #EarnedLeave;
+      #PrivilegeLeave;
+      #WithoutPayLeave;
+    };
+    fromDate : Text;
+    toDate : Text;
+    days : Nat;
+    reason : Text;
+    status : { #Pending; #Approved; #Rejected };
+  };
+
   type OldIdCounters = {
     nextAreaId : Nat;
     nextDoctorId : Nat;
     nextProductId : Nat;
     nextChemistId : Nat;
     nextHeadquarterId : Nat;
-  };
-
-  type OldActor = {
-    idCounters : OldIdCounters;
+    nextSampleAllotmentId : Nat;
+    nextDemandOrderId : Nat;
   };
 
   type NewIdCounters = {
@@ -23,44 +93,47 @@ module {
     nextHeadquarterId : Nat;
     nextSampleAllotmentId : Nat;
     nextDemandOrderId : Nat;
+    nextCRMDemandId : Nat;
+    nextGiftArticleId : Nat;
+    nextGiftDistributionId : Nat;
+    nextGiftDemandOrderId : Nat;
+  };
+
+  type OldActor = {
+    userProfiles : Map.Map<Principal, UserProfile>;
+    managerProfiles : Map.Map<Principal, ManagerProfile>;
+    areas : Map.Map<Nat, Area>;
+    headquarters : Map.Map<Nat, Headquarter>;
+    chemistOrders : Map.Map<Principal, List.List<ChemistOrder>>;
+    expenseEntries : Map.Map<Principal, List.List<ExpenseEntry>>;
+    detailingEntries : Map.Map<Principal, List.List<DetailedEntry>>;
+    sampleEntries : Map.Map<Principal, List.List<SampleEntry>>;
+    leaveEntries : Map.Map<Principal, List.List<LeaveEntry>>;
+    idCounters : OldIdCounters;
   };
 
   type NewActor = {
+    userProfiles : Map.Map<Principal, UserProfile>;
+    managerProfiles : Map.Map<Principal, ManagerProfile>;
+    areas : Map.Map<Nat, Area>;
+    headquarters : Map.Map<Nat, Headquarter>;
+    chemistOrders : Map.Map<Principal, List.List<ChemistOrder>>;
+    expenseEntries : Map.Map<Principal, List.List<ExpenseEntry>>;
+    detailingEntries : Map.Map<Principal, List.List<DetailedEntry>>;
+    sampleEntries : Map.Map<Principal, List.List<SampleEntry>>;
+    leaveEntries : Map.Map<Principal, List.List<LeaveEntry>>;
     idCounters : NewIdCounters;
-    sampleAllotments : Map.Map<Nat, SampleAllotment>;
-    sampleDemandOrders : Map.Map<Nat, SampleDemandOrder>;
-  };
-
-  type SampleAllotment = {
-    id : Nat;
-    targetPrincipal : Principal.Principal;
-    productId : Nat;
-    quantity : Nat;
-    date : Text;
-    allocatedBy : Principal.Principal;
-  };
-
-  type DemandOrderStatus = { #Pending; #Approved; #Rejected };
-
-  type SampleDemandOrder = {
-    id : Nat;
-    mrPrincipal : Principal.Principal;
-    productId : Nat;
-    requestedQty : Nat;
-    date : Text;
-    notes : Text;
-    status : DemandOrderStatus;
   };
 
   public func run(old : OldActor) : NewActor {
-    {
-      idCounters = {
-        old.idCounters with
-        nextSampleAllotmentId = 1;
-        nextDemandOrderId = 1;
-      };
-      sampleAllotments = Map.empty<Nat, SampleAllotment>();
-      sampleDemandOrders = Map.empty<Nat, SampleDemandOrder>();
+    let oldCounters = old.idCounters;
+    let newCounters : NewIdCounters = {
+      oldCounters with
+      nextCRMDemandId = 1;
+      nextGiftArticleId = 1;
+      nextGiftDistributionId = 1;
+      nextGiftDemandOrderId = 1;
     };
+    { old with idCounters = newCounters };
   };
 };

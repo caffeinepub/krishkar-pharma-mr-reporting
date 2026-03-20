@@ -12,6 +12,7 @@ export const AreaId = IDL.Nat;
 export const ChemistId = IDL.Nat;
 export const ProductId = IDL.Nat;
 export const DoctorId = IDL.Nat;
+export const GiftArticleId = IDL.Nat;
 export const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
 export const LeaveType = IDL.Variant({
   'WithoutPayLeave' : IDL.Null,
@@ -45,6 +46,24 @@ export const Area = IDL.Record({
   'createdBy' : IDL.Principal,
   'headquarterId' : IDL.Nat,
 });
+export const CRMDemandId = IDL.Nat;
+export const CRMDemandStatus = IDL.Variant({
+  'Approved' : IDL.Null,
+  'Rejected' : IDL.Null,
+  'Pending' : IDL.Null,
+});
+export const CRMDemand = IDL.Record({
+  'id' : CRMDemandId,
+  'status' : CRMDemandStatus,
+  'doctorId' : DoctorId,
+  'date' : IDL.Text,
+  'notes' : IDL.Text,
+  'raisedBy' : IDL.Principal,
+  'doctorName' : IDL.Text,
+  'amount' : IDL.Nat,
+  'raiserName' : IDL.Text,
+  'adminRemarks' : IDL.Text,
+});
 export const Chemist = IDL.Record({
   'id' : ChemistId,
   'contact' : IDL.Text,
@@ -61,6 +80,39 @@ export const Doctor = IDL.Record({
   'specialization' : IDL.Text,
   'areaId' : AreaId,
   'qualification' : IDL.Text,
+});
+export const GiftArticle = IDL.Record({
+  'id' : GiftArticleId,
+  'name' : IDL.Text,
+  'description' : IDL.Text,
+});
+export const GiftDemandOrderId = IDL.Nat;
+export const GiftDemandOrderStatus = IDL.Variant({
+  'Approved' : IDL.Null,
+  'Rejected' : IDL.Null,
+  'Pending' : IDL.Null,
+});
+export const GiftDemandOrder = IDL.Record({
+  'id' : GiftDemandOrderId,
+  'status' : GiftDemandOrderStatus,
+  'mrPrincipal' : IDL.Principal,
+  'date' : IDL.Text,
+  'giftArticleName' : IDL.Text,
+  'notes' : IDL.Text,
+  'giftArticleId' : GiftArticleId,
+  'quantity' : IDL.Nat,
+  'adminRemarks' : IDL.Text,
+});
+export const GiftDistributionId = IDL.Nat;
+export const GiftDistribution = IDL.Record({
+  'id' : GiftDistributionId,
+  'doctorId' : DoctorId,
+  'date' : IDL.Text,
+  'distributedBy' : IDL.Principal,
+  'giftArticleName' : IDL.Text,
+  'giftArticleId' : GiftArticleId,
+  'quantity' : IDL.Nat,
+  'doctorName' : IDL.Text,
 });
 export const Headquarter = IDL.Record({
   'id' : IDL.Nat,
@@ -188,6 +240,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'addGiftArticle' : IDL.Func([IDL.Text, IDL.Text], [GiftArticleId], []),
   'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
   'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
   'adminAllotSamples' : IDL.Func(
@@ -224,14 +277,27 @@ export const idlService = IDL.Service({
     ),
   'deleteArea' : IDL.Func([AreaId], [], []),
   'deleteDoctor' : IDL.Func([DoctorId], [], []),
+  'deleteGiftArticle' : IDL.Func([GiftArticleId], [], []),
   'deleteHeadquarter' : IDL.Func([IDL.Nat], [], []),
   'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
   'deleteManagerProfile' : IDL.Func([IDL.Principal], [], []),
   'deleteProduct' : IDL.Func([ProductId], [], []),
   'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
   'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
+  'getAllCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
   'getAllChemists' : IDL.Func([], [IDL.Vec(Chemist)], ['query']),
   'getAllDoctors' : IDL.Func([], [IDL.Vec(Doctor)], ['query']),
+  'getAllGiftArticles' : IDL.Func([], [IDL.Vec(GiftArticle)], ['query']),
+  'getAllGiftDemandOrders' : IDL.Func(
+      [],
+      [IDL.Vec(GiftDemandOrder)],
+      ['query'],
+    ),
+  'getAllGiftDistributions' : IDL.Func(
+      [],
+      [IDL.Vec(GiftDistribution)],
+      ['query'],
+    ),
   'getAllHeadquarters' : IDL.Func([], [IDL.Vec(Headquarter)], ['query']),
   'getAllLeaveApplications' : IDL.Func(
       [],
@@ -281,6 +347,13 @@ export const idlService = IDL.Service({
     ),
   'getManagerProfile' : IDL.Func([], [IDL.Opt(ManagerProfile)], ['query']),
   'getMyAllotments' : IDL.Func([], [IDL.Vec(SampleAllotment)], ['query']),
+  'getMyCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
+  'getMyGiftDemandOrders' : IDL.Func([], [IDL.Vec(GiftDemandOrder)], ['query']),
+  'getMyGiftDistributions' : IDL.Func(
+      [],
+      [IDL.Vec(GiftDistribution)],
+      ['query'],
+    ),
   'getMySampleBalance' : IDL.Func([], [IDL.Vec(SampleBalance)], ['query']),
   'getMySampleDemandOrders' : IDL.Func(
       [],
@@ -310,7 +383,22 @@ export const idlService = IDL.Service({
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
+  'logGiftDistribution' : IDL.Func(
+      [DoctorId, IDL.Text, GiftArticleId, IDL.Text, IDL.Nat, IDL.Text],
+      [],
+      [],
+    ),
   'logSample' : IDL.Func([DoctorId, IDL.Text, ProductId, IDL.Nat], [], []),
+  'raiseCRMDemand' : IDL.Func(
+      [DoctorId, IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+      [],
+      [],
+    ),
+  'raiseGiftDemandOrder' : IDL.Func(
+      [GiftArticleId, IDL.Text, IDL.Nat, IDL.Text, IDL.Text],
+      [],
+      [],
+    ),
   'raiseSampleDemandOrder' : IDL.Func(
       [ProductId, IDL.Nat, IDL.Text, IDL.Text],
       [],
@@ -323,8 +411,19 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateArea' : IDL.Func([AreaId, IDL.Text, IDL.Nat], [], []),
+  'updateCRMDemandStatus' : IDL.Func(
+      [CRMDemandId, CRMDemandStatus, IDL.Text],
+      [],
+      [],
+    ),
   'updateDoctor' : IDL.Func(
       [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
+      [],
+      [],
+    ),
+  'updateGiftArticle' : IDL.Func([GiftArticleId, IDL.Text, IDL.Text], [], []),
+  'updateGiftDemandOrderStatus' : IDL.Func(
+      [GiftDemandOrderId, GiftDemandOrderStatus, IDL.Text],
       [],
       [],
     ),
@@ -350,6 +449,7 @@ export const idlFactory = ({ IDL }) => {
   const ChemistId = IDL.Nat;
   const ProductId = IDL.Nat;
   const DoctorId = IDL.Nat;
+  const GiftArticleId = IDL.Nat;
   const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
   const LeaveType = IDL.Variant({
     'WithoutPayLeave' : IDL.Null,
@@ -383,6 +483,24 @@ export const idlFactory = ({ IDL }) => {
     'createdBy' : IDL.Principal,
     'headquarterId' : IDL.Nat,
   });
+  const CRMDemandId = IDL.Nat;
+  const CRMDemandStatus = IDL.Variant({
+    'Approved' : IDL.Null,
+    'Rejected' : IDL.Null,
+    'Pending' : IDL.Null,
+  });
+  const CRMDemand = IDL.Record({
+    'id' : CRMDemandId,
+    'status' : CRMDemandStatus,
+    'doctorId' : DoctorId,
+    'date' : IDL.Text,
+    'notes' : IDL.Text,
+    'raisedBy' : IDL.Principal,
+    'doctorName' : IDL.Text,
+    'amount' : IDL.Nat,
+    'raiserName' : IDL.Text,
+    'adminRemarks' : IDL.Text,
+  });
   const Chemist = IDL.Record({
     'id' : ChemistId,
     'contact' : IDL.Text,
@@ -399,6 +517,39 @@ export const idlFactory = ({ IDL }) => {
     'specialization' : IDL.Text,
     'areaId' : AreaId,
     'qualification' : IDL.Text,
+  });
+  const GiftArticle = IDL.Record({
+    'id' : GiftArticleId,
+    'name' : IDL.Text,
+    'description' : IDL.Text,
+  });
+  const GiftDemandOrderId = IDL.Nat;
+  const GiftDemandOrderStatus = IDL.Variant({
+    'Approved' : IDL.Null,
+    'Rejected' : IDL.Null,
+    'Pending' : IDL.Null,
+  });
+  const GiftDemandOrder = IDL.Record({
+    'id' : GiftDemandOrderId,
+    'status' : GiftDemandOrderStatus,
+    'mrPrincipal' : IDL.Principal,
+    'date' : IDL.Text,
+    'giftArticleName' : IDL.Text,
+    'notes' : IDL.Text,
+    'giftArticleId' : GiftArticleId,
+    'quantity' : IDL.Nat,
+    'adminRemarks' : IDL.Text,
+  });
+  const GiftDistributionId = IDL.Nat;
+  const GiftDistribution = IDL.Record({
+    'id' : GiftDistributionId,
+    'doctorId' : DoctorId,
+    'date' : IDL.Text,
+    'distributedBy' : IDL.Principal,
+    'giftArticleName' : IDL.Text,
+    'giftArticleId' : GiftArticleId,
+    'quantity' : IDL.Nat,
+    'doctorName' : IDL.Text,
   });
   const Headquarter = IDL.Record({
     'id' : IDL.Nat,
@@ -524,6 +675,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'addGiftArticle' : IDL.Func([IDL.Text, IDL.Text], [GiftArticleId], []),
     'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
     'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
     'adminAllotSamples' : IDL.Func(
@@ -564,14 +716,27 @@ export const idlFactory = ({ IDL }) => {
       ),
     'deleteArea' : IDL.Func([AreaId], [], []),
     'deleteDoctor' : IDL.Func([DoctorId], [], []),
+    'deleteGiftArticle' : IDL.Func([GiftArticleId], [], []),
     'deleteHeadquarter' : IDL.Func([IDL.Nat], [], []),
     'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
     'deleteManagerProfile' : IDL.Func([IDL.Principal], [], []),
     'deleteProduct' : IDL.Func([ProductId], [], []),
     'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
     'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
+    'getAllCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
     'getAllChemists' : IDL.Func([], [IDL.Vec(Chemist)], ['query']),
     'getAllDoctors' : IDL.Func([], [IDL.Vec(Doctor)], ['query']),
+    'getAllGiftArticles' : IDL.Func([], [IDL.Vec(GiftArticle)], ['query']),
+    'getAllGiftDemandOrders' : IDL.Func(
+        [],
+        [IDL.Vec(GiftDemandOrder)],
+        ['query'],
+      ),
+    'getAllGiftDistributions' : IDL.Func(
+        [],
+        [IDL.Vec(GiftDistribution)],
+        ['query'],
+      ),
     'getAllHeadquarters' : IDL.Func([], [IDL.Vec(Headquarter)], ['query']),
     'getAllLeaveApplications' : IDL.Func(
         [],
@@ -621,6 +786,17 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getManagerProfile' : IDL.Func([], [IDL.Opt(ManagerProfile)], ['query']),
     'getMyAllotments' : IDL.Func([], [IDL.Vec(SampleAllotment)], ['query']),
+    'getMyCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
+    'getMyGiftDemandOrders' : IDL.Func(
+        [],
+        [IDL.Vec(GiftDemandOrder)],
+        ['query'],
+      ),
+    'getMyGiftDistributions' : IDL.Func(
+        [],
+        [IDL.Vec(GiftDistribution)],
+        ['query'],
+      ),
     'getMySampleBalance' : IDL.Func([], [IDL.Vec(SampleBalance)], ['query']),
     'getMySampleDemandOrders' : IDL.Func(
         [],
@@ -650,7 +826,22 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
+    'logGiftDistribution' : IDL.Func(
+        [DoctorId, IDL.Text, GiftArticleId, IDL.Text, IDL.Nat, IDL.Text],
+        [],
+        [],
+      ),
     'logSample' : IDL.Func([DoctorId, IDL.Text, ProductId, IDL.Nat], [], []),
+    'raiseCRMDemand' : IDL.Func(
+        [DoctorId, IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+        [],
+        [],
+      ),
+    'raiseGiftDemandOrder' : IDL.Func(
+        [GiftArticleId, IDL.Text, IDL.Nat, IDL.Text, IDL.Text],
+        [],
+        [],
+      ),
     'raiseSampleDemandOrder' : IDL.Func(
         [ProductId, IDL.Nat, IDL.Text, IDL.Text],
         [],
@@ -663,8 +854,19 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateArea' : IDL.Func([AreaId, IDL.Text, IDL.Nat], [], []),
+    'updateCRMDemandStatus' : IDL.Func(
+        [CRMDemandId, CRMDemandStatus, IDL.Text],
+        [],
+        [],
+      ),
     'updateDoctor' : IDL.Func(
         [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
+        [],
+        [],
+      ),
+    'updateGiftArticle' : IDL.Func([GiftArticleId, IDL.Text, IDL.Text], [], []),
+    'updateGiftDemandOrderStatus' : IDL.Func(
+        [GiftDemandOrderId, GiftDemandOrderStatus, IDL.Text],
         [],
         [],
       ),

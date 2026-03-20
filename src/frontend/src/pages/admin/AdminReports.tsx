@@ -130,13 +130,26 @@ export default function AdminReports() {
     enabled,
   });
 
+  const { data: crmDemands = [], isLoading: loadingCRM } = useQuery({
+    queryKey: ["all-crm-demands"],
+    queryFn: () => actor!.getAllCRMDemands(),
+    enabled,
+  });
+
+  const { data: giftDistributions = [], isLoading: loadingGiftDist } = useQuery(
+    {
+      queryKey: ["all-gift-distributions"],
+      queryFn: () => actor!.getAllGiftDistributions(),
+      enabled,
+    },
+  );
+
   // Build lookup maps
   const userMap = new Map(userProfiles.map(([p, u]) => [p.toString(), u]));
   const areaMap = new Map(areas.map((a) => [String(a.id), a.name]));
   const productMap = new Map(allProducts.map((p) => [String(p.id), p.name]));
   const doctorMap = new Map(doctors.map((d) => [String(d.id), d.name]));
 
-  // ── Export: MR Profiles ──────────────────────────────────
   const exportMRProfiles = () => {
     const data = mrProfiles.map(([principal, mrp]) => ({
       "Employee Code": mrp.employeeCode,
@@ -148,7 +161,6 @@ export default function AdminReports() {
     exportToExcel(data, "MR_Profiles_Report");
   };
 
-  // ── Export: Leave Applications ───────────────────────────
   const leaveRows = leaveApps.flatMap(([principal, leaves]) =>
     leaves.map((l) => ({
       "Employee Name": userMap.get(principal.toString())?.name ?? "N/A",
@@ -163,7 +175,6 @@ export default function AdminReports() {
   const exportLeaves = () =>
     exportToExcel(leaveRows, "Leave_Applications_Report");
 
-  // ── Export: Doctors ──────────────────────────────────────
   const exportDoctors = () => {
     const data = doctors.map((d) => ({
       "Doctor Name": d.name,
@@ -175,7 +186,6 @@ export default function AdminReports() {
     exportToExcel(data, "Doctor_List_Report");
   };
 
-  // ── Export: Team Detailing ───────────────────────────────
   const detailingRows = teamDetailings.flatMap(([principal, entries]) =>
     entries.map((e) => ({
       "MR Name": userMap.get(principal.toString())?.name ?? "N/A",
@@ -189,7 +199,6 @@ export default function AdminReports() {
   const exportDetailings = () =>
     exportToExcel(detailingRows, "Team_Detailing_Report");
 
-  // ── Export: Team Expenses ────────────────────────────────
   const expenseRows = teamExpenses.flatMap(([principal, entries]) =>
     entries.map((e) => ({
       "MR Name": userMap.get(principal.toString())?.name ?? "N/A",
@@ -203,6 +212,27 @@ export default function AdminReports() {
   );
   const exportExpenses = () =>
     exportToExcel(expenseRows, "Team_Expense_Report");
+
+  const crmRows = crmDemands.map((d) => ({
+    "Raised By": d.raiserName,
+    "Doctor Name": d.doctorName,
+    "Amount (\u20b9)": Number(d.amount),
+    Date: d.date,
+    Notes: d.notes || "",
+    Status: String(d.status),
+    "Admin Remarks": d.adminRemarks || "",
+  }));
+  const exportCRM = () => exportToExcel(crmRows, "CRM_Demands_Report");
+
+  const giftDistRows = giftDistributions.map((g) => ({
+    "Distributed By": `${g.distributedBy.toString().slice(0, 8)}...`,
+    "Doctor Name": g.doctorName,
+    "Gift Article": g.giftArticleName,
+    Quantity: Number(g.quantity),
+    Date: g.date,
+  }));
+  const exportGiftDist = () =>
+    exportToExcel(giftDistRows, "Gift_Distribution_Report");
 
   const isLoadingMRCard = loadingMR || loadingUsers;
   const isLoadingLeaveCard = loadingLeaves || loadingUsers;
@@ -264,6 +294,22 @@ export default function AdminReports() {
           isLoading={isLoadingExpenseCard}
           onExport={exportExpenses}
           exportId="expenses"
+        />
+        <ReportCard
+          title="CRM Demand Report"
+          description="All CRM demands by ASM & RSM with approval status"
+          count={crmRows.length}
+          isLoading={loadingCRM}
+          onExport={exportCRM}
+          exportId="crm_demands"
+        />
+        <ReportCard
+          title="Gift Distribution Report"
+          description="All gift articles distributed to doctors by MRs"
+          count={giftDistRows.length}
+          isLoading={loadingGiftDist}
+          onExport={exportGiftDist}
+          exportId="gift_distributions"
         />
       </div>
     </div>

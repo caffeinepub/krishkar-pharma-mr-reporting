@@ -18,6 +18,7 @@ import {
   ClipboardList,
   DollarSign,
   FlaskConical,
+  Gift,
   Loader2,
   ShoppingBag,
   Stethoscope,
@@ -31,29 +32,37 @@ export default function MRWorkingDetails() {
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
 
+  const enabled = !!actor && !isFetching;
+
   // ── Data Queries ──────────────────────────────────────────
   const { data: areas = [] } = useQuery({
     queryKey: ["areas"],
     queryFn: () => actor!.getAllAreas(),
-    enabled: !!actor && !isFetching,
+    enabled,
   });
 
   const { data: allDoctors = [] } = useQuery({
     queryKey: ["doctors"],
     queryFn: () => actor!.getAllDoctors(),
-    enabled: !!actor && !isFetching,
+    enabled,
   });
 
   const { data: allChemists = [] } = useQuery({
     queryKey: ["chemists"],
     queryFn: () => actor!.getAllChemists(),
-    enabled: !!actor && !isFetching,
+    enabled,
   });
 
   const { data: allProducts = [] } = useQuery({
     queryKey: ["products"],
     queryFn: () => actor!.getAllProducts(),
-    enabled: !!actor && !isFetching,
+    enabled,
+  });
+
+  const { data: giftArticles = [] } = useQuery({
+    queryKey: ["gift-articles"],
+    queryFn: () => actor!.getAllGiftArticles(),
+    enabled,
   });
 
   // ── Section 1: Doctor Visit ───────────────────────────────
@@ -165,6 +174,64 @@ export default function MRWorkingDetails() {
     onError: () => toast.error("Failed to log expense"),
   });
 
+  // ── Section 5: Gift Distribution ─────────────────────────
+  const [giftDoctorId, setGiftDoctorId] = useState("");
+  const [giftArticleId, setGiftArticleId] = useState("");
+  const [giftQty, setGiftQty] = useState("");
+
+  const giftDistMutation = useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("No actor");
+      const doctor = allDoctors.find((d) => String(d.id) === giftDoctorId);
+      const article = giftArticles.find((a) => String(a.id) === giftArticleId);
+      if (!doctor || !article) throw new Error("Invalid selection");
+      await actor.logGiftDistribution(
+        BigInt(giftDoctorId),
+        doctor.name,
+        BigInt(giftArticleId),
+        article.name,
+        BigInt(giftQty),
+        date,
+      );
+    },
+    onSuccess: () => {
+      toast.success("Gift distribution logged");
+      setGiftDoctorId("");
+      setGiftArticleId("");
+      setGiftQty("");
+    },
+    onError: () => toast.error("Failed to log gift distribution"),
+  });
+
+  // ── Section 6: Gift Demand Order ─────────────────────────
+  const [demandArticleId, setDemandArticleId] = useState("");
+  const [demandQty, setDemandQty] = useState("");
+  const [demandNotes, setDemandNotes] = useState("");
+
+  const giftDemandMutation = useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("No actor");
+      const article = giftArticles.find(
+        (a) => String(a.id) === demandArticleId,
+      );
+      if (!article) throw new Error("Invalid selection");
+      await actor.raiseGiftDemandOrder(
+        BigInt(demandArticleId),
+        article.name,
+        BigInt(demandQty),
+        demandNotes,
+        date,
+      );
+    },
+    onSuccess: () => {
+      toast.success("Gift demand order raised!");
+      setDemandArticleId("");
+      setDemandQty("");
+      setDemandNotes("");
+    },
+    onError: () => toast.error("Failed to raise gift demand"),
+  });
+
   const toggleProduct = (id: string) => {
     setSelectedProductIds((prev) => {
       const next = new Set(prev);
@@ -210,7 +277,7 @@ export default function MRWorkingDetails() {
       </div>
 
       <Tabs defaultValue="detailing">
-        <TabsList className="grid w-full grid-cols-4 bg-[#F8FAFC] border border-[#E5EAF2]">
+        <TabsList className="grid w-full grid-cols-6 bg-[#F8FAFC] border border-[#E5EAF2]">
           <TabsTrigger
             value="detailing"
             data-ocid="working_details.detailing.tab"
@@ -230,7 +297,7 @@ export default function MRWorkingDetails() {
             data-ocid="working_details.orders.tab"
             className="flex items-center gap-1.5 text-xs"
           >
-            <ShoppingBag size={14} /> Chemist Order
+            <ShoppingBag size={14} /> Chemist
           </TabsTrigger>
           <TabsTrigger
             value="expenses"
@@ -238,6 +305,20 @@ export default function MRWorkingDetails() {
             className="flex items-center gap-1.5 text-xs"
           >
             <DollarSign size={14} /> Expenses
+          </TabsTrigger>
+          <TabsTrigger
+            value="gift-dist"
+            data-ocid="working_details.gift_dist.tab"
+            className="flex items-center gap-1.5 text-xs"
+          >
+            <Gift size={14} /> Gift Dist.
+          </TabsTrigger>
+          <TabsTrigger
+            value="gift-demand"
+            data-ocid="working_details.gift_demand.tab"
+            className="flex items-center gap-1.5 text-xs"
+          >
+            <Gift size={14} /> Gift Order
           </TabsTrigger>
         </TabsList>
 
@@ -672,7 +753,6 @@ export default function MRWorkingDetails() {
                 </div>
               </div>
 
-              {/* TA Calculation Live Preview */}
               {expenseKm && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">
@@ -732,6 +812,215 @@ export default function MRWorkingDetails() {
                 ) : (
                   <>
                     <DollarSign className="mr-2 h-4 w-4" /> Log Daily Expense
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Section 5: Gift Distribution ── */}
+        <TabsContent value="gift-dist">
+          <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
+            <CardHeader className="border-b border-[#F1F5F9] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold text-gray-900">
+                    Gift Distribution
+                  </CardTitle>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Record gift articles distributed to doctors
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Select Doctor
+                  </Label>
+                  <Select value={giftDoctorId} onValueChange={setGiftDoctorId}>
+                    <SelectTrigger
+                      data-ocid="working_details.gift_doctor.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue placeholder="Select doctor..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allDoctors.map((doc) => (
+                        <SelectItem key={String(doc.id)} value={String(doc.id)}>
+                          {doc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Gift Article
+                  </Label>
+                  <Select
+                    value={giftArticleId}
+                    onValueChange={setGiftArticleId}
+                  >
+                    <SelectTrigger
+                      data-ocid="working_details.gift_article.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue placeholder="Select gift article..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {giftArticles.length === 0 ? (
+                        <SelectItem value="__none" disabled>
+                          No articles available
+                        </SelectItem>
+                      ) : (
+                        giftArticles.map((a) => (
+                          <SelectItem key={String(a.id)} value={String(a.id)}>
+                            {a.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700">
+                  Quantity
+                </Label>
+                <Input
+                  type="number"
+                  data-ocid="working_details.gift_qty.input"
+                  value={giftQty}
+                  onChange={(e) => setGiftQty(e.target.value)}
+                  placeholder="Enter quantity"
+                  min="1"
+                  className="border-[#E5EAF2]"
+                />
+              </div>
+              <Button
+                data-ocid="working_details.gift_dist.submit_button"
+                className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+                onClick={() => giftDistMutation.mutate()}
+                disabled={
+                  giftDistMutation.isPending ||
+                  !giftDoctorId ||
+                  !giftArticleId ||
+                  !giftQty
+                }
+              >
+                {giftDistMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging...
+                  </>
+                ) : (
+                  <>
+                    <Gift className="mr-2 h-4 w-4" /> Log Gift Distribution
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Section 6: Gift Demand Order ── */}
+        <TabsContent value="gift-demand">
+          <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
+            <CardHeader className="border-b border-[#F1F5F9] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold text-gray-900">
+                    Gift Demand Order
+                  </CardTitle>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Raise a demand for gift articles from admin
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Gift Article
+                  </Label>
+                  <Select
+                    value={demandArticleId}
+                    onValueChange={setDemandArticleId}
+                  >
+                    <SelectTrigger
+                      data-ocid="working_details.demand_article.select"
+                      className="border-[#E5EAF2]"
+                    >
+                      <SelectValue placeholder="Select gift article..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {giftArticles.length === 0 ? (
+                        <SelectItem value="__none" disabled>
+                          No articles available
+                        </SelectItem>
+                      ) : (
+                        giftArticles.map((a) => (
+                          <SelectItem key={String(a.id)} value={String(a.id)}>
+                            {a.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Quantity
+                  </Label>
+                  <Input
+                    type="number"
+                    data-ocid="working_details.demand_qty.input"
+                    value={demandQty}
+                    onChange={(e) => setDemandQty(e.target.value)}
+                    placeholder="Enter quantity needed"
+                    min="1"
+                    className="border-[#E5EAF2]"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700">
+                  Notes (Optional)
+                </Label>
+                <Textarea
+                  data-ocid="working_details.demand_notes.textarea"
+                  value={demandNotes}
+                  onChange={(e) => setDemandNotes(e.target.value)}
+                  placeholder="Reason or purpose..."
+                  className="border-[#E5EAF2] resize-none"
+                  rows={3}
+                />
+              </div>
+              <Button
+                data-ocid="working_details.gift_demand.submit_button"
+                className="bg-orange-600 hover:bg-orange-700 text-white w-full"
+                onClick={() => giftDemandMutation.mutate()}
+                disabled={
+                  giftDemandMutation.isPending || !demandArticleId || !demandQty
+                }
+              >
+                {giftDemandMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Gift className="mr-2 h-4 w-4" /> Raise Gift Demand Order
                   </>
                 )}
               </Button>

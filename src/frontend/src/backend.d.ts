@@ -18,6 +18,28 @@ export interface MRProfile {
     assignedAreas: Array<AreaId>;
     headQuarter: string;
 }
+export interface GiftDistribution {
+    id: GiftDistributionId;
+    doctorId: DoctorId;
+    date: string;
+    distributedBy: Principal;
+    giftArticleName: string;
+    giftArticleId: GiftArticleId;
+    quantity: bigint;
+    doctorName: string;
+}
+export interface CRMDemand {
+    id: CRMDemandId;
+    status: CRMDemandStatus;
+    doctorId: DoctorId;
+    date: string;
+    notes: string;
+    raisedBy: Principal;
+    doctorName: string;
+    amount: bigint;
+    raiserName: string;
+    adminRemarks: string;
+}
 export interface DoctorInput {
     station: string;
     name: string;
@@ -34,6 +56,7 @@ export interface SampleDemandOrder {
     requestedQty: bigint;
     notes: string;
 }
+export type CRMDemandId = bigint;
 export interface ManagerAreaAssignment {
     areaIds: Array<AreaId>;
 }
@@ -46,12 +69,30 @@ export interface Doctor {
     areaId: AreaId;
     qualification: string;
 }
+export interface GiftDemandOrder {
+    id: GiftDemandOrderId;
+    status: GiftDemandOrderStatus;
+    mrPrincipal: Principal;
+    date: string;
+    giftArticleName: string;
+    notes: string;
+    giftArticleId: GiftArticleId;
+    quantity: bigint;
+    adminRemarks: string;
+}
 export interface ExpenseEntry {
     daAmount: bigint;
     date: string;
     kmTraveled: bigint;
     notes: string;
     taAmount: bigint;
+}
+export interface SampleBalance {
+    balance: bigint;
+    totalDistributed: bigint;
+    productId: ProductId;
+    productName: string;
+    totalAllotted: bigint;
 }
 export interface Chemist {
     id: ChemistId;
@@ -61,19 +102,14 @@ export interface Chemist {
     address: string;
     areaId: AreaId;
 }
-export interface SampleBalance {
-    balance: bigint;
-    totalDistributed: bigint;
-    productId: ProductId;
-    productName: string;
-    totalAllotted: bigint;
-}
+export type GiftArticleId = bigint;
 export interface SampleEntry {
     doctorId: DoctorId;
     date: string;
     productId: ProductId;
     quantity: bigint;
 }
+export type GiftDemandOrderId = bigint;
 export type DoctorId = bigint;
 export interface DetailingEntry {
     doctorId: DoctorId;
@@ -81,6 +117,11 @@ export interface DetailingEntry {
     date: string;
 }
 export type ChemistId = bigint;
+export interface GiftArticle {
+    id: GiftArticleId;
+    name: string;
+    description: string;
+}
 export interface Headquarter {
     id: bigint;
     name: string;
@@ -117,6 +158,7 @@ export interface Area {
 }
 export type AreaId = bigint;
 export type ProductId = bigint;
+export type GiftDistributionId = bigint;
 export interface SampleAllotment {
     id: bigint;
     date: string;
@@ -136,7 +178,17 @@ export interface Product {
     name: string;
     createdBy: Principal;
 }
-export enum LeaveStatus {
+export enum CRMDemandStatus {
+    Pending = "Pending",
+    Approved = "Approved",
+    Rejected = "Rejected"
+}
+export enum GiftDemandOrderStatus {
+    Pending = "Pending",
+    Approved = "Approved",
+    Rejected = "Rejected"
+}
+export enum DemandOrderStatus {
     Approved = "Approved",
     Rejected = "Rejected",
     Pending = "Pending"
@@ -147,6 +199,11 @@ export enum LeaveType {
     EarnedLeave = "EarnedLeave",
     SickLeave = "SickLeave",
     PrivilegeLeave = "PrivilegeLeave"
+}
+export enum LeaveStatus {
+    Pending = "Pending",
+    Approved = "Approved",
+    Rejected = "Rejected"
 }
 export enum ManagerRole {
     ASM = "ASM",
@@ -167,6 +224,7 @@ export interface backendInterface {
     addChemistOrder(chemistId: ChemistId, date: string, productId: ProductId, quantity: bigint, scheme: string): Promise<void>;
     addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId): Promise<DoctorId>;
     addExpense(date: string, kmTraveled: bigint, daAmount: bigint, notes: string, taAmountOpt: bigint | null): Promise<void>;
+    addGiftArticle(name: string, description: string): Promise<GiftArticleId>;
     addHeadquarter(name: string): Promise<bigint>;
     addProduct(name: string, code: string): Promise<ProductId>;
     adminAllotSamples(target: Principal, productId: ProductId, quantity: bigint, date: string): Promise<void>;
@@ -179,14 +237,19 @@ export interface backendInterface {
     createOrUpdateMRProfile(employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
     deleteArea(id: AreaId): Promise<void>;
     deleteDoctor(id: DoctorId): Promise<void>;
+    deleteGiftArticle(id: GiftArticleId): Promise<void>;
     deleteHeadquarter(id: bigint): Promise<void>;
     deleteMRProfile(mrPrincipal: Principal): Promise<void>;
     deleteManagerProfile(target: Principal): Promise<void>;
     deleteProduct(id: ProductId): Promise<void>;
     getActivitySummary(date: string): Promise<ActivitySummary>;
     getAllAreas(): Promise<Array<Area>>;
+    getAllCRMDemands(): Promise<Array<CRMDemand>>;
     getAllChemists(): Promise<Array<Chemist>>;
     getAllDoctors(): Promise<Array<Doctor>>;
+    getAllGiftArticles(): Promise<Array<GiftArticle>>;
+    getAllGiftDemandOrders(): Promise<Array<GiftDemandOrder>>;
+    getAllGiftDistributions(): Promise<Array<GiftDistribution>>;
     getAllHeadquarters(): Promise<Array<Headquarter>>;
     getAllLeaveApplications(): Promise<Array<[Principal, Array<LeaveEntry>]>>;
     getAllMRProfiles(): Promise<Array<[Principal, MRProfile]>>;
@@ -208,6 +271,9 @@ export interface backendInterface {
     getManagerAreas(target: Principal): Promise<ManagerAreaAssignment>;
     getManagerProfile(): Promise<ManagerProfile | null>;
     getMyAllotments(): Promise<Array<SampleAllotment>>;
+    getMyCRMDemands(): Promise<Array<CRMDemand>>;
+    getMyGiftDemandOrders(): Promise<Array<GiftDemandOrder>>;
+    getMyGiftDistributions(): Promise<Array<GiftDistribution>>;
     getMySampleBalance(): Promise<Array<SampleBalance>>;
     getMySampleDemandOrders(): Promise<Array<SampleDemandOrder>>;
     getSampleEntries(): Promise<Array<SampleEntry>>;
@@ -217,12 +283,18 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>): Promise<void>;
+    logGiftDistribution(doctorId: DoctorId, doctorName: string, giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, date: string): Promise<void>;
     logSample(doctorId: DoctorId, date: string, productId: ProductId, quantity: bigint): Promise<void>;
+    raiseCRMDemand(doctorId: DoctorId, doctorName: string, amount: bigint, notes: string, date: string, raiserName: string): Promise<void>;
+    raiseGiftDemandOrder(giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, notes: string, date: string): Promise<void>;
     raiseSampleDemandOrder(productId: ProductId, requestedQty: bigint, date: string, notes: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveManagerProfile(name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     updateArea(id: AreaId, name: string, headquarterId: bigint): Promise<void>;
+    updateCRMDemandStatus(demandId: CRMDemandId, newStatus: CRMDemandStatus, adminRemarks: string): Promise<void>;
     updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId): Promise<void>;
+    updateGiftArticle(id: GiftArticleId, name: string, description: string): Promise<void>;
+    updateGiftDemandOrderStatus(orderId: GiftDemandOrderId, newStatus: GiftDemandOrderStatus, adminRemarks: string): Promise<void>;
     updateHeadquarter(id: bigint, name: string): Promise<void>;
     updateLeaveStatus(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;
     updateLeaveStatusByManager(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   CalendarCheck,
+  IndianRupee,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -10,22 +11,25 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
+import ASMCRMDemand from "./ASMCRMDemand";
 import ASMDashboard from "./ASMDashboard";
 import ASMLeaveApprovals from "./ASMLeaveApprovals";
 import ASMTeamReports from "./ASMTeamReports";
 
-type ASMPage = "dashboard" | "leave-approvals" | "team-reports";
+type ASMPage = "dashboard" | "leave-approvals" | "team-reports" | "crm-demand";
 
 const navItems: { id: ASMPage; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
+  { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
 ];
 
 const pageTitles: Record<ASMPage, string> = {
   dashboard: "ASM Dashboard",
   "leave-approvals": "Leave Approvals",
   "team-reports": "Team Reports",
+  "crm-demand": "CRM Demand",
 };
 
 export default function ASMLayout() {
@@ -47,19 +51,19 @@ export default function ASMLayout() {
         return <ASMLeaveApprovals />;
       case "team-reports":
         return <ASMTeamReports />;
+      case "crm-demand":
+        return <ASMCRMDemand />;
     }
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
       <aside
         className={`flex flex-col flex-shrink-0 transition-all duration-300 ${sidebarOpen ? "w-64" : "w-0 overflow-hidden"}`}
         style={{
           background: "linear-gradient(180deg, #0B2F6B 0%, #06224F 100%)",
         }}
       >
-        {/* Brand */}
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0 p-1">
@@ -79,8 +83,6 @@ export default function ASMLayout() {
             </div>
           </div>
         </div>
-
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <p className="text-white/40 text-xs font-semibold uppercase tracking-widest px-2 mb-3">
             ASM Menu
@@ -106,8 +108,6 @@ export default function ASMLayout() {
             );
           })}
         </nav>
-
-        {/* User */}
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
@@ -136,8 +136,6 @@ export default function ASMLayout() {
           </Button>
         </div>
       </aside>
-
-      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-[#E5EAF2] px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
@@ -172,9 +170,7 @@ export default function ASMLayout() {
             </p>
           </div>
         </header>
-
         <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
-
         <footer className="bg-white border-t border-[#E5EAF2] px-6 py-3 flex-shrink-0">
           <p className="text-xs text-gray-400 text-center">
             © {new Date().getFullYear()}. Built with ❤️ using{" "}
@@ -189,7 +185,6 @@ export default function ASMLayout() {
           </p>
         </footer>
       </div>
-
       <Toaster />
     </div>
   );

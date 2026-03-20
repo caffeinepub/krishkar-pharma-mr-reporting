@@ -6,12 +6,15 @@ import {
   CalendarCheck,
   Copy,
   FlaskConical,
+  Gift,
+  IndianRupee,
   LayoutDashboard,
   LogOut,
   MapPin,
   Menu,
   Package,
   Shield,
+  ShoppingBag,
   Stethoscope,
   User,
   UserCog,
@@ -22,8 +25,11 @@ import { toast } from "sonner";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 import AdminAreas from "./AdminAreas";
+import AdminCRMApprovals from "./AdminCRMApprovals";
 import AdminDashboard from "./AdminDashboard";
 import AdminDoctors from "./AdminDoctors";
+import AdminGiftArticles from "./AdminGiftArticles";
+import AdminGiftOrders from "./AdminGiftOrders";
 import AdminHeadquarters from "./AdminHeadquarters";
 import AdminProducts from "./AdminProducts";
 import AdminReports from "./AdminReports";
@@ -42,7 +48,10 @@ type AdminPage =
   | "admin-doctors"
   | "areas"
   | "reports"
-  | "sample-management";
+  | "sample-management"
+  | "crm-approvals"
+  | "gift-orders"
+  | "gift-articles";
 
 const adminNavItems: {
   id: AdminPage;
@@ -59,6 +68,9 @@ const adminNavItems: {
   { id: "areas", label: "Areas", icon: MapPin },
   { id: "reports", label: "Reports", icon: BarChart2 },
   { id: "sample-management", label: "Sample Management", icon: FlaskConical },
+  { id: "crm-approvals", label: "CRM Approvals", icon: IndianRupee },
+  { id: "gift-orders", label: "Gift Orders", icon: Gift },
+  { id: "gift-articles", label: "Gift Articles", icon: ShoppingBag },
 ];
 
 const pageTitles: Record<AdminPage, string> = {
@@ -72,6 +84,9 @@ const pageTitles: Record<AdminPage, string> = {
   areas: "Area Management",
   reports: "Export Reports",
   "sample-management": "Sample Management",
+  "crm-approvals": "CRM Approvals",
+  "gift-orders": "Gift Article Orders",
+  "gift-articles": "Gift Articles Catalog",
 };
 
 export default function AdminLayout() {
@@ -114,12 +129,17 @@ export default function AdminLayout() {
         return <AdminReports />;
       case "sample-management":
         return <AdminSampleManagement />;
+      case "crm-approvals":
+        return <AdminCRMApprovals />;
+      case "gift-orders":
+        return <AdminGiftOrders />;
+      case "gift-articles":
+        return <AdminGiftArticles />;
     }
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
       <aside
         className={`flex flex-col flex-shrink-0 transition-all duration-300 ${
           sidebarOpen ? "w-64" : "w-0 overflow-hidden"
@@ -128,7 +148,6 @@ export default function AdminLayout() {
           background: "linear-gradient(180deg, #0B2F6B 0%, #06224F 100%)",
         }}
       >
-        {/* Brand */}
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0 p-1">
@@ -148,8 +167,6 @@ export default function AdminLayout() {
             </div>
           </div>
         </div>
-
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <p className="text-white/40 text-xs font-semibold uppercase tracking-widest px-2 mb-3">
             Admin Menu
@@ -175,8 +192,6 @@ export default function AdminLayout() {
             );
           })}
         </nav>
-
-        {/* Footer */}
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -193,7 +208,6 @@ export default function AdminLayout() {
               </div>
             </div>
           </div>
-          {/* Principal ID with copy button */}
           <div className="flex items-center gap-1.5 mb-3 bg-white/10 rounded-md px-2 py-1.5">
             <p
               className="text-white/60 text-xs truncate flex-1 font-mono"
@@ -222,10 +236,7 @@ export default function AdminLayout() {
           </Button>
         </div>
       </aside>
-
-      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-[#E5EAF2] px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <button
@@ -259,11 +270,7 @@ export default function AdminLayout() {
             </p>
           </div>
         </header>
-
-        {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
-
-        {/* Footer */}
         <footer className="bg-white border-t border-[#E5EAF2] px-6 py-3 flex-shrink-0">
           <p className="text-xs text-gray-400 text-center">
             © {new Date().getFullYear()}. Built with ❤️ using{" "}
@@ -278,7 +285,6 @@ export default function AdminLayout() {
           </p>
         </footer>
       </div>
-
       <Toaster />
     </div>
   );
