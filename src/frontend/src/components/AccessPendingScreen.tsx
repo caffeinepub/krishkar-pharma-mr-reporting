@@ -1,11 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock, LogOut, ShieldCheck } from "lucide-react";
+import { Clock, Loader2, LogOut, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+
+const RECOVERY_PRINCIPAL =
+  "grbwb-eomkl-kudk6-gg5mh-ye5qx-b6cqs-7apa2-lus3n-b5lpa-sqbtx-tqe";
 
 export default function AccessPendingScreen() {
   const { identity, clear } = useInternetIdentity();
@@ -18,6 +21,10 @@ export default function AccessPendingScreen() {
   const [adminAlreadySetup, setAdminAlreadySetup] = useState<boolean | null>(
     null,
   );
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+
+  const isRecoveryPrincipal = principal === RECOVERY_PRINCIPAL;
 
   // Check if admin is already initialized so we can hide the setup panel for regular users
   useEffect(() => {
@@ -25,7 +32,7 @@ export default function AccessPendingScreen() {
     actor
       .isAdminInitialized()
       .then((initialized) => setAdminAlreadySetup(initialized))
-      .catch(() => setAdminAlreadySetup(false)); // If check fails, show the panel just in case
+      .catch(() => setAdminAlreadySetup(false));
   }, [actor]);
 
   const handleInitAdmin = async () => {
@@ -35,6 +42,7 @@ export default function AccessPendingScreen() {
       await actor._initializeAccessControlWithSecret(adminToken.trim());
       toast.success("Admin role assigned! Reloading...");
       await queryClient.invalidateQueries({ queryKey: ["userRole"] });
+      window.location.reload();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("already") || msg.includes("registered")) {
@@ -46,6 +54,23 @@ export default function AccessPendingScreen() {
       }
     } finally {
       setIsInitializing(false);
+    }
+  };
+
+  const handleRestoreAdmin = async () => {
+    if (!actor) return;
+    setIsRestoring(true);
+    setRestoreError(null);
+    try {
+      await (actor as any).emergencyRestoreAdmin();
+      toast.success("Admin access restored! Reloading...");
+      await queryClient.invalidateQueries({ queryKey: ["userRole"] });
+      window.location.reload();
+    } catch (err: any) {
+      setRestoreError(
+        err?.message ?? "Failed to restore admin access. Please try again.",
+      );
+      setIsRestoring(false);
     }
   };
 
@@ -71,18 +96,59 @@ export default function AccessPendingScreen() {
         </h1>
         <p className="text-sm text-gray-500 mt-1">MR Reporting System</p>
 
-        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Clock className="w-5 h-5 text-amber-600" />
-            <span className="text-amber-800 font-semibold text-sm">
-              Access Pending
-            </span>
+        {/* Admin Recovery Banner — shown only for the recovery principal */}
+        {isRecoveryPrincipal && (
+          <div
+            data-ocid="admin.recovery.panel"
+            className="mt-6 bg-amber-50 border border-amber-300 rounded-xl p-4 text-left"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0" />
+              <span className="text-amber-900 font-bold text-sm">
+                Admin Access Recovery
+              </span>
+            </div>
+            <p className="text-amber-800 text-xs mb-3">
+              Your account was previously the system Admin. Click below to
+              restore your Admin access.
+            </p>
+            <Button
+              data-ocid="admin.recovery.primary_button"
+              onClick={handleRestoreAdmin}
+              disabled={isRestoring}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
+            >
+              {isRestoring ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Restoring...
+                </>
+              ) : (
+                "Restore Admin Access"
+              )}
+            </Button>
+            {restoreError && (
+              <p className="text-red-600 text-xs font-medium mt-2">
+                {restoreError}
+              </p>
+            )}
           </div>
-          <p className="text-amber-700 text-sm">
-            Your account is awaiting admin approval. Please contact your
-            administrator to get access.
-          </p>
-        </div>
+        )}
+
+        {!isRecoveryPrincipal && (
+          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Clock className="w-5 h-5 text-amber-600" />
+              <span className="text-amber-800 font-semibold text-sm">
+                Access Pending
+              </span>
+            </div>
+            <p className="text-amber-700 text-sm">
+              Your account is awaiting admin approval. Please contact your
+              administrator to get access.
+            </p>
+          </div>
+        )}
 
         <div className="mt-5 bg-gray-50 rounded-lg p-3 text-left">
           <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">
@@ -91,8 +157,8 @@ export default function AccessPendingScreen() {
           <code className="text-xs text-gray-600 break-all">{principal}</code>
         </div>
 
-        {/* Admin initialization — only shown when no admin has been set up yet */}
-        {adminAlreadySetup === false && (
+        {/* Admin initialization — only shown when no admin has been set up yet and not recovery principal */}
+        {!isRecoveryPrincipal && adminAlreadySetup === false && (
           <div className="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4 text-left">
             <div className="flex items-center gap-2 mb-3">
               <ShieldCheck className="w-4 h-4 text-blue-600" />
