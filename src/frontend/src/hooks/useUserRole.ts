@@ -3,6 +3,13 @@ import { useActor } from "./useActor";
 
 export type AppRole = "admin" | "user" | "rsm" | "asm" | "guest" | null;
 
+// Candid `opt text` arrives as [] | [string] from the IC JS agent
+function unwrapOptText(val: unknown): string | undefined {
+  if (Array.isArray(val)) return val[0] as string | undefined;
+  if (typeof val === "string") return val;
+  return undefined;
+}
+
 export function useUserRole() {
   const { actor, isFetching } = useActor();
 
@@ -16,7 +23,8 @@ export function useUserRole() {
       if (!actor) return "guest";
       try {
         const roleInfo = await actor.getCallerRoleInfo();
-        const { baseRole, managerRole } = roleInfo;
+        const baseRole = roleInfo.baseRole;
+        const managerRole = unwrapOptText(roleInfo.managerRole);
         if (baseRole === "admin") return "admin";
         if (baseRole === "guest") return "guest";
         // Backend returns "mr" for regular MR users (or "user" in legacy builds)
