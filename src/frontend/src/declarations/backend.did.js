@@ -17,12 +17,15 @@ export const TADASettings = IDL.Record({
   'mrTaPerKm' : IDL.Nat,
   'mrDaHQ' : IDL.Nat,
   'mrDaOutStation' : IDL.Nat,
+  'mrDaExStation' : IDL.Nat,
   'asmTaPerKm' : IDL.Nat,
   'asmDaHQ' : IDL.Nat,
   'asmDaOutStation' : IDL.Nat,
+  'asmDaExStation' : IDL.Nat,
   'rsmTaPerKm' : IDL.Nat,
   'rsmDaHQ' : IDL.Nat,
   'rsmDaOutStation' : IDL.Nat,
+  'rsmDaExStation' : IDL.Nat,
 });
 export const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
 export const LeaveType = IDL.Variant({
@@ -488,12 +491,15 @@ export const idlFactory = ({ IDL }) => {
     'mrTaPerKm' : IDL.Nat,
     'mrDaHQ' : IDL.Nat,
     'mrDaOutStation' : IDL.Nat,
+    'mrDaExStation' : IDL.Nat,
     'asmTaPerKm' : IDL.Nat,
     'asmDaHQ' : IDL.Nat,
     'asmDaOutStation' : IDL.Nat,
+    'asmDaExStation' : IDL.Nat,
     'rsmTaPerKm' : IDL.Nat,
     'rsmDaHQ' : IDL.Nat,
     'rsmDaOutStation' : IDL.Nat,
+    'rsmDaExStation' : IDL.Nat,
   });
   const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
   const LeaveType = IDL.Variant({

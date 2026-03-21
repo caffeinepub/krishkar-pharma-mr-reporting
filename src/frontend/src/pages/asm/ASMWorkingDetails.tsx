@@ -40,6 +40,21 @@ function formatTA(stored: bigint | number): string {
   return (n / TA_SCALE).toFixed(2);
 }
 
+type DaType = "HQ" | "OutStation" | "ExStation";
+
+function getDaBadgeClass(daType: DaType | string) {
+  if (daType === "HQ") return "text-blue-600 border-blue-300 bg-blue-50";
+  if (daType === "ExStation")
+    return "text-green-600 border-green-300 bg-green-50";
+  return "text-orange-600 border-orange-300 bg-orange-50";
+}
+
+function getDaLabel(daType: DaType | string) {
+  if (daType === "HQ") return "Head Quarter";
+  if (daType === "ExStation") return "Ex-Station";
+  return "Out Station";
+}
+
 export default function ASMWorkingDetails() {
   const { actor, isFetching } = useActor();
   const queryClient = useQueryClient();
@@ -48,7 +63,7 @@ export default function ASMWorkingDetails() {
   const [workingArea, setWorkingArea] = useState("");
   const [doctorsVisited, setDoctorsVisited] = useState("");
   const [km, setKm] = useState("");
-  const [daType, setDaType] = useState<"HQ" | "OutStation">("HQ");
+  const [daType, setDaType] = useState<DaType>("HQ");
   const [da, setDa] = useState("300");
   const [daOverride, setDaOverride] = useState(false);
   const [taManual, setTaManual] = useState("");
@@ -84,6 +99,9 @@ export default function ASMWorkingDetails() {
 
   const asmDaHQ = tadaSettings ? Number(tadaSettings.asmDaHQ) : 300;
   const asmDaOut = tadaSettings ? Number(tadaSettings.asmDaOutStation) : 400;
+  const asmDaEx = tadaSettings
+    ? Number(tadaSettings.asmDaExStation ?? 600n)
+    : 600;
   const asmTaRateRaw = tadaSettings ? Number(tadaSettings.asmTaPerKm) : 275;
   const asmTaRate = asmTaRateRaw / TA_SCALE;
 
@@ -96,9 +114,11 @@ export default function ASMWorkingDetails() {
 
   useEffect(() => {
     if (!daOverride) {
-      setDa(daType === "HQ" ? String(asmDaHQ) : String(asmDaOut));
+      if (daType === "HQ") setDa(String(asmDaHQ));
+      else if (daType === "ExStation") setDa(String(asmDaEx));
+      else setDa(String(asmDaOut));
     }
-  }, [daType, asmDaHQ, asmDaOut, daOverride]);
+  }, [daType, asmDaHQ, asmDaOut, asmDaEx, daOverride]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -145,7 +165,6 @@ export default function ASMWorkingDetails() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Date */}
             <div className="space-y-1.5">
               <Label>Date</Label>
               <Input
@@ -155,7 +174,6 @@ export default function ASMWorkingDetails() {
               />
             </div>
 
-            {/* Working Area */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1">
                 <MapPin size={13} /> Working Area
@@ -174,7 +192,6 @@ export default function ASMWorkingDetails() {
               </Select>
             </div>
 
-            {/* Doctors Visited */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1">
                 <Stethoscope size={13} /> No. of Doctors Visited
@@ -188,7 +205,6 @@ export default function ASMWorkingDetails() {
               />
             </div>
 
-            {/* KM Traveled */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1">
                 <Car size={13} /> KM Traveled
@@ -206,7 +222,6 @@ export default function ASMWorkingDetails() {
               />
             </div>
 
-            {/* TA Amount */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1">
                 <IndianRupee size={13} /> TA Amount (₹)
@@ -240,13 +255,12 @@ export default function ASMWorkingDetails() {
               </p>
             </div>
 
-            {/* DA Type */}
             <div className="space-y-1.5">
               <Label>DA Type</Label>
               <Select
                 value={daType}
                 onValueChange={(v) => {
-                  setDaType(v as "HQ" | "OutStation");
+                  setDaType(v as DaType);
                   setDaOverride(false);
                 }}
               >
@@ -256,11 +270,11 @@ export default function ASMWorkingDetails() {
                 <SelectContent>
                   <SelectItem value="HQ">Head Quarter</SelectItem>
                   <SelectItem value="OutStation">Out Station</SelectItem>
+                  <SelectItem value="ExStation">Ex-Station</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* DA Amount */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1">
                 <IndianRupee size={13} /> DA Amount (₹)
@@ -274,20 +288,12 @@ export default function ASMWorkingDetails() {
                     setDaOverride(true);
                   }}
                 />
-                <Badge
-                  variant="outline"
-                  className={
-                    daType === "HQ"
-                      ? "text-blue-600 border-blue-300 bg-blue-50"
-                      : "text-orange-600 border-orange-300 bg-orange-50"
-                  }
-                >
-                  {daType === "HQ" ? "Head Quarter" : "Out Station"}
+                <Badge variant="outline" className={getDaBadgeClass(daType)}>
+                  {getDaLabel(daType)}
                 </Badge>
               </div>
             </div>
 
-            {/* Notes */}
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Notes (optional)</Label>
               <Input
@@ -324,7 +330,6 @@ export default function ASMWorkingDetails() {
         </CardContent>
       </Card>
 
-      {/* History */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Submission History</CardTitle>
@@ -381,13 +386,9 @@ export default function ASMWorkingDetails() {
                           {e.daType ? (
                             <Badge
                               variant="outline"
-                              className={
-                                e.daType === "HQ"
-                                  ? "text-blue-600 border-blue-300 bg-blue-50"
-                                  : "text-orange-600 border-orange-300 bg-orange-50"
-                              }
+                              className={getDaBadgeClass(e.daType)}
                             >
-                              {e.daType === "HQ" ? "HQ" : "Out Station"}
+                              {getDaLabel(e.daType)}
                             </Badge>
                           ) : (
                             "-"

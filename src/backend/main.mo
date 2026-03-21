@@ -262,6 +262,21 @@ actor {
     rsmDaOutStation : Nat;
   };
 
+  type TADASettingsV3 = {
+    mrTaPerKm : Nat;
+    mrDaHQ : Nat;
+    mrDaOutStation : Nat;
+    mrDaExStation : Nat;
+    asmTaPerKm : Nat;
+    asmDaHQ : Nat;
+    asmDaOutStation : Nat;
+    asmDaExStation : Nat;
+    rsmTaPerKm : Nat;
+    rsmDaHQ : Nat;
+    rsmDaOutStation : Nat;
+    rsmDaExStation : Nat;
+  };
+
   // === Persistent Storage ===
   let userProfiles = Map.empty<Principal, UserProfile>();
   let mrProfiles = Map.empty<Principal, MRProfile>();
@@ -305,6 +320,22 @@ actor {
     rsmTaPerKm = 1200;
     rsmDaHQ = 700;
     rsmDaOutStation = 1000;
+  };
+
+  // V3 settings with ExStation DA support
+  var tadaSettingsV3 : TADASettingsV3 = {
+    mrTaPerKm = tadaSettingsV2.mrTaPerKm;
+    mrDaHQ = tadaSettingsV2.mrDaHQ;
+    mrDaOutStation = tadaSettingsV2.mrDaOutStation;
+    mrDaExStation = 350;
+    asmTaPerKm = tadaSettingsV2.asmTaPerKm;
+    asmDaHQ = tadaSettingsV2.asmDaHQ;
+    asmDaOutStation = tadaSettingsV2.asmDaOutStation;
+    asmDaExStation = 600;
+    rsmTaPerKm = tadaSettingsV2.rsmTaPerKm;
+    rsmDaHQ = tadaSettingsV2.rsmDaHQ;
+    rsmDaOutStation = tadaSettingsV2.rsmDaOutStation;
+    rsmDaExStation = 850;
   };
 
   // === Modules for Ordering ===
@@ -1328,15 +1359,15 @@ actor {
   };
 
   // --- TA/DA Settings ---
-  public shared ({ caller }) func adminSetTADASettings(settings : TADASettings) : async () {
+  public shared ({ caller }) func adminSetTADASettings(settings : TADASettingsV3) : async () {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can update TA/DA settings");
     };
-    tadaSettingsV2 := settings;
+    tadaSettingsV3 := settings;
   };
 
-  public query func adminGetTADASettings() : async TADASettings {
-    tadaSettingsV2;
+  public query func adminGetTADASettings() : async TADASettingsV3 {
+    tadaSettingsV3;
   };
 
   // === ROLES API ===

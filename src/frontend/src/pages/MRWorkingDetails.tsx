@@ -188,7 +188,9 @@ export default function MRWorkingDetails() {
   const [expenseDa, setExpenseDa] = useState<"250" | "300">("300");
   const [expenseNotes, setExpenseNotes] = useState("");
   const [expenseWorkingArea, setExpenseWorkingArea] = useState("");
-  const [expenseDaType, setExpenseDaType] = useState<"HQ" | "OutStation">("HQ");
+  const [expenseDaType, setExpenseDaType] = useState<
+    "HQ" | "OutStation" | "ExStation"
+  >("HQ");
 
   const taAmount = useMemo(() => {
     const km = Number.parseFloat(expenseKm) || 0;
@@ -948,7 +950,7 @@ export default function MRWorkingDetails() {
                   <Select
                     value={expenseDaType}
                     onValueChange={(v) =>
-                      setExpenseDaType(v as "HQ" | "OutStation")
+                      setExpenseDaType(v as "HQ" | "OutStation" | "ExStation")
                     }
                   >
                     <SelectTrigger
@@ -960,6 +962,7 @@ export default function MRWorkingDetails() {
                     <SelectContent>
                       <SelectItem value="HQ">Head Quarter</SelectItem>
                       <SelectItem value="OutStation">Out Station</SelectItem>
+                      <SelectItem value="ExStation">Ex-Station</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

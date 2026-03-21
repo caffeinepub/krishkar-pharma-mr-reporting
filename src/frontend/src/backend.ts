@@ -204,12 +204,15 @@ export interface TADASettings {
     mrTaPerKm: bigint;
     mrDaHQ: bigint;
     mrDaOutStation: bigint;
+    mrDaExStation: bigint;
     rsmTaPerKm: bigint;
     rsmDaHQ: bigint;
     rsmDaOutStation: bigint;
+    rsmDaExStation: bigint;
     asmTaPerKm: bigint;
     asmDaHQ: bigint;
     asmDaOutStation: bigint;
+    asmDaExStation: bigint;
 }
 export interface GiftArticle {
     id: GiftArticleId;

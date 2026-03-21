@@ -122,12 +122,15 @@ export interface TADASettings {
     mrTaPerKm: bigint;
     mrDaHQ: bigint;
     mrDaOutStation: bigint;
+    mrDaExStation: bigint;
     rsmTaPerKm: bigint;
     rsmDaHQ: bigint;
     rsmDaOutStation: bigint;
+    rsmDaExStation: bigint;
     asmTaPerKm: bigint;
     asmDaHQ: bigint;
     asmDaOutStation: bigint;
+    asmDaExStation: bigint;
 }
 export interface GiftArticle {
     id: GiftArticleId;
@@ -216,6 +219,9 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export type LeaveStatus = { Approved: null } | { Rejected: null } | { Pending: null };
+export type CRMDemandStatus = { Approved: null } | { Rejected: null } | { Pending: null };
+export type GiftDemandOrderStatus = { Approved: null } | { Rejected: null } | { Pending: null };
 export interface backendInterface {
     addArea(name: string, headquarterId: bigint): Promise<AreaId>;
     addChemist(name: string, areaId: AreaId, address: string, contact: string): Promise<ChemistId>;

@@ -199,11 +199,17 @@ export interface SampleEntry {
 }
 export interface TADASettings {
   'mrTaPerKm' : bigint,
-  'rsmDaDefault' : bigint,
+  'mrDaHQ' : bigint,
+  'mrDaOutStation' : bigint,
+  'mrDaExStation' : bigint,
   'rsmTaPerKm' : bigint,
-  'mrDaDefault' : bigint,
+  'rsmDaHQ' : bigint,
+  'rsmDaOutStation' : bigint,
+  'rsmDaExStation' : bigint,
   'asmTaPerKm' : bigint,
-  'asmDaDefault' : bigint,
+  'asmDaHQ' : bigint,
+  'asmDaOutStation' : bigint,
+  'asmDaExStation' : bigint,
 }
 export interface UserProfile {
   'employeeCode' : string,
