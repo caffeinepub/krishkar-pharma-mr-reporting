@@ -15,11 +15,14 @@ export const DoctorId = IDL.Nat;
 export const GiftArticleId = IDL.Nat;
 export const TADASettings = IDL.Record({
   'mrTaPerKm' : IDL.Nat,
-  'rsmDaDefault' : IDL.Nat,
-  'rsmTaPerKm' : IDL.Nat,
-  'mrDaDefault' : IDL.Nat,
+  'mrDaHQ' : IDL.Nat,
+  'mrDaOutStation' : IDL.Nat,
   'asmTaPerKm' : IDL.Nat,
-  'asmDaDefault' : IDL.Nat,
+  'asmDaHQ' : IDL.Nat,
+  'asmDaOutStation' : IDL.Nat,
+  'rsmTaPerKm' : IDL.Nat,
+  'rsmDaHQ' : IDL.Nat,
+  'rsmDaOutStation' : IDL.Nat,
 });
 export const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
 export const LeaveType = IDL.Variant({
@@ -483,11 +486,14 @@ export const idlFactory = ({ IDL }) => {
   const GiftArticleId = IDL.Nat;
   const TADASettings = IDL.Record({
     'mrTaPerKm' : IDL.Nat,
-    'rsmDaDefault' : IDL.Nat,
-    'rsmTaPerKm' : IDL.Nat,
-    'mrDaDefault' : IDL.Nat,
+    'mrDaHQ' : IDL.Nat,
+    'mrDaOutStation' : IDL.Nat,
     'asmTaPerKm' : IDL.Nat,
-    'asmDaDefault' : IDL.Nat,
+    'asmDaHQ' : IDL.Nat,
+    'asmDaOutStation' : IDL.Nat,
+    'rsmTaPerKm' : IDL.Nat,
+    'rsmDaHQ' : IDL.Nat,
+    'rsmDaOutStation' : IDL.Nat,
   });
   const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
   const LeaveType = IDL.Variant({
