@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   CalendarCheck,
+  ClipboardList,
   IndianRupee,
   LayoutDashboard,
   LogOut,
@@ -15,11 +16,18 @@ import ASMCRMDemand from "./ASMCRMDemand";
 import ASMDashboard from "./ASMDashboard";
 import ASMLeaveApprovals from "./ASMLeaveApprovals";
 import ASMTeamReports from "./ASMTeamReports";
+import ASMWorkingDetails from "./ASMWorkingDetails";
 
-type ASMPage = "dashboard" | "leave-approvals" | "team-reports" | "crm-demand";
+type ASMPage =
+  | "dashboard"
+  | "leave-approvals"
+  | "team-reports"
+  | "crm-demand"
+  | "working-details";
 
 const navItems: { id: ASMPage; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "working-details", label: "Working Details", icon: ClipboardList },
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
   { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
@@ -27,6 +35,7 @@ const navItems: { id: ASMPage; label: string; icon: React.ElementType }[] = [
 
 const pageTitles: Record<ASMPage, string> = {
   dashboard: "ASM Dashboard",
+  "working-details": "Daily Working Details",
   "leave-approvals": "Leave Approvals",
   "team-reports": "Team Reports",
   "crm-demand": "CRM Demand",
@@ -47,6 +56,8 @@ export default function ASMLayout() {
     switch (currentPage) {
       case "dashboard":
         return <ASMDashboard />;
+      case "working-details":
+        return <ASMWorkingDetails />;
       case "leave-approvals":
         return <ASMLeaveApprovals />;
       case "team-reports":

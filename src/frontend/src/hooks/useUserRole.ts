@@ -19,12 +19,13 @@ export function useUserRole() {
         const { baseRole, managerRole } = roleInfo;
         if (baseRole === "admin") return "admin";
         if (baseRole === "guest") return "guest";
-        if (baseRole === "user") {
+        // Backend returns "mr" for regular MR users (or "user" in legacy builds)
+        if (baseRole === "mr" || baseRole === "user") {
           if (managerRole === "RSM") return "rsm";
           if (managerRole === "ASM") return "asm";
           return "user";
         }
-        return baseRole as AppRole;
+        return (baseRole as AppRole) ?? "guest";
       } catch {
         return "guest";
       }

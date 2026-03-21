@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   CalendarCheck,
+  ClipboardList,
   IndianRupee,
   LayoutDashboard,
   LogOut,
@@ -15,11 +16,18 @@ import RSMCRMDemand from "./RSMCRMDemand";
 import RSMDashboard from "./RSMDashboard";
 import RSMLeaveApprovals from "./RSMLeaveApprovals";
 import RSMTeamReports from "./RSMTeamReports";
+import RSMWorkingDetails from "./RSMWorkingDetails";
 
-type RSMPage = "dashboard" | "leave-approvals" | "team-reports" | "crm-demand";
+type RSMPage =
+  | "dashboard"
+  | "leave-approvals"
+  | "team-reports"
+  | "crm-demand"
+  | "working-details";
 
 const navItems: { id: RSMPage; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "working-details", label: "Working Details", icon: ClipboardList },
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
   { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
@@ -27,6 +35,7 @@ const navItems: { id: RSMPage; label: string; icon: React.ElementType }[] = [
 
 const pageTitles: Record<RSMPage, string> = {
   dashboard: "RSM Dashboard",
+  "working-details": "Daily Working Details",
   "leave-approvals": "Leave Approvals",
   "team-reports": "Team Reports",
   "crm-demand": "CRM Demand",
@@ -47,6 +56,8 @@ export default function RSMLayout() {
     switch (currentPage) {
       case "dashboard":
         return <RSMDashboard />;
+      case "working-details":
+        return <RSMWorkingDetails />;
       case "leave-approvals":
         return <RSMLeaveApprovals />;
       case "team-reports":

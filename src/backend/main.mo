@@ -1340,10 +1340,10 @@ actor {
   };
 
   // === ROLES API ===
-  // Single call to check both roles
+  // Single call to check both roles - never traps, returns guest for unknown principals
   public query ({ caller }) func getCallerRoleInfo() : async { baseRole : Text; managerRole : ?Text } {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view roles");
+    if (caller.isAnonymous()) {
+      return { baseRole = "guest"; managerRole = null };
     };
     let managerRoleToText = func(role : ManagerRole) : Text {
       switch (role) {
@@ -1351,14 +1351,17 @@ actor {
         case (#RSM) { "RSM" };
       };
     };
-    if (AccessControl.isAdmin(accessControlState, caller)) {
-      { baseRole = "admin"; managerRole = null };
-    } else {
-      switch (managerProfiles.get(caller)) {
-        case (?profile) {
-          { baseRole = "mr"; managerRole = ?(managerRoleToText(profile.managerRole)) };
+    switch (accessControlState.userRoles.get(caller)) {
+      case (null) { { baseRole = "guest"; managerRole = null } };
+      case (?#guest) { { baseRole = "guest"; managerRole = null } };
+      case (?#admin) { { baseRole = "admin"; managerRole = null } };
+      case (?#user) {
+        switch (managerProfiles.get(caller)) {
+          case (?profile) {
+            { baseRole = "mr"; managerRole = ?(managerRoleToText(profile.managerRole)) };
+          };
+          case (null) { { baseRole = "mr"; managerRole = null } };
         };
-        case (null) { { baseRole = "mr"; managerRole = null } };
       };
     };
   };
