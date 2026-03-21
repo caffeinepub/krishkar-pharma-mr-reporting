@@ -32,6 +32,7 @@ import MRProfile from "./pages/MRProfile";
 import MRWorkingDetails from "./pages/MRWorkingDetails";
 import Products from "./pages/Products";
 import Samples from "./pages/Samples";
+import WorkingPlanPage from "./pages/WorkingPlanPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import ASMLayout from "./pages/asm/ASMLayout";
 import RSMLayout from "./pages/rsm/RSMLayout";
@@ -49,11 +50,13 @@ type Page =
   | "products"
   | "expenses"
   | "leaves"
-  | "samples";
+  | "samples"
+  | "working-plan";
 
 const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "working-details", label: "Working Details", icon: ClipboardList },
+  { id: "working-plan", label: "Working Plan", icon: MapPin },
   { id: "profile", label: "MR Profile", icon: User },
   { id: "areas", label: "Areas", icon: MapPin },
   { id: "doctors", label: "Doctors", icon: Stethoscope },
@@ -67,6 +70,7 @@ const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
 const pageTitles: Record<Page, string> = {
   dashboard: "Dashboard",
   "working-details": "MR Working Details",
+  "working-plan": "Working Plan",
   profile: "MR Profile",
   areas: "Area Management",
   doctors: "Doctor Management",
@@ -194,6 +198,8 @@ function MRLayout() {
         return <Leaves />;
       case "samples":
         return <Samples />;
+      case "working-plan":
+        return <WorkingPlanPage />;
     }
   };
 

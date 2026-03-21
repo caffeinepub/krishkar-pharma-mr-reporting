@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   CalendarCheck,
+  CalendarRange,
   ClipboardList,
   IndianRupee,
   LayoutDashboard,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
+import WorkingPlanPage from "../WorkingPlanPage";
 import RSMCRMDemand from "./RSMCRMDemand";
 import RSMDashboard from "./RSMDashboard";
 import RSMLeaveApprovals from "./RSMLeaveApprovals";
@@ -23,11 +25,13 @@ type RSMPage =
   | "leave-approvals"
   | "team-reports"
   | "crm-demand"
-  | "working-details";
+  | "working-details"
+  | "working-plan";
 
 const navItems: { id: RSMPage; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "working-details", label: "Working Details", icon: ClipboardList },
+  { id: "working-plan", label: "Working Plan", icon: CalendarRange },
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
   { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
@@ -36,6 +40,7 @@ const navItems: { id: RSMPage; label: string; icon: React.ElementType }[] = [
 const pageTitles: Record<RSMPage, string> = {
   dashboard: "RSM Dashboard",
   "working-details": "Daily Working Details",
+  "working-plan": "Working Plan",
   "leave-approvals": "Leave Approvals",
   "team-reports": "Team Reports",
   "crm-demand": "CRM Demand",
@@ -58,6 +63,8 @@ export default function RSMLayout() {
         return <RSMDashboard />;
       case "working-details":
         return <RSMWorkingDetails />;
+      case "working-plan":
+        return <WorkingPlanPage />;
       case "leave-approvals":
         return <RSMLeaveApprovals />;
       case "team-reports":

@@ -4,6 +4,7 @@ import {
   BarChart2,
   Building2,
   CalendarCheck,
+  CalendarRange,
   Copy,
   FlaskConical,
   Gift,
@@ -35,6 +36,7 @@ import AdminProducts from "./AdminProducts";
 import AdminReports from "./AdminReports";
 import AdminSampleManagement from "./AdminSampleManagement";
 import AdminTADASettings from "./AdminTADASettings";
+import AdminWorkingPlans from "./AdminWorkingPlans";
 import LeaveApprovals from "./LeaveApprovals";
 import MRManagement from "./MRManagement";
 import UserManagement from "./UserManagement";
@@ -53,7 +55,8 @@ type AdminPage =
   | "crm-approvals"
   | "gift-orders"
   | "gift-articles"
-  | "tada-settings";
+  | "tada-settings"
+  | "working-plans";
 
 const adminNavItems: {
   id: AdminPage;
@@ -74,6 +77,7 @@ const adminNavItems: {
   { id: "gift-orders", label: "Gift Orders", icon: Gift },
   { id: "gift-articles", label: "Gift Articles", icon: ShoppingBag },
   { id: "tada-settings", label: "TA/DA Settings", icon: IndianRupee },
+  { id: "working-plans", label: "Working Plans", icon: CalendarRange },
 ];
 
 const pageTitles: Record<AdminPage, string> = {
@@ -91,6 +95,7 @@ const pageTitles: Record<AdminPage, string> = {
   "gift-orders": "Gift Article Orders",
   "gift-articles": "Gift Articles Catalog",
   "tada-settings": "TA/DA Settings",
+  "working-plans": "All Working Plans",
 };
 
 export default function AdminLayout() {
@@ -141,6 +146,8 @@ export default function AdminLayout() {
         return <AdminGiftArticles />;
       case "tada-settings":
         return <AdminTADASettings />;
+      case "working-plans":
+        return <AdminWorkingPlans />;
     }
   };
 

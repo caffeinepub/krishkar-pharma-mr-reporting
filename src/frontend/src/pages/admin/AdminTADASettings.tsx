@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { TADASettings } from "../../backend.d";
+import type { TADASettingsV3 } from "../../backend.d";
 import { useActor } from "../../hooks/useActor";
 
 const TA_SCALE = 100;
@@ -26,7 +26,7 @@ const DEFAULT_FORM = {
 
 type SettingsForm = typeof DEFAULT_FORM;
 
-function toForm(s: TADASettings): SettingsForm {
+function toForm(s: TADASettingsV3): SettingsForm {
   return {
     mrTaPerKm: (Number(s.mrTaPerKm) / TA_SCALE).toFixed(2),
     mrDaHQ: s.mrDaHQ.toString(),
@@ -43,7 +43,7 @@ function toForm(s: TADASettings): SettingsForm {
   };
 }
 
-function fromForm(f: SettingsForm): TADASettings {
+function fromForm(f: SettingsForm): TADASettingsV3 {
   return {
     mrTaPerKm: BigInt(
       Math.round(Number.parseFloat(f.mrTaPerKm || "0") * TA_SCALE),
@@ -66,7 +66,7 @@ function fromForm(f: SettingsForm): TADASettings {
   };
 }
 
-export default function AdminTADASettings() {
+export default function AdminTADASettingsV3() {
   const { actor, isFetching } = useActor();
   const [form, setForm] = useState<SettingsForm>(DEFAULT_FORM);
   const [loading, setLoading] = useState(true);

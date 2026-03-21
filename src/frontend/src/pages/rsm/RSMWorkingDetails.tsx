@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { Area, ExpenseEntry, TADASettings } from "../../backend";
+import type { Area, ExpenseEntry, TADASettingsV3 } from "../../backend";
 import { useActor } from "../../hooks/useActor";
 
 const TA_SCALE = 100;
@@ -70,7 +70,7 @@ export default function RSMWorkingDetails() {
   const [taOverride, setTaOverride] = useState(false);
   const [notes, setNotes] = useState("");
 
-  const { data: tadaSettings } = useQuery<TADASettings>({
+  const { data: tadaSettings } = useQuery<TADASettingsV3>({
     queryKey: ["tadaSettings"],
     queryFn: async () => {
       if (!actor) throw new Error("No actor");

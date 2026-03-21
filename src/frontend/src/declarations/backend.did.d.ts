@@ -197,19 +197,19 @@ export interface SampleEntry {
   'productId' : ProductId,
   'quantity' : bigint,
 }
-export interface TADASettings {
+export interface TADASettingsV3 {
   'mrTaPerKm' : bigint,
   'mrDaHQ' : bigint,
-  'mrDaOutStation' : bigint,
-  'mrDaExStation' : bigint,
-  'rsmTaPerKm' : bigint,
   'rsmDaHQ' : bigint,
   'rsmDaOutStation' : bigint,
-  'rsmDaExStation' : bigint,
-  'asmTaPerKm' : bigint,
-  'asmDaHQ' : bigint,
+  'rsmTaPerKm' : bigint,
   'asmDaOutStation' : bigint,
+  'asmDaHQ' : bigint,
+  'asmTaPerKm' : bigint,
+  'mrDaExStation' : bigint,
+  'rsmDaExStation' : bigint,
   'asmDaExStation' : bigint,
+  'mrDaOutStation' : bigint,
 }
 export interface UserProfile {
   'employeeCode' : string,
@@ -219,6 +219,24 @@ export interface UserProfile {
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface WorkingPlan {
+  'id' : WorkingPlanId,
+  'content' : string,
+  'date' : string,
+  'createdAt' : bigint,
+  'workingMode' : string,
+  'workingWith' : [] | [string],
+  'stationType' : string,
+  'principalId' : Principal,
+}
+export type WorkingPlanId = bigint;
+export interface WorkingPlanInput {
+  'content' : string,
+  'date' : string,
+  'workingMode' : string,
+  'workingWith' : [] | [string],
+  'stationType' : string,
+}
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addArea' : ActorMethod<[string, bigint], AreaId>,
@@ -235,6 +253,7 @@ export interface _SERVICE {
   'addGiftArticle' : ActorMethod<[string, string], GiftArticleId>,
   'addHeadquarter' : ActorMethod<[string], bigint>,
   'addProduct' : ActorMethod<[string, string], ProductId>,
+  'addWorkingPlan' : ActorMethod<[WorkingPlanInput], WorkingPlanId>,
   'adminAllotSamples' : ActorMethod<
     [Principal, ProductId, bigint, string],
     undefined
@@ -247,12 +266,13 @@ export interface _SERVICE {
     [Principal, string, string, Array<AreaId>],
     undefined
   >,
-  'adminGetTADASettings' : ActorMethod<[], TADASettings>,
+  'adminGetAllWorkingPlans' : ActorMethod<[], Array<WorkingPlan>>,
+  'adminGetTADASettings' : ActorMethod<[], TADASettingsV3>,
   'adminSaveManagerProfile' : ActorMethod<
     [Principal, string, string, string, ManagerRole],
     undefined
   >,
-  'adminSetTADASettings' : ActorMethod<[TADASettings], undefined>,
+  'adminSetTADASettings' : ActorMethod<[TADASettingsV3], undefined>,
   'applyLeave' : ActorMethod<
     [LeaveType, string, string, bigint, string],
     undefined
@@ -270,6 +290,7 @@ export interface _SERVICE {
   'deleteMRProfile' : ActorMethod<[Principal], undefined>,
   'deleteManagerProfile' : ActorMethod<[Principal], undefined>,
   'deleteProduct' : ActorMethod<[ProductId], undefined>,
+  'deleteWorkingPlan' : ActorMethod<[WorkingPlanId], undefined>,
   'emergencyRestoreAdmin' : ActorMethod<[], undefined>,
   'getActivitySummary' : ActorMethod<[string], ActivitySummary>,
   'getAllAreas' : ActorMethod<[], Array<Area>>,
@@ -312,6 +333,7 @@ export interface _SERVICE {
   'getMyGiftDistributions' : ActorMethod<[], Array<GiftDistribution>>,
   'getMySampleBalance' : ActorMethod<[], Array<SampleBalance>>,
   'getMySampleDemandOrders' : ActorMethod<[], Array<SampleDemandOrder>>,
+  'getMyWorkingPlans' : ActorMethod<[], Array<WorkingPlan>>,
   'getSampleEntries' : ActorMethod<[], Array<SampleEntry>>,
   'getTeamDetailingEntries' : ActorMethod<
     [],
@@ -326,6 +348,7 @@ export interface _SERVICE {
     Array<[Principal, Array<LeaveEntry>]>
   >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'isAdminInitialized' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'logDetailing' : ActorMethod<[DoctorId, string, Array<ProductId>], undefined>,
   'logGiftDistribution' : ActorMethod<

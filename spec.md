@@ -1,29 +1,34 @@
 # Krishkar Pharma MR Reporting
 
 ## Current State
-- ASM portal has: Dashboard, Leave Approvals, Team Reports, CRM Demand
-- RSM portal has: Dashboard, Leave Approvals, Team Reports, CRM Demand
-- Neither ASM nor RSM can log daily working details or submit TA/DA expense demands
-- MR has a dedicated Working Details page and Expenses page
-- Backend `addExpense` already works for all roles (ASM/RSM TA rates are handled)
+The app supports MR, ASM, RSM, and Admin roles with daily working details, expense management (TA/DA), doctor visits, sample/gift distribution, CRM demand, leave management, and admin portal features. There is no working plan feature.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `ASMWorkingDetails.tsx` — page for ASM to log daily working details (number of doctors visited) and demand TA/DA (km, DA type HQ/Out Station, auto-calculated TA, DA amount). History table below.
-- `RSMWorkingDetails.tsx` — same page for RSM role
-- "Working Details" nav item in ASMLayout.tsx linking to ASMWorkingDetails
-- "Working Details" nav item in RSMLayout.tsx linking to RSMWorkingDetails
+- **Working Plan** module for MR, ASM, and RSM roles
+  - Fields per plan entry:
+    - Date of working (date picker, restricted to current month and next month only)
+    - Work content/description (text area)
+    - Working mode: "Alone" or "With" (dropdown/radio; if "With", allow entering name/details of who they are working with)
+    - Station type: "As Per Working Plan" or "Other Station" (dropdown)
+  - Each role (MR, ASM, RSM) gets a "Working Plan" menu item in their sidebar
+  - Users can add, view, and delete their own working plan entries
+  - Plans are stored per user (principal)
+  - Display plans in a table grouped or filterable by month (current/next)
+  - Admin can view all users' working plans in Admin Portal > Working Plans section
 
 ### Modify
-- `ASMLayout.tsx` — add `working-details` page type, import, nav item, render case
-- `RSMLayout.tsx` — same changes for RSM
+- Backend: Add WorkingPlan type and CRUD functions
+- Frontend: Add Working Plan page to MR, ASM, RSM portals and admin portal view
 
 ### Remove
 - Nothing removed
 
 ## Implementation Plan
-1. Create `ASMWorkingDetails.tsx` with combined daily working + TA/DA demand form using `addExpense` backend call; doctors visited count stored in notes field
-2. Create `RSMWorkingDetails.tsx` as a clone adapted for RSM context
-3. Update `ASMLayout.tsx` to add nav item and render new page
-4. Update `RSMLayout.tsx` to add nav item and render new page
+1. Add `WorkingPlan` record type to backend with fields: id, principalId, date, content, workingWith (opt text), stationType ("plan" | "other"), createdAt
+2. Add stable storage for working plans (HashMap by user principal)
+3. Add backend functions: `addWorkingPlan`, `getMyWorkingPlans`, `deleteWorkingPlan`, `adminGetAllWorkingPlans`
+4. Add Working Plan page component used by MR, ASM, RSM portals
+5. Add Working Plan menu item to MR, ASM, RSM sidebars
+6. Add Admin Portal > Working Plans view

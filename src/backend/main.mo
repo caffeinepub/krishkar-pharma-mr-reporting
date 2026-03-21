@@ -1,15 +1,18 @@
 import Array "mo:core/Array";
-import Map "mo:core/Map";
 import Iter "mo:core/Iter";
+import Map "mo:core/Map";
 import List "mo:core/List";
+import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
-import Principal "mo:core/Principal";
 import Order "mo:core/Order";
+import Nat32 "mo:core/Nat32";
+import Int "mo:core/Int";
+import Principal "mo:core/Principal";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   // === Type Definitions ===
   type UserProfile = {
@@ -147,6 +150,7 @@ actor {
     nextGiftArticleId : Nat;
     nextGiftDistributionId : Nat;
     nextGiftDemandOrderId : Nat;
+    nextWorkingPlanId : Nat;
   };
 
   // --- New Types for Upgraded Features ---
@@ -239,7 +243,6 @@ actor {
     adminRemarks : Text;
   };
 
-
   // Legacy type kept for stable variable migration compatibility
   type TADASettingsLegacy = {
     mrTaPerKm : Nat;
@@ -277,6 +280,28 @@ actor {
     rsmDaExStation : Nat;
   };
 
+  // === New Working Plan Types ===
+  type WorkingPlanId = Nat;
+
+  type WorkingPlan = {
+    id : WorkingPlanId;
+    principalId : Principal;
+    date : Text;
+    content : Text;
+    workingMode : Text;
+    workingWith : ?Text;
+    stationType : Text;
+    createdAt : Int;
+  };
+
+  type WorkingPlanInput = {
+    date : Text;
+    content : Text;
+    workingMode : Text;
+    workingWith : ?Text;
+    stationType : Text;
+  };
+
   // === Persistent Storage ===
   let userProfiles = Map.empty<Principal, UserProfile>();
   let mrProfiles = Map.empty<Principal, MRProfile>();
@@ -298,6 +323,7 @@ actor {
   let giftArticles = Map.empty<GiftArticleId, GiftArticle>();
   let giftDistributions = Map.empty<GiftDistributionId, GiftDistribution>();
   let giftDemandOrders = Map.empty<GiftDemandOrderId, GiftDemandOrder>();
+  let workingPlans = Map.empty<WorkingPlanId, WorkingPlan>();
 
   // Legacy stable variable for migration — do not rename or remove
   var tadaSettings : TADASettingsLegacy = {
@@ -376,11 +402,66 @@ actor {
     nextGiftArticleId = 1;
     nextGiftDistributionId = 1;
     nextGiftDemandOrderId = 1;
+    nextWorkingPlanId = 1;
   };
 
   // === Authorization ===
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  // === Working Plan Functions ===
+  public shared ({ caller }) func addWorkingPlan(input : WorkingPlanInput) : async WorkingPlanId {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can add working plans");
+    };
+
+    let newId = idCounters.nextWorkingPlanId;
+    let newPlan : WorkingPlan = {
+      id = newId;
+      principalId = caller;
+      date = input.date;
+      content = input.content;
+      workingMode = input.workingMode;
+      workingWith = input.workingWith;
+      stationType = input.stationType;
+      createdAt = Time.now();
+    };
+
+    workingPlans.add(newId, newPlan);
+    idCounters := { idCounters with nextWorkingPlanId = newId + 1 };
+    newId;
+  };
+
+  public query ({ caller }) func getMyWorkingPlans() : async [WorkingPlan] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view working plans");
+    };
+
+    workingPlans.values().toArray().filter(func(plan) { plan.principalId == caller });
+  };
+
+  public shared ({ caller }) func deleteWorkingPlan(planId : WorkingPlanId) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can delete working plans");
+    };
+
+    switch (workingPlans.get(planId)) {
+      case (null) { Runtime.trap("Working plan does not exist") };
+      case (?plan) {
+        if (plan.principalId != caller) {
+          Runtime.trap("Unauthorized: Cannot delete plan that is not yours");
+        };
+        workingPlans.remove(planId);
+      };
+    };
+  };
+
+  public query ({ caller }) func adminGetAllWorkingPlans() : async [WorkingPlan] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can get all working plans");
+    };
+    workingPlans.values().toArray();
+  };
 
   // === Helper: Manager Check ===
   func isManager(caller : Principal) : Bool {
@@ -1396,4 +1477,10 @@ actor {
       };
     };
   };
+
+  // === Stable Nat32 to Int Conversion ===
+  func convertNat32ToInt(nat32Value : Nat32) : Int {
+    nat32Value.toNat().toInt();
+  };
 };
+

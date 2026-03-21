@@ -13,19 +13,37 @@ export const ChemistId = IDL.Nat;
 export const ProductId = IDL.Nat;
 export const DoctorId = IDL.Nat;
 export const GiftArticleId = IDL.Nat;
-export const TADASettings = IDL.Record({
+export const WorkingPlanInput = IDL.Record({
+  'content' : IDL.Text,
+  'date' : IDL.Text,
+  'workingMode' : IDL.Text,
+  'workingWith' : IDL.Opt(IDL.Text),
+  'stationType' : IDL.Text,
+});
+export const WorkingPlanId = IDL.Nat;
+export const WorkingPlan = IDL.Record({
+  'id' : WorkingPlanId,
+  'content' : IDL.Text,
+  'date' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'workingMode' : IDL.Text,
+  'workingWith' : IDL.Opt(IDL.Text),
+  'stationType' : IDL.Text,
+  'principalId' : IDL.Principal,
+});
+export const TADASettingsV3 = IDL.Record({
   'mrTaPerKm' : IDL.Nat,
   'mrDaHQ' : IDL.Nat,
-  'mrDaOutStation' : IDL.Nat,
-  'mrDaExStation' : IDL.Nat,
-  'asmTaPerKm' : IDL.Nat,
-  'asmDaHQ' : IDL.Nat,
-  'asmDaOutStation' : IDL.Nat,
-  'asmDaExStation' : IDL.Nat,
-  'rsmTaPerKm' : IDL.Nat,
   'rsmDaHQ' : IDL.Nat,
   'rsmDaOutStation' : IDL.Nat,
+  'rsmTaPerKm' : IDL.Nat,
+  'asmDaOutStation' : IDL.Nat,
+  'asmDaHQ' : IDL.Nat,
+  'asmTaPerKm' : IDL.Nat,
+  'mrDaExStation' : IDL.Nat,
   'rsmDaExStation' : IDL.Nat,
+  'asmDaExStation' : IDL.Nat,
+  'mrDaOutStation' : IDL.Nat,
 });
 export const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
 export const LeaveType = IDL.Variant({
@@ -267,6 +285,7 @@ export const idlService = IDL.Service({
   'addGiftArticle' : IDL.Func([IDL.Text, IDL.Text], [GiftArticleId], []),
   'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
   'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
+  'addWorkingPlan' : IDL.Func([WorkingPlanInput], [WorkingPlanId], []),
   'adminAllotSamples' : IDL.Func(
       [IDL.Principal, ProductId, IDL.Nat, IDL.Text],
       [],
@@ -282,13 +301,14 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
-  'adminGetTADASettings' : IDL.Func([], [TADASettings], ['query']),
+  'adminGetAllWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
+  'adminGetTADASettings' : IDL.Func([], [TADASettingsV3], ['query']),
   'adminSaveManagerProfile' : IDL.Func(
       [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
       [],
       [],
     ),
-  'adminSetTADASettings' : IDL.Func([TADASettings], [], []),
+  'adminSetTADASettings' : IDL.Func([TADASettingsV3], [], []),
   'applyLeave' : IDL.Func(
       [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
       [],
@@ -308,6 +328,7 @@ export const idlService = IDL.Service({
   'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
   'deleteManagerProfile' : IDL.Func([IDL.Principal], [], []),
   'deleteProduct' : IDL.Func([ProductId], [], []),
+  'deleteWorkingPlan' : IDL.Func([WorkingPlanId], [], []),
   'emergencyRestoreAdmin' : IDL.Func([], [], []),
   'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
   'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
@@ -397,6 +418,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(SampleDemandOrder)],
       ['query'],
     ),
+  'getMyWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
   'getSampleEntries' : IDL.Func([], [IDL.Vec(SampleEntry)], ['query']),
   'getTeamDetailingEntries' : IDL.Func(
       [],
@@ -418,6 +440,7 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'isAdminInitialized' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
   'logGiftDistribution' : IDL.Func(
@@ -487,19 +510,37 @@ export const idlFactory = ({ IDL }) => {
   const ProductId = IDL.Nat;
   const DoctorId = IDL.Nat;
   const GiftArticleId = IDL.Nat;
-  const TADASettings = IDL.Record({
+  const WorkingPlanInput = IDL.Record({
+    'content' : IDL.Text,
+    'date' : IDL.Text,
+    'workingMode' : IDL.Text,
+    'workingWith' : IDL.Opt(IDL.Text),
+    'stationType' : IDL.Text,
+  });
+  const WorkingPlanId = IDL.Nat;
+  const WorkingPlan = IDL.Record({
+    'id' : WorkingPlanId,
+    'content' : IDL.Text,
+    'date' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'workingMode' : IDL.Text,
+    'workingWith' : IDL.Opt(IDL.Text),
+    'stationType' : IDL.Text,
+    'principalId' : IDL.Principal,
+  });
+  const TADASettingsV3 = IDL.Record({
     'mrTaPerKm' : IDL.Nat,
     'mrDaHQ' : IDL.Nat,
-    'mrDaOutStation' : IDL.Nat,
-    'mrDaExStation' : IDL.Nat,
-    'asmTaPerKm' : IDL.Nat,
-    'asmDaHQ' : IDL.Nat,
-    'asmDaOutStation' : IDL.Nat,
-    'asmDaExStation' : IDL.Nat,
-    'rsmTaPerKm' : IDL.Nat,
     'rsmDaHQ' : IDL.Nat,
     'rsmDaOutStation' : IDL.Nat,
+    'rsmTaPerKm' : IDL.Nat,
+    'asmDaOutStation' : IDL.Nat,
+    'asmDaHQ' : IDL.Nat,
+    'asmTaPerKm' : IDL.Nat,
+    'mrDaExStation' : IDL.Nat,
     'rsmDaExStation' : IDL.Nat,
+    'asmDaExStation' : IDL.Nat,
+    'mrDaOutStation' : IDL.Nat,
   });
   const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
   const LeaveType = IDL.Variant({
@@ -739,6 +780,7 @@ export const idlFactory = ({ IDL }) => {
     'addGiftArticle' : IDL.Func([IDL.Text, IDL.Text], [GiftArticleId], []),
     'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
     'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
+    'addWorkingPlan' : IDL.Func([WorkingPlanInput], [WorkingPlanId], []),
     'adminAllotSamples' : IDL.Func(
         [IDL.Principal, ProductId, IDL.Nat, IDL.Text],
         [],
@@ -754,13 +796,14 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
-    'adminGetTADASettings' : IDL.Func([], [TADASettings], ['query']),
+    'adminGetAllWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
+    'adminGetTADASettings' : IDL.Func([], [TADASettingsV3], ['query']),
     'adminSaveManagerProfile' : IDL.Func(
         [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
         [],
         [],
       ),
-    'adminSetTADASettings' : IDL.Func([TADASettings], [], []),
+    'adminSetTADASettings' : IDL.Func([TADASettingsV3], [], []),
     'applyLeave' : IDL.Func(
         [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
         [],
@@ -784,6 +827,7 @@ export const idlFactory = ({ IDL }) => {
     'deleteMRProfile' : IDL.Func([IDL.Principal], [], []),
     'deleteManagerProfile' : IDL.Func([IDL.Principal], [], []),
     'deleteProduct' : IDL.Func([ProductId], [], []),
+    'deleteWorkingPlan' : IDL.Func([WorkingPlanId], [], []),
     'emergencyRestoreAdmin' : IDL.Func([], [], []),
     'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
     'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
@@ -877,6 +921,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(SampleDemandOrder)],
         ['query'],
       ),
+    'getMyWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
     'getSampleEntries' : IDL.Func([], [IDL.Vec(SampleEntry)], ['query']),
     'getTeamDetailingEntries' : IDL.Func(
         [],
@@ -898,6 +943,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'isAdminInitialized' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
     'logGiftDistribution' : IDL.Func(

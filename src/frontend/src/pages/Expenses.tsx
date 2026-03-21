@@ -22,7 +22,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Car, IndianRupee, Loader2, MapPin, Receipt } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { Area, ExpenseEntry, MRProfile, TADASettings } from "../backend";
+import type { Area, ExpenseEntry, MRProfile, TADASettingsV3 } from "../backend";
 import { useActor } from "../hooks/useActor";
 
 // TA is stored as paise (x100) in the backend to preserve 2 decimal places
@@ -52,7 +52,7 @@ export default function Expenses() {
   const [taOverride, setTaOverride] = useState(false);
 
   // Fetch TA/DA settings
-  const { data: tadaSettings } = useQuery<TADASettings>({
+  const { data: tadaSettings } = useQuery<TADASettingsV3>({
     queryKey: ["tadaSettings"],
     queryFn: async () => {
       if (!actor) throw new Error("No actor");

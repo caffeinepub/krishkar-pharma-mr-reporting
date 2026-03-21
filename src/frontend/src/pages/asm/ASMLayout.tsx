@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   CalendarCheck,
+  CalendarRange,
   ClipboardList,
   IndianRupee,
   LayoutDashboard,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
+import WorkingPlanPage from "../WorkingPlanPage";
 import ASMCRMDemand from "./ASMCRMDemand";
 import ASMDashboard from "./ASMDashboard";
 import ASMLeaveApprovals from "./ASMLeaveApprovals";
@@ -23,11 +25,13 @@ type ASMPage =
   | "leave-approvals"
   | "team-reports"
   | "crm-demand"
-  | "working-details";
+  | "working-details"
+  | "working-plan";
 
 const navItems: { id: ASMPage; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "working-details", label: "Working Details", icon: ClipboardList },
+  { id: "working-plan", label: "Working Plan", icon: CalendarRange },
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
   { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
@@ -36,6 +40,7 @@ const navItems: { id: ASMPage; label: string; icon: React.ElementType }[] = [
 const pageTitles: Record<ASMPage, string> = {
   dashboard: "ASM Dashboard",
   "working-details": "Daily Working Details",
+  "working-plan": "Working Plan",
   "leave-approvals": "Leave Approvals",
   "team-reports": "Team Reports",
   "crm-demand": "CRM Demand",
@@ -58,6 +63,8 @@ export default function ASMLayout() {
         return <ASMDashboard />;
       case "working-details":
         return <ASMWorkingDetails />;
+      case "working-plan":
+        return <WorkingPlanPage />;
       case "leave-approvals":
         return <ASMLeaveApprovals />;
       case "team-reports":

@@ -47,6 +47,23 @@ export interface DoctorInput {
     areaId: AreaId;
     qualification: string;
 }
+export interface WorkingPlan {
+    id: WorkingPlanId;
+    content: string;
+    date: string;
+    createdAt: bigint;
+    workingMode: string;
+    workingWith?: string;
+    stationType: string;
+    principalId: Principal;
+}
+export interface WorkingPlanInput {
+    content: string;
+    date: string;
+    workingMode: string;
+    workingWith?: string;
+    stationType: string;
+}
 export interface SampleDemandOrder {
     id: bigint;
     status: DemandOrderStatus;
@@ -105,6 +122,7 @@ export interface Chemist {
     areaId: AreaId;
 }
 export type GiftArticleId = bigint;
+export type WorkingPlanId = bigint;
 export interface SampleEntry {
     doctorId: DoctorId;
     date: string;
@@ -118,26 +136,12 @@ export interface DetailingEntry {
     productIds: Array<ProductId>;
     date: string;
 }
-export interface TADASettings {
-    mrTaPerKm: bigint;
-    mrDaHQ: bigint;
-    mrDaOutStation: bigint;
-    mrDaExStation: bigint;
-    rsmTaPerKm: bigint;
-    rsmDaHQ: bigint;
-    rsmDaOutStation: bigint;
-    rsmDaExStation: bigint;
-    asmTaPerKm: bigint;
-    asmDaHQ: bigint;
-    asmDaOutStation: bigint;
-    asmDaExStation: bigint;
-}
+export type ChemistId = bigint;
 export interface GiftArticle {
     id: GiftArticleId;
     name: string;
     description: string;
 }
-export type ChemistId = bigint;
 export interface Headquarter {
     id: bigint;
     name: string;
@@ -165,6 +169,20 @@ export interface ActivitySummary {
     dailyExpense: bigint;
     doctorsVisited: bigint;
     chemistOrders: bigint;
+}
+export interface TADASettingsV3 {
+    mrTaPerKm: bigint;
+    mrDaHQ: bigint;
+    rsmDaHQ: bigint;
+    rsmDaOutStation: bigint;
+    rsmTaPerKm: bigint;
+    asmDaOutStation: bigint;
+    asmDaHQ: bigint;
+    asmTaPerKm: bigint;
+    mrDaExStation: bigint;
+    rsmDaExStation: bigint;
+    asmDaExStation: bigint;
+    mrDaOutStation: bigint;
 }
 export interface Area {
     id: AreaId;
@@ -219,9 +237,6 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
-export type LeaveStatus = { Approved: null } | { Rejected: null } | { Pending: null };
-export type CRMDemandStatus = { Approved: null } | { Rejected: null } | { Pending: null };
-export type GiftDemandOrderStatus = { Approved: null } | { Rejected: null } | { Pending: null };
 export interface backendInterface {
     addArea(name: string, headquarterId: bigint): Promise<AreaId>;
     addChemist(name: string, areaId: AreaId, address: string, contact: string): Promise<ChemistId>;
@@ -231,12 +246,14 @@ export interface backendInterface {
     addGiftArticle(name: string, description: string): Promise<GiftArticleId>;
     addHeadquarter(name: string): Promise<bigint>;
     addProduct(name: string, code: string): Promise<ProductId>;
+    addWorkingPlan(input: WorkingPlanInput): Promise<WorkingPlanId>;
     adminAllotSamples(target: Principal, productId: ProductId, quantity: bigint, date: string): Promise<void>;
     adminAssignManagerAreas(target: Principal, areaIds: Array<AreaId>): Promise<void>;
     adminCreateOrUpdateMRProfile(mrPrincipal: Principal, employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
-    adminGetTADASettings(): Promise<TADASettings>;
+    adminGetAllWorkingPlans(): Promise<Array<WorkingPlan>>;
+    adminGetTADASettings(): Promise<TADASettingsV3>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
-    adminSetTADASettings(settings: TADASettings): Promise<void>;
+    adminSetTADASettings(settings: TADASettingsV3): Promise<void>;
     applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkAddDoctors(doctorsInput: Array<DoctorInput>): Promise<Array<DoctorId>>;
@@ -248,6 +265,7 @@ export interface backendInterface {
     deleteMRProfile(mrPrincipal: Principal): Promise<void>;
     deleteManagerProfile(target: Principal): Promise<void>;
     deleteProduct(id: ProductId): Promise<void>;
+    deleteWorkingPlan(planId: WorkingPlanId): Promise<void>;
     emergencyRestoreAdmin(): Promise<void>;
     getActivitySummary(date: string): Promise<ActivitySummary>;
     getAllAreas(): Promise<Array<Area>>;
@@ -287,6 +305,7 @@ export interface backendInterface {
     getMyGiftDistributions(): Promise<Array<GiftDistribution>>;
     getMySampleBalance(): Promise<Array<SampleBalance>>;
     getMySampleDemandOrders(): Promise<Array<SampleDemandOrder>>;
+    getMyWorkingPlans(): Promise<Array<WorkingPlan>>;
     getSampleEntries(): Promise<Array<SampleEntry>>;
     getTeamDetailingEntries(): Promise<Array<[Principal, Array<DetailingEntry>]>>;
     getTeamExpenseEntries(): Promise<Array<[Principal, Array<ExpenseEntry>]>>;
