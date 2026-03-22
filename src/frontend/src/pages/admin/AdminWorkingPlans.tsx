@@ -20,7 +20,7 @@ import { useActor } from "@/hooks/useActor";
 import { CalendarDays, Loader2, MapPin, User2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { WorkingPlan } from "../../backend";
+import type { ManagerProfile, UserProfile, WorkingPlan } from "../../backend";
 
 interface MonthOption {
   value: string;
@@ -45,6 +45,7 @@ function getMonthOptions(): MonthOption[] {
 export default function AdminWorkingPlans() {
   const { actor } = useActor();
   const [plans, setPlans] = useState<WorkingPlan[]>([]);
+  const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -61,6 +62,28 @@ export default function AdminWorkingPlans() {
       .then((result) => setPlans(result))
       .catch(() => toast.error("Failed to load working plans"))
       .finally(() => setLoading(false));
+  }, [actor]);
+
+  useEffect(() => {
+    if (!actor) return;
+    Promise.all([actor.getAllUserProfiles(), actor.getAllManagerProfiles()])
+      .then(([userProfiles, managerProfiles]) => {
+        const map = new Map<string, string>();
+        for (const [principal, profile] of userProfiles) {
+          map.set(
+            principal.toString(),
+            (profile as UserProfile).name || "Unknown",
+          );
+        }
+        for (const [principal, profile] of managerProfiles) {
+          map.set(
+            principal.toString(),
+            (profile as ManagerProfile).name || "Unknown",
+          );
+        }
+        setNameMap(map);
+      })
+      .catch(() => {});
   }, [actor]);
 
   const filteredPlans = plans
@@ -166,6 +189,9 @@ export default function AdminWorkingPlans() {
                   <TableHead className="font-semibold text-gray-700">
                     Station Type
                   </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    Added By
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -221,6 +247,13 @@ export default function AdminWorkingPlans() {
                         <MapPin size={11} className="mr-1" />
                         {stationLabel(plan.stationType)}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-700">
+                      {nameMap.get(plan.principalId.toString()) || (
+                        <span className="text-gray-400 text-xs font-mono">
+                          {plan.principalId.toString().slice(0, 8)}...
+                        </span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -266,6 +266,7 @@ export interface backendInterface {
     deleteManagerProfile(target: Principal): Promise<void>;
     deleteProduct(id: ProductId): Promise<void>;
     deleteWorkingPlan(planId: WorkingPlanId): Promise<void>;
+    adminResetAllReportData(): Promise<void>;
     emergencyRestoreAdmin(): Promise<void>;
     getActivitySummary(date: string): Promise<ActivitySummary>;
     getAllAreas(): Promise<Array<Area>>;

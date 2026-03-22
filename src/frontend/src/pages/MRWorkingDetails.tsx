@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  CalendarDays,
   DollarSign,
   FlaskConical,
   Gift,
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { MRProfile } from "../backend";
+import type { MRProfile, WorkingPlan } from "../backend";
 import { useActor } from "../hooks/useActor";
 
 export default function MRWorkingDetails() {
@@ -34,6 +35,18 @@ export default function MRWorkingDetails() {
   const [date, setDate] = useState(today);
 
   const enabled = !!actor && !isFetching;
+
+  // ── Today's Working Plan ──────────────────────────────────
+  const { data: workingPlans = [] } = useQuery<WorkingPlan[]>({
+    queryKey: ["myWorkingPlans"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getMyWorkingPlans();
+    },
+    enabled,
+  });
+
+  const todayPlans = workingPlans.filter((p) => p.date === today);
 
   // ── Data Queries ──────────────────────────────────────────
   const { data: allAreas = [] } = useQuery({
@@ -300,6 +313,45 @@ export default function MRWorkingDetails() {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {todayPlans.length > 0 && (
+        <Card className="bg-blue-50 border border-blue-200 shadow-sm rounded-xl">
+          <CardHeader className="pb-3 pt-4 px-5">
+            <CardTitle className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+              <CalendarDays size={16} className="text-blue-600" />
+              Today's Working Plan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-4 space-y-3">
+            {todayPlans.map((plan) => (
+              <div
+                key={String(plan.id)}
+                className="bg-white rounded-lg p-3 border border-blue-100 space-y-1"
+              >
+                <p className="text-sm text-gray-800">{plan.content}</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                  >
+                    {plan.workingMode === "alone"
+                      ? "Working Alone"
+                      : `With: ${plan.workingWith || "Someone"}`}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${plan.stationType === "plan" ? "bg-green-50 text-green-700 border-green-200" : "bg-orange-50 text-orange-700 border-orange-200"}`}
+                  >
+                    {plan.stationType === "plan"
+                      ? "As Per Working Plan"
+                      : "Other Station"}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Page header with date picker */}
       <div className="flex items-center justify-between">
         <div>

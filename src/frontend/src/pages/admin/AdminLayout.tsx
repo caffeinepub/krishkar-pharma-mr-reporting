@@ -17,6 +17,7 @@ import {
   Shield,
   ShoppingBag,
   Stethoscope,
+  Trash2,
   User,
   UserCog,
   Users,
@@ -34,6 +35,7 @@ import AdminGiftOrders from "./AdminGiftOrders";
 import AdminHeadquarters from "./AdminHeadquarters";
 import AdminProducts from "./AdminProducts";
 import AdminReports from "./AdminReports";
+import AdminResetData from "./AdminResetData";
 import AdminSampleManagement from "./AdminSampleManagement";
 import AdminTADASettings from "./AdminTADASettings";
 import AdminWorkingPlans from "./AdminWorkingPlans";
@@ -56,7 +58,8 @@ type AdminPage =
   | "gift-orders"
   | "gift-articles"
   | "tada-settings"
-  | "working-plans";
+  | "working-plans"
+  | "reset-data";
 
 const adminNavItems: {
   id: AdminPage;
@@ -78,6 +81,7 @@ const adminNavItems: {
   { id: "gift-articles", label: "Gift Articles", icon: ShoppingBag },
   { id: "tada-settings", label: "TA/DA Settings", icon: IndianRupee },
   { id: "working-plans", label: "Working Plans", icon: CalendarRange },
+  { id: "reset-data", label: "Reset Data", icon: Trash2 },
 ];
 
 const pageTitles: Record<AdminPage, string> = {
@@ -96,6 +100,7 @@ const pageTitles: Record<AdminPage, string> = {
   "gift-articles": "Gift Articles Catalog",
   "tada-settings": "TA/DA Settings",
   "working-plans": "All Working Plans",
+  "reset-data": "Reset Report Data",
 };
 
 export default function AdminLayout() {
@@ -148,6 +153,8 @@ export default function AdminLayout() {
         return <AdminTADASettings />;
       case "working-plans":
         return <AdminWorkingPlans />;
+      case "reset-data":
+        return <AdminResetData />;
     }
   };
 

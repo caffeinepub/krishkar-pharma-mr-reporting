@@ -47,7 +47,7 @@ export default function Expenses() {
   const [daOverride, setDaOverride] = useState(false);
   const [notes, setNotes] = useState("");
   const [workingArea, setWorkingArea] = useState("");
-  const [daType, setDaType] = useState<"HQ" | "OutStation">("HQ");
+  const [daType, setDaType] = useState<"HQ" | "OutStation" | "ExStation">("HQ");
   const [taManual, setTaManual] = useState("");
   const [taOverride, setTaOverride] = useState(false);
 
@@ -99,6 +99,14 @@ export default function Expenses() {
         : Number(tadaSettings.mrDaOutStation)
     : 400;
 
+  const daExAmount = tadaSettings
+    ? effectiveRole === "rsm"
+      ? Number(tadaSettings.rsmDaExStation)
+      : effectiveRole === "asm"
+        ? Number(tadaSettings.asmDaExStation)
+        : Number(tadaSettings.mrDaExStation)
+    : 500;
+
   // Auto-calculate TA when KM changes (unless manually overridden)
   useEffect(() => {
     if (!taOverride && km) {
@@ -113,9 +121,11 @@ export default function Expenses() {
   // Auto-set DA when daType changes (unless manually overridden)
   useEffect(() => {
     if (!daOverride) {
-      setDa(daType === "HQ" ? String(daHQAmount) : String(daOutAmount));
+      if (daType === "HQ") setDa(String(daHQAmount));
+      else if (daType === "OutStation") setDa(String(daOutAmount));
+      else setDa(String(daExAmount));
     }
-  }, [daType, daHQAmount, daOutAmount, daOverride]);
+  }, [daType, daHQAmount, daOutAmount, daExAmount, daOverride]);
 
   const taValue = taManual ? Number.parseFloat(taManual) : 0;
   const total = taValue + Number(da);
@@ -309,7 +319,9 @@ export default function Expenses() {
                     setDa(
                       daType === "HQ"
                         ? String(daHQAmount)
-                        : String(daOutAmount),
+                        : daType === "OutStation"
+                          ? String(daOutAmount)
+                          : String(daExAmount),
                     );
                   }}
                 >
@@ -346,7 +358,9 @@ export default function Expenses() {
               </Label>
               <Select
                 value={daType}
-                onValueChange={(v) => setDaType(v as "HQ" | "OutStation")}
+                onValueChange={(v) =>
+                  setDaType(v as "HQ" | "OutStation" | "ExStation")
+                }
               >
                 <SelectTrigger
                   data-ocid="expenses.da_type.select"
@@ -357,6 +371,7 @@ export default function Expenses() {
                 <SelectContent>
                   <SelectItem value="HQ">Head Quarter</SelectItem>
                   <SelectItem value="OutStation">Out Station</SelectItem>
+                  <SelectItem value="ExStation">Ex-Station</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -395,7 +410,11 @@ export default function Expenses() {
                   ₹{Number(da).toLocaleString()}
                 </p>
                 <p className="text-xs text-green-400 mt-0.5">
-                  {daType === "HQ" ? "Head Quarter" : "Out Station"}
+                  {daType === "HQ"
+                    ? "Head Quarter"
+                    : daType === "OutStation"
+                      ? "Out Station"
+                      : "Ex-Station"}
                 </p>
               </div>
               <div className="bg-purple-50 rounded-lg p-3 text-center">
@@ -506,10 +525,16 @@ export default function Expenses() {
                             className={
                               e.daType === "HQ"
                                 ? "border-blue-200 text-blue-700 bg-blue-50 text-xs"
-                                : "border-orange-200 text-orange-700 bg-orange-50 text-xs"
+                                : e.daType === "ExStation"
+                                  ? "border-green-200 text-green-700 bg-green-50 text-xs"
+                                  : "border-orange-200 text-orange-700 bg-orange-50 text-xs"
                             }
                           >
-                            {e.daType === "HQ" ? "Head Quarter" : "Out Station"}
+                            {e.daType === "HQ"
+                              ? "Head Quarter"
+                              : e.daType === "ExStation"
+                                ? "Ex-Station"
+                                : "Out Station"}
                           </Badge>
                         ) : (
                           <span className="text-gray-400 text-sm">—</span>

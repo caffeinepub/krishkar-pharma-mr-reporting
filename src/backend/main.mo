@@ -10,9 +10,9 @@ import Int "mo:core/Int";
 import Principal "mo:core/Principal";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   // === Type Definitions ===
   type UserProfile = {
@@ -1482,5 +1482,25 @@ actor {
   func convertNat32ToInt(nat32Value : Nat32) : Int {
     nat32Value.toNat().toInt();
   };
+
+  // === Admin Reset All Report Data ===
+  public shared ({ caller }) func adminResetAllReportData() : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      return;
+    };
+    // Clear all transactional/report data
+    for (k in detailingEntries.keys().toArray().vals()) { detailingEntries.remove(k) };
+    for (k in sampleEntries.keys().toArray().vals()) { sampleEntries.remove(k) };
+    for (k in chemistOrders.keys().toArray().vals()) { chemistOrders.remove(k) };
+    for (k in expenseEntries.keys().toArray().vals()) { expenseEntries.remove(k) };
+    for (k in leaveEntries.keys().toArray().vals()) { leaveEntries.remove(k) };
+    for (k in crmDemands.keys().toArray().vals()) { crmDemands.remove(k) };
+    for (k in giftDistributions.keys().toArray().vals()) { giftDistributions.remove(k) };
+    for (k in giftDemandOrders.keys().toArray().vals()) { giftDemandOrders.remove(k) };
+    for (k in workingPlans.keys().toArray().vals()) { workingPlans.remove(k) };
+    for (k in sampleDemandOrders.keys().toArray().vals()) { sampleDemandOrders.remove(k) };
+    for (k in sampleAllotments.keys().toArray().vals()) { sampleAllotments.remove(k) };
+  };
+
 };
 
