@@ -500,6 +500,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'adminResetAllReportData' : IDL.Func([], [], []),
 });
 
 export const idlInitArgs = [];
@@ -1007,6 +1008,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'adminResetAllReportData' : IDL.Func([], [], []),
   });
 };
 

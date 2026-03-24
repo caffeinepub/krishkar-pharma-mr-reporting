@@ -19,7 +19,7 @@ export default function AdminResetData() {
     setLoading(true);
     try {
       if (!actor) throw new Error("Not connected");
-      await (actor as any).adminResetAllReportData();
+      await actor.adminResetAllReportData();
       toast.success("All report data has been cleared successfully.");
       setDone(true);
       setConfirmText("");

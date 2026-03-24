@@ -401,6 +401,7 @@ export interface _SERVICE {
     [bigint, DemandOrderStatus],
     undefined
   >,
+  'adminResetAllReportData' : ActorMethod<[], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

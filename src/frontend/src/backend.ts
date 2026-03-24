@@ -349,6 +349,7 @@ export interface backendInterface {
     deleteManagerProfile(target: Principal): Promise<void>;
     deleteProduct(id: ProductId): Promise<void>;
     deleteWorkingPlan(planId: WorkingPlanId): Promise<void>;
+    adminResetAllReportData(): Promise<void>;
     emergencyRestoreAdmin(): Promise<void>;
     getActivitySummary(date: string): Promise<ActivitySummary>;
     getAllAreas(): Promise<Array<Area>>;
@@ -835,6 +836,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.emergencyRestoreAdmin();
+            return result;
+        }
+    }
+    async adminResetAllReportData(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminResetAllReportData();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminResetAllReportData();
             return result;
         }
     }

@@ -12,13 +12,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -29,14 +22,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useActor } from "@/hooks/useActor";
-import {
-  CalendarPlus,
-  Loader2,
-  MapPin,
-  Plus,
-  Trash2,
-  User2,
-} from "lucide-react";
+import { CalendarPlus, Loader2, MapPin, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { WorkingPlan } from "../backend";
@@ -77,9 +63,6 @@ export default function WorkingPlanPage() {
 
   const [formDate, setFormDate] = useState("");
   const [formContent, setFormContent] = useState("");
-  const [formWorkingMode, setFormWorkingMode] = useState("alone");
-  const [formWorkingWith, setFormWorkingWith] = useState("");
-  const [formStationType, setFormStationType] = useState("plan");
 
   const { start: minDateInput } = getMonthRange("current");
   const { end: maxDateInput } = getMonthRange("next");
@@ -110,9 +93,6 @@ export default function WorkingPlanPage() {
   const resetForm = () => {
     setFormDate("");
     setFormContent("");
-    setFormWorkingMode("alone");
-    setFormWorkingWith("");
-    setFormStationType("plan");
   };
 
   const handleSubmit = async () => {
@@ -126,12 +106,9 @@ export default function WorkingPlanPage() {
       await actor.addWorkingPlan({
         date: formDate,
         content: formContent.trim(),
-        workingMode: formWorkingMode,
-        workingWith:
-          formWorkingMode === "with" && formWorkingWith.trim()
-            ? formWorkingWith.trim()
-            : undefined,
-        stationType: formStationType,
+        workingMode: "alone",
+        workingWith: undefined,
+        stationType: "plan",
       });
       toast.success("Working plan added successfully");
       setDialogOpen(false);
@@ -157,14 +134,6 @@ export default function WorkingPlanPage() {
       setDeletingId(null);
     }
   };
-
-  const stationLabel = (type: string) =>
-    type === "plan" ? "As Per Working Plan" : "Other Station";
-
-  const stationColor = (type: string) =>
-    type === "plan"
-      ? "bg-blue-100 text-blue-700 border-blue-200"
-      : "bg-orange-100 text-orange-700 border-orange-200";
 
   return (
     <div className="space-y-6">
@@ -227,49 +196,6 @@ export default function WorkingPlanPage() {
                   onChange={(e) => setFormContent(e.target.value)}
                   rows={3}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Working Mode</Label>
-                <Select
-                  value={formWorkingMode}
-                  onValueChange={setFormWorkingMode}
-                >
-                  <SelectTrigger data-ocid="working_plan.select">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="alone">Alone</SelectItem>
-                    <SelectItem value="with">With Someone</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {formWorkingMode === "with" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="working-with">
-                    Working With (Name/Details)
-                  </Label>
-                  <Input
-                    id="working-with"
-                    placeholder="e.g. Dr. Sharma, ASM Rajesh..."
-                    value={formWorkingWith}
-                    onChange={(e) => setFormWorkingWith(e.target.value)}
-                  />
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <Label>Station Type</Label>
-                <Select
-                  value={formStationType}
-                  onValueChange={setFormStationType}
-                >
-                  <SelectTrigger data-ocid="working_plan.select">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="plan">As Per Working Plan</SelectItem>
-                    <SelectItem value="other">Other Station</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <DialogFooter>
@@ -349,15 +275,6 @@ export default function WorkingPlanPage() {
                   <TableHead className="font-semibold text-gray-700">
                     Description
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Working Mode
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Working With
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Station Type
-                  </TableHead>
                   <TableHead className="font-semibold text-gray-700 text-right">
                     Action
                   </TableHead>
@@ -383,38 +300,6 @@ export default function WorkingPlanPage() {
                       <p className="text-sm text-gray-700 line-clamp-2">
                         {plan.content}
                       </p>
-                    </TableCell>
-                    <TableCell>
-                      {plan.workingMode === "alone" ? (
-                        <Badge
-                          variant="outline"
-                          className="bg-gray-50 text-gray-600 border-gray-200 gap-1"
-                        >
-                          Alone
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="bg-purple-50 text-purple-700 border-purple-200 gap-1"
-                        >
-                          <User2 size={12} /> With Someone
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {plan.workingWith ?? (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${stationColor(plan.stationType)}`}
-                      >
-                        {stationLabel(plan.stationType)}
-                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

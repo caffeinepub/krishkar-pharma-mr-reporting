@@ -23,10 +23,16 @@ import {
   MapPin,
   ShoppingBag,
   Stethoscope,
+  User2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { MRProfile, WorkingPlan } from "../backend";
+import type {
+  MRProfile,
+  ManagerProfile,
+  UserProfile,
+  WorkingPlan,
+} from "../backend";
 import { useActor } from "../hooks/useActor";
 
 export default function MRWorkingDetails() {
@@ -311,8 +317,190 @@ export default function MRWorkingDetails() {
     setOrderChemistId("");
   }, [orderAreaId]);
 
+  // ── Working Mode Header ───────────────────────────────────
+  const [workingMode, setWorkingMode] = useState("alone");
+  const [workingWith, setWorkingWith] = useState("");
+  const [stationType, setStationType] = useState("plan");
+  const [savingHeader, setSavingHeader] = useState(false);
+  const [useOtherName, setUseOtherName] = useState(false);
+
+  // Fetch all staff names for "Working With" dropdown
+  const { data: staffNames = [], isLoading: staffNamesLoading } = useQuery<
+    string[]
+  >({
+    queryKey: ["allStaffNames"],
+    queryFn: async () => {
+      if (!actor) return [];
+      const [userProfiles, managerProfiles] = await Promise.all([
+        actor.getAllUserProfiles() as Promise<Array<[unknown, UserProfile]>>,
+        actor.getAllManagerProfiles() as Promise<
+          Array<[unknown, ManagerProfile]>
+        >,
+      ]);
+      const names = [
+        ...userProfiles.map(([, p]) => p.name),
+        ...managerProfiles.map(([, p]) => p.name),
+      ].filter((n) => n && n.trim().length > 0);
+      return Array.from(new Set(names)).sort();
+    },
+    enabled,
+  });
+
+  // Pre-populate from today's plan
+  useEffect(() => {
+    if (todayPlans.length > 0) {
+      const plan = todayPlans[0];
+      setWorkingMode(plan.workingMode ?? "alone");
+      const savedWith = plan.workingWith ?? "";
+      setWorkingWith(savedWith);
+      // If saved name doesn't match any staff name, show manual input
+      if (
+        savedWith &&
+        staffNames.length > 0 &&
+        !staffNames.includes(savedWith)
+      ) {
+        setUseOtherName(true);
+      } else {
+        setUseOtherName(false);
+      }
+      setStationType(plan.stationType ?? "plan");
+    }
+  }, [todayPlans, staffNames]);
+
+  const handleSaveHeader = async () => {
+    if (!actor) return;
+    setSavingHeader(true);
+    try {
+      await actor.addWorkingPlan({
+        date: today,
+        content: todayPlans[0]?.content ?? "",
+        workingMode,
+        workingWith:
+          workingMode === "with" && workingWith ? workingWith : undefined,
+        stationType,
+      });
+      toast.success("Working mode saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setSavingHeader(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* ── Today's Working Mode Card ── */}
+      <Card className="border border-[#E5EAF2] shadow-sm rounded-xl bg-white">
+        <CardHeader className="pb-3 pt-4 px-5 border-b border-[#F1F5F9]">
+          <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <User2 size={16} className="text-[#0B2F6B]" />
+            Today's Working Mode
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-5 py-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">
+                Working Mode
+              </Label>
+              <Select value={workingMode} onValueChange={setWorkingMode}>
+                <SelectTrigger
+                  data-ocid="working_details.working_mode.select"
+                  className="border-[#E5EAF2]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alone">Alone</SelectItem>
+                  <SelectItem value="with">With Someone</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">
+                Station Type
+              </Label>
+              <Select value={stationType} onValueChange={setStationType}>
+                <SelectTrigger
+                  data-ocid="working_details.station_type.select"
+                  className="border-[#E5EAF2]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="plan">As Per Working Plan</SelectItem>
+                  <SelectItem value="other">Other Station</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {workingMode === "with" && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">
+                Working With
+              </Label>
+              <Select
+                value={useOtherName ? "__other__" : workingWith}
+                onValueChange={(val) => {
+                  if (val === "__other__") {
+                    setUseOtherName(true);
+                    setWorkingWith("");
+                  } else {
+                    setUseOtherName(false);
+                    setWorkingWith(val);
+                  }
+                }}
+                disabled={staffNamesLoading}
+              >
+                <SelectTrigger
+                  data-ocid="working_details.working_with.select"
+                  className="border-[#E5EAF2]"
+                >
+                  <SelectValue
+                    placeholder={
+                      staffNamesLoading ? "Loading..." : "Select a person"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {staffNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__other__">
+                    Other (type manually)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {useOtherName && (
+                <Input
+                  data-ocid="working_details.working_with.input"
+                  placeholder="Enter name manually..."
+                  value={workingWith}
+                  onChange={(e) => setWorkingWith(e.target.value)}
+                  className="border-[#E5EAF2] mt-2"
+                />
+              )}
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button
+              data-ocid="working_details.save_mode.button"
+              className="bg-[#0B2F6B] hover:bg-[#0E5AA7]"
+              onClick={handleSaveHeader}
+              disabled={savingHeader}
+              size="sm"
+            >
+              {savingHeader ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {savingHeader ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {todayPlans.length > 0 && (
         <Card className="bg-blue-50 border border-blue-200 shadow-sm rounded-xl">
           <CardHeader className="pb-3 pt-4 px-5">
