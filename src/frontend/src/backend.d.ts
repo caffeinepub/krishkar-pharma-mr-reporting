@@ -44,6 +44,7 @@ export interface DoctorInput {
     station: string;
     name: string;
     mobileNumber?: string;
+    dob?: [] | [string];
     specialization: string;
     areaId: AreaId;
     qualification: string;
@@ -90,6 +91,7 @@ export interface Doctor {
     station: string;
     name: string;
     mobileNumber?: string;
+    dob?: [] | [string];
     createdBy: Principal;
     specialization: string;
     areaId: AreaId;
@@ -260,7 +262,7 @@ export interface backendInterface {
     addArea(name: string, headquarterId: bigint): Promise<AreaId>;
     addChemist(name: string, areaId: AreaId, address: string, contact: string): Promise<ChemistId>;
     addChemistOrder(chemistId: ChemistId, date: string, productId: ProductId, quantity: bigint, scheme: string): Promise<void>;
-    addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string]): Promise<DoctorId>;
+    addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string], dob: [] | [string]): Promise<DoctorId>;
     addExpenseWithGeoTag(date: string, kmTraveled: bigint, daAmount: bigint, notes: string, taAmountOpt: bigint | null, workingArea: string, daType: string, latitude: number | null, longitude: number | null): Promise<void>;
     addGPSTrace(latitude: number, longitude: number, accuracy: number): Promise<void>;
     addGiftArticle(name: string, description: string): Promise<GiftArticleId>;
@@ -350,7 +352,7 @@ export interface backendInterface {
     saveManagerProfile(name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     updateArea(id: AreaId, name: string, headquarterId: bigint): Promise<void>;
     updateCRMDemandStatus(demandId: CRMDemandId, newStatus: CRMDemandStatus, adminRemarks: string): Promise<void>;
-    updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string]): Promise<void>;
+    updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string], dob: [] | [string]): Promise<void>;
     updateGiftArticle(id: GiftArticleId, name: string, description: string): Promise<void>;
     updateGiftDemandOrderStatus(orderId: GiftDemandOrderId, newStatus: GiftDemandOrderStatus, adminRemarks: string): Promise<void>;
     updateHeadquarter(id: bigint, name: string): Promise<void>;

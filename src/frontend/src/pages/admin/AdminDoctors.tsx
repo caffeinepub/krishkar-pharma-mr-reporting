@@ -59,6 +59,7 @@ interface DoctorForm {
   specialization: string;
   areaId: string;
   mobileNumber: string;
+  dob: string;
 }
 
 const emptyForm: DoctorForm = {
@@ -68,6 +69,7 @@ const emptyForm: DoctorForm = {
   specialization: "",
   areaId: "",
   mobileNumber: "",
+  dob: "",
 };
 
 interface ParsedRow {
@@ -78,6 +80,7 @@ interface ParsedRow {
   areaName: string;
   areaId: number | null;
   mobileNumber: string;
+  dob: string;
 }
 
 export default function AdminDoctors() {
@@ -123,6 +126,7 @@ export default function AdminDoctors() {
         form.specialization,
         BigInt(form.areaId),
         form.mobileNumber ? [form.mobileNumber] : [],
+        form.dob ? [form.dob] : [],
       );
     },
     onSuccess: () => {
@@ -146,6 +150,7 @@ export default function AdminDoctors() {
         form.specialization,
         BigInt(form.areaId),
         form.mobileNumber ? [form.mobileNumber] : [],
+        form.dob ? [form.dob] : [],
       );
     },
     onSuccess: () => {
@@ -182,6 +187,7 @@ export default function AdminDoctors() {
           specialization: r.specialization,
           areaId: BigInt(r.areaId as number),
           mobileNumber: r.mobileNumber || undefined,
+          dob: r.dob ? [r.dob] : [],
         })),
       );
       return result.length;
@@ -204,6 +210,7 @@ export default function AdminDoctors() {
       specialization: doc.specialization,
       areaId: doc.areaId.toString(),
       mobileNumber: doc.mobileNumber?.[0] ?? "",
+      dob: doc.dob?.[0] ?? "",
     });
   };
 
@@ -240,6 +247,7 @@ export default function AdminDoctors() {
         headers.indexOf("mobile number") !== -1
           ? headers.indexOf("mobile number")
           : headers.indexOf("mobile");
+      const dobIdx = headers.indexOf("dob");
 
       const areaNameMap = new Map(
         (areas ?? []).map((a) => [a.name.toLowerCase().trim(), Number(a.id)]),
@@ -259,6 +267,7 @@ export default function AdminDoctors() {
             areaId,
             mobileNumber:
               mobileIdx !== -1 ? String(row[mobileIdx] ?? "").trim() : "",
+            dob: dobIdx !== -1 ? String(row[dobIdx] ?? "").trim() : "",
           };
         })
         .filter((r) => r.name);
@@ -364,6 +373,16 @@ export default function AdminDoctors() {
           placeholder="e.g. 9876543210"
           className="mt-1"
         />
+        <div>
+          <Label htmlFor="doc-dob">Date of Birth (Optional)</Label>
+          <Input
+            id="doc-dob"
+            type="date"
+            value={form.dob}
+            onChange={(e) => setForm({ ...form, dob: e.target.value })}
+            className="mt-1"
+          />
+        </div>
       </div>
     </div>
   );
@@ -439,6 +458,7 @@ export default function AdminDoctors() {
                     <TableHead>Specialization</TableHead>
                     <TableHead>Area</TableHead>
                     <TableHead>Mobile</TableHead>
+                    <TableHead>DOB</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -478,6 +498,9 @@ export default function AdminDoctors() {
                       </TableCell>
                       <TableCell className="text-gray-600 text-sm">
                         {doc.mobileNumber?.[0] ?? "—"}
+                        <TableCell className="text-gray-600 text-sm">
+                          {doc.dob?.[0] ?? "—"}
+                        </TableCell>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -633,9 +656,9 @@ export default function AdminDoctors() {
           <div className="space-y-4 py-2">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
               <strong>Expected columns:</strong> Name, Qualification, Station,
-              Specialization, Area, Mobile Number (optional) — column headers
-              are case-insensitive. Area must match an existing area name
-              exactly.
+              Specialization, Area, Mobile Number (optional), DOB (optional) —
+              column headers are case-insensitive. Area must match an existing
+              area name exactly.
             </div>
 
             <div>

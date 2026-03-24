@@ -148,6 +148,20 @@ export default function AdminReports() {
     },
   );
 
+  const { data: chemistOrders = [], isLoading: loadingChemistOrders } =
+    useQuery({
+      queryKey: ["all-chemist-orders"],
+      queryFn: () => actor!.getChemistOrders(),
+      enabled,
+    });
+
+  const { data: allChemistsReport = [], isLoading: loadingChemistsReport } =
+    useQuery({
+      queryKey: ["all-chemists-report"],
+      queryFn: () => actor!.getAllChemists(),
+      enabled,
+    });
+
   // Build lookup maps
   const userMap = new Map(userProfiles.map(([p, u]) => [p.toString(), u]));
   const areaMap = new Map(areas.map((a) => [String(a.id), a.name]));
@@ -238,6 +252,20 @@ export default function AdminReports() {
   const exportGiftDist = () =>
     exportToExcel(giftDistRows, "Gift_Distribution_Report");
 
+  const chemistMap = new Map(
+    allChemistsReport.map((c) => [String(c.id), c.name]),
+  );
+  const chemistOrderRows = chemistOrders.map((o) => ({
+    "Chemist Name": chemistMap.get(String(o.chemistId)) ?? "N/A",
+    Product: productMap.get(String(o.productId)) ?? "N/A",
+    Date: o.date,
+    Quantity: Number(o.quantity),
+    Scheme: o.scheme,
+    Status: String(o.status),
+  }));
+  const exportChemistOrders = () =>
+    exportToExcel(chemistOrderRows, "Chemist_Call_Orders_Report");
+
   const isLoadingMRCard = loadingMR || loadingUsers;
   const isLoadingLeaveCard = loadingLeaves || loadingUsers;
   const isLoadingDetailingCard =
@@ -314,6 +342,16 @@ export default function AdminReports() {
           isLoading={loadingGiftDist}
           onExport={exportGiftDist}
           exportId="gift_distributions"
+        />
+        <ReportCard
+          title="Chemist Orders Report"
+          description="All chemist call orders by MRs"
+          count={chemistOrderRows.length}
+          isLoading={
+            loadingChemistOrders || loadingChemistsReport || loadingProducts
+          }
+          onExport={exportChemistOrders}
+          exportId="chemist_orders"
         />
       </div>
     </div>

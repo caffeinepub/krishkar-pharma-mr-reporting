@@ -24,11 +24,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, MapPin, Phone, Plus, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import {
+  Loader2,
+  MapPin,
+  Phone,
+  Plus,
+  ShoppingBag,
+  Upload,
+} from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Area, Chemist, Product } from "../backend";
 import { useActor } from "../hooks/useActor";
+import { loadXlsx } from "../lib/xlsxLoader";
 
 export default function Chemists() {
   const { actor, isFetching } = useActor();
@@ -37,6 +45,7 @@ export default function Chemists() {
   const [filterAreaId, setFilterAreaId] = useState<string>("all");
   const [showAdd, setShowAdd] = useState(false);
   const [showOrder, setShowOrder] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [selectedChemist, setSelectedChemist] = useState<Chemist | null>(null);
 
   const [cName, setCName] = useState("");
@@ -50,6 +59,20 @@ export default function Chemists() {
   const [orderProductId, setOrderProductId] = useState("");
   const [orderQty, setOrderQty] = useState("1");
   const [orderScheme, setOrderScheme] = useState("");
+
+  // Bulk upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [bulkRows, setBulkRows] = useState<
+    Array<{
+      name: string;
+      area: string;
+      address: string;
+      contact: string;
+      areaId?: string;
+      valid: boolean;
+    }>
+  >([]);
+  const [bulkUploading, setBulkUploading] = useState(false);
 
   const { data: areas = [] } = useQuery<Area[]>({
     queryKey: ["areas"],
@@ -124,6 +147,70 @@ export default function Chemists() {
   const getAreaName = (areaId: bigint) =>
     areas.find((a) => a.id === areaId)?.name ?? String(areaId);
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const XLSX = await loadXlsx();
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: Array<Record<string, string>> = XLSX.utils.sheet_to_json(ws, {
+        defval: "",
+      });
+      const parsed = rows.map((row) => {
+        const name = String(row.Name ?? "").trim();
+        const area = String(row.Area ?? "").trim();
+        const address = String(row.Address ?? "").trim();
+        const contact = String(row.Contact ?? "").trim();
+        const matchedArea = areas.find(
+          (a) => a.name.toLowerCase() === area.toLowerCase(),
+        );
+        return {
+          name,
+          area,
+          address,
+          contact,
+          areaId: matchedArea ? String(matchedArea.id) : undefined,
+          valid: !!name && !!matchedArea,
+        };
+      });
+      setBulkRows(parsed);
+    } catch {
+      toast.error("Failed to parse Excel file");
+    }
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleBulkUpload = async () => {
+    const validRows = bulkRows.filter((r) => r.valid && r.areaId);
+    if (!actor || validRows.length === 0) return;
+    setBulkUploading(true);
+    let success = 0;
+    let fail = 0;
+    for (const row of validRows) {
+      try {
+        await actor.addChemist(
+          row.name,
+          BigInt(row.areaId!),
+          row.address,
+          row.contact,
+        );
+        success++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkUploading(false);
+    queryClient.invalidateQueries({ queryKey: ["chemists"] });
+    if (success > 0)
+      toast.success(`${success} chemist(s) uploaded successfully`);
+    if (fail > 0) toast.error(`${fail} row(s) failed to upload`);
+    setBulkRows([]);
+    setShowBulkUpload(false);
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -135,7 +222,7 @@ export default function Chemists() {
             {filtered.length} chemists found
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Select value={filterAreaId} onValueChange={setFilterAreaId}>
             <SelectTrigger
               data-ocid="chemists.select"
@@ -152,6 +239,14 @@ export default function Chemists() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            data-ocid="chemists.upload_button"
+            variant="outline"
+            className="border-[#0D5BA6] text-[#0D5BA6] hover:bg-blue-50 gap-2"
+            onClick={() => setShowBulkUpload(true)}
+          >
+            <Upload className="w-4 h-4" /> Upload from Excel
+          </Button>
           <Button
             data-ocid="chemists.open_modal_button"
             className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white gap-2"
@@ -428,6 +523,138 @@ export default function Chemists() {
                 variant="outline"
                 data-ocid="chemists.order.cancel_button"
                 onClick={() => setShowOrder(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Upload Dialog */}
+      <Dialog open={showBulkUpload} onOpenChange={setShowBulkUpload}>
+        <DialogContent
+          className="sm:max-w-2xl"
+          data-ocid="chemists.bulk_upload.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold">
+              Bulk Upload Chemists from Excel
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+              <p className="font-semibold mb-1">Excel Format Required:</p>
+              <p>
+                Columns:{" "}
+                <span className="font-mono">
+                  Name | Area | Address | Contact
+                </span>
+              </p>
+              <p className="mt-1 text-blue-600">
+                Area must exactly match an existing area name
+                (case-insensitive).
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <Button
+                data-ocid="chemists.bulk_upload.upload_button"
+                variant="outline"
+                className="border-[#0D5BA6] text-[#0D5BA6] hover:bg-blue-50 gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="w-4 h-4" /> Choose Excel File
+              </Button>
+              {bulkRows.length > 0 && (
+                <span className="text-sm text-gray-600">
+                  {bulkRows.filter((r) => r.valid).length} valid /{" "}
+                  {bulkRows.filter((r) => !r.valid).length} invalid rows
+                </span>
+              )}
+            </div>
+
+            {bulkRows.length > 0 && (
+              <div className="max-h-64 overflow-y-auto border border-[#E5EAF2] rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-[#F8FAFC]">
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-xs">Name</TableHead>
+                      <TableHead className="text-xs">Area</TableHead>
+                      <TableHead className="text-xs">Address</TableHead>
+                      <TableHead className="text-xs">Contact</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bulkRows.map((row, i) => (
+                      <TableRow
+                        key={`${row.name}-${i}`}
+                        className={row.valid ? "" : "bg-red-50"}
+                      >
+                        <TableCell>
+                          <span
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              row.valid
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {row.valid ? "Valid" : "Invalid"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {row.name || "—"}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <span className={!row.areaId ? "text-red-500" : ""}>
+                            {row.area || "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {row.address || "—"}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {row.contact || "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button
+                data-ocid="chemists.bulk_upload.submit_button"
+                className="flex-1 bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
+                onClick={handleBulkUpload}
+                disabled={
+                  bulkUploading || bulkRows.filter((r) => r.valid).length === 0
+                }
+              >
+                {bulkUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />{" "}
+                    Uploading...
+                  </>
+                ) : (
+                  `Upload ${bulkRows.filter((r) => r.valid).length} Valid Rows`
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                data-ocid="chemists.bulk_upload.cancel_button"
+                onClick={() => {
+                  setShowBulkUpload(false);
+                  setBulkRows([]);
+                }}
               >
                 Cancel
               </Button>

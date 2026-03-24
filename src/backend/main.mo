@@ -61,6 +61,7 @@ actor {
     areaId : AreaId;
     createdBy : Principal;
     mobileNumber : ?Text;
+    dob : ?Text;
   };
   type Doctor = {
     id : DoctorId;
@@ -186,6 +187,7 @@ actor {
     areaId : AreaId;
     mobileNumber : ?Text;
     // stored separately in doctorMobileNumbers map
+    dob : ?Text;
   };
 
   type SampleBalance = {
@@ -344,6 +346,7 @@ actor {
   let areas = Map.empty<AreaId, Area>();
   let doctors = Map.empty<DoctorId, Doctor>();
   let doctorMobileNumbers = Map.empty<DoctorId, Text>();
+  let doctorDOBs = Map.empty<DoctorId, Text>();
   let products = Map.empty<ProductId, Product>();
   let chemists = Map.empty<ChemistId, Chemist>();
   let detailingEntries = Map.empty<Principal, List.List<DetailingEntry>>();
@@ -1190,13 +1193,14 @@ actor {
   };
 
   // --- Doctor Management ---
-  public shared ({ caller }) func addDoctor(name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId, mobileNumber : ?Text) : async DoctorId {
+  public shared ({ caller }) func addDoctor(name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId, mobileNumber : ?Text, dob : ?Text) : async DoctorId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add doctors");
     };
     let id = idCounters.nextDoctorId;
     doctors.add(id, { id; name; qualification; station; specialization; areaId; createdBy = caller });
     switch (mobileNumber) { case (?m) { doctorMobileNumbers.add(id, m) }; case null {} };
+    switch (dob) { case (?d) { doctorDOBs.add(id, d) }; case null {} };
     idCounters := { idCounters with nextDoctorId = id + 1 };
     id;
   };
@@ -1205,14 +1209,14 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view doctors");
     };
-    doctors.values().filter(func(d) { d.areaId == areaId }).toArray().sort().map(func(d : Doctor) : DoctorExtended { { id = d.id; name = d.name; qualification = d.qualification; station = d.station; specialization = d.specialization; areaId = d.areaId; createdBy = d.createdBy; mobileNumber = doctorMobileNumbers.get(d.id) } });
+    doctors.values().filter(func(d) { d.areaId == areaId }).toArray().sort().map(func(d : Doctor) : DoctorExtended { { id = d.id; name = d.name; qualification = d.qualification; station = d.station; specialization = d.specialization; areaId = d.areaId; createdBy = d.createdBy; mobileNumber = doctorMobileNumbers.get(d.id); dob = doctorDOBs.get(d.id) } });
   };
 
   public query ({ caller }) func getAllDoctors() : async [DoctorExtended] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view doctors");
     };
-    doctors.values().toArray().sort().map(func(d : Doctor) : DoctorExtended { { id = d.id; name = d.name; qualification = d.qualification; station = d.station; specialization = d.specialization; areaId = d.areaId; createdBy = d.createdBy; mobileNumber = doctorMobileNumbers.get(d.id) } });
+    doctors.values().toArray().sort().map(func(d : Doctor) : DoctorExtended { { id = d.id; name = d.name; qualification = d.qualification; station = d.station; specialization = d.specialization; areaId = d.areaId; createdBy = d.createdBy; mobileNumber = doctorMobileNumbers.get(d.id); dob = doctorDOBs.get(d.id) } });
   };
 
   // --- Doctor Detailing ---
@@ -1471,7 +1475,7 @@ actor {
   };
 
   // Admin: update doctor
-  public shared ({ caller }) func updateDoctor(id : DoctorId, name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId, mobileNumber : ?Text) : async () {
+  public shared ({ caller }) func updateDoctor(id : DoctorId, name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId, mobileNumber : ?Text, dob : ?Text) : async () {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can update doctors");
     };
@@ -1480,6 +1484,7 @@ actor {
       case (?existing) {
         doctors.add(id, { id; name; qualification; station; specialization; areaId; createdBy = existing.createdBy });
         switch (mobileNumber) { case (?m) { doctorMobileNumbers.add(id, m) }; case null { doctorMobileNumbers.remove(id) } };
+        switch (dob) { case (?d) { doctorDOBs.add(id, d) }; case null { doctorDOBs.remove(id) } };
       };
     };
   };
@@ -1491,7 +1496,7 @@ actor {
     };
     switch (doctors.get(id)) {
       case (null) { Runtime.trap("Doctor not found") };
-      case (?_) { doctors.remove(id); doctorMobileNumbers.remove(id) };
+      case (?_) { doctors.remove(id); doctorMobileNumbers.remove(id); doctorDOBs.remove(id) };
     };
   };
 
@@ -1640,6 +1645,7 @@ actor {
         let newId = idCounters.nextDoctorId;
         doctors.add(newId, { id = newId; name = input.name; qualification = input.qualification; station = input.station; specialization = input.specialization; areaId = input.areaId; createdBy = caller });
         switch (input.mobileNumber) { case (?m) { doctorMobileNumbers.add(newId, m) }; case null {} };
+        switch (input.dob) { case (?d) { doctorDOBs.add(newId, d) }; case null {} };
         idCounters := { idCounters with nextDoctorId = newId + 1 };
         newId;
       },

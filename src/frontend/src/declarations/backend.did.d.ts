@@ -70,6 +70,7 @@ export interface Doctor {
   'station' : string,
   'name' : string,
   'mobileNumber' : [] | [string],
+  'dob' : [] | [string],
   'createdBy' : Principal,
   'specialization' : string,
   'areaId' : AreaId,
@@ -80,6 +81,7 @@ export interface DoctorInput {
   'station' : string,
   'name' : string,
   'mobileNumber' : [] | [string],
+  'dob' : [] | [string],
   'specialization' : string,
   'areaId' : AreaId,
   'qualification' : string,
@@ -264,7 +266,7 @@ export interface _SERVICE {
     [ChemistId, string, ProductId, bigint, string],
     undefined
   >,
-  'addDoctor' : ActorMethod<[string, string, string, string, AreaId, [] | [string]], DoctorId>,
+  'addDoctor' : ActorMethod<[string, string, string, string, AreaId, [] | [string], [] | [string]], DoctorId>,
   'addExpenseWithGeoTag' : ActorMethod<
     [
       string,
@@ -425,7 +427,7 @@ export interface _SERVICE {
     undefined
   >,
   'updateDoctor' : ActorMethod<
-    [DoctorId, string, string, string, string, AreaId, [] | [string]],
+    [DoctorId, string, string, string, string, AreaId, [] | [string], [] | [string]],
     undefined
   >,
   'updateGiftArticle' : ActorMethod<[GiftArticleId, string, string], undefined>,

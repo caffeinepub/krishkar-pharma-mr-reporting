@@ -126,6 +126,7 @@ export interface DoctorInput {
     station: string;
     name: string;
     mobileNumber?: string;
+    dob?: [] | [string];
     specialization: string;
     areaId: AreaId;
     qualification: string;
@@ -172,6 +173,7 @@ export interface Doctor {
     station: string;
     name: string;
     mobileNumber?: string;
+    dob?: [] | [string];
     createdBy: Principal;
     specialization: string;
     areaId: AreaId;
@@ -343,7 +345,7 @@ export interface backendInterface {
     addArea(name: string, headquarterId: bigint): Promise<AreaId>;
     addChemist(name: string, areaId: AreaId, address: string, contact: string): Promise<ChemistId>;
     addChemistOrder(chemistId: ChemistId, date: string, productId: ProductId, quantity: bigint, scheme: string): Promise<void>;
-    addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string]): Promise<DoctorId>;
+    addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string], dob: [] | [string]): Promise<DoctorId>;
     addExpenseWithGeoTag(date: string, kmTraveled: bigint, daAmount: bigint, notes: string, taAmountOpt: bigint | null, workingArea: string, daType: string, latitude: number | null, longitude: number | null): Promise<void>;
     addGPSTrace(latitude: number, longitude: number, accuracy: number): Promise<void>;
     addGiftArticle(name: string, description: string): Promise<GiftArticleId>;
@@ -433,7 +435,7 @@ export interface backendInterface {
     saveManagerProfile(name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     updateArea(id: AreaId, name: string, headquarterId: bigint): Promise<void>;
     updateCRMDemandStatus(demandId: CRMDemandId, newStatus: CRMDemandStatus, adminRemarks: string): Promise<void>;
-    updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string]): Promise<void>;
+    updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string], dob: [] | [string]): Promise<void>;
     updateGiftArticle(id: GiftArticleId, name: string, description: string): Promise<void>;
     updateGiftDemandOrderStatus(orderId: GiftDemandOrderId, newStatus: GiftDemandOrderStatus, adminRemarks: string): Promise<void>;
     updateHeadquarter(id: bigint, name: string): Promise<void>;
@@ -502,17 +504,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addDoctor(arg0: string, arg1: string, arg2: string, arg3: string, arg4: AreaId, arg5: [] | [string]): Promise<DoctorId> {
+    async addDoctor(arg0: string, arg1: string, arg2: string, arg3: string, arg4: AreaId, arg5: [] | [string], arg6: [] | [string]): Promise<DoctorId> {
         if (this.processError) {
             try {
-                const result = await this.actor.addDoctor(arg0, arg1, arg2, arg3, arg4, arg5);
+                const result = await this.actor.addDoctor(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addDoctor(arg0, arg1, arg2, arg3, arg4, arg5);
+            const result = await this.actor.addDoctor(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
             return result;
         }
     }
@@ -1723,17 +1725,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updateDoctor(arg0: DoctorId, arg1: string, arg2: string, arg3: string, arg4: string, arg5: AreaId, arg6: [] | [string]): Promise<void> {
+    async updateDoctor(arg0: DoctorId, arg1: string, arg2: string, arg3: string, arg4: string, arg5: AreaId, arg6: [] | [string], arg7: [] | [string]): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateDoctor(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+                const result = await this.actor.updateDoctor(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateDoctor(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+            const result = await this.actor.updateDoctor(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
             return result;
         }
     }

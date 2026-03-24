@@ -117,6 +117,7 @@ export const Doctor = IDL.Record({
   'station' : IDL.Text,
   'name' : IDL.Text,
   'mobileNumber' : IDL.Opt(IDL.Text),
+  'dob' : IDL.Opt(IDL.Text),
   'createdBy' : IDL.Principal,
   'specialization' : IDL.Text,
   'areaId' : AreaId,
@@ -283,7 +284,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'addDoctor' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text)],
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
       [DoctorId],
       [],
     ),
@@ -525,7 +526,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateDoctor' : IDL.Func(
-      [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text)],
+      [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
       [],
       [],
     ),
