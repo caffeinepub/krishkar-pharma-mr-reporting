@@ -27,6 +27,7 @@ import {
   Loader2,
   MapPin,
   Stethoscope,
+  Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -64,6 +65,11 @@ function getDaLabel(daType: DaType | string) {
 export default function RSMWorkingDetails() {
   const { actor, isFetching } = useActor();
   const queryClient = useQueryClient();
+
+  // Working mode state
+  const [workingMode, setWorkingMode] = useState("alone");
+  const [workingWith, setWorkingWith] = useState("");
+  const [useOtherName, setUseOtherName] = useState(false);
 
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [workingArea, setWorkingArea] = useState("");
@@ -103,6 +109,28 @@ export default function RSMWorkingDetails() {
     enabled: !!actor && !isFetching,
   });
 
+  // Fetch all staff names for "Working With" dropdown
+  const { data: staffNames = [] } = useQuery<string[]>({
+    queryKey: ["allStaffNamesRSM"],
+    queryFn: async () => {
+      if (!actor) return [];
+      const [userProfiles, managerProfiles] = await Promise.all([
+        (actor as any).getAllUserProfiles(),
+        (actor as any).getAllManagerProfiles(),
+      ]);
+      const names: string[] = [];
+      for (const [, profile] of userProfiles as Array<[any, any]>) {
+        if (profile.name) names.push(profile.name as string);
+      }
+      for (const [, profile] of managerProfiles as Array<[any, any]>) {
+        if (profile.name) names.push(profile.name as string);
+      }
+      const unique = [...new Set(names)].sort();
+      return unique;
+    },
+    enabled: !!actor && !isFetching,
+  });
+
   const rsmDaHQ = tadaSettings ? Number(tadaSettings.rsmDaHQ) : 400;
   const rsmDaOut = tadaSettings ? Number(tadaSettings.rsmDaOutStation) : 500;
   const rsmDaEx = tadaSettings
@@ -133,10 +161,18 @@ export default function RSMWorkingDetails() {
       const daVal = Number.parseInt(da) || 0;
       const taVal = Math.round((Number.parseFloat(displayTA) || 0) * TA_SCALE);
       const visitCount = Number.parseInt(doctorsVisited) || 0;
-      const combinedNotes =
+      let combinedNotes =
         visitCount > 0
           ? `Doctors Visited: ${visitCount}${notes ? ` | ${notes}` : ""}`
           : notes;
+      if (workingMode === "with") {
+        const name = workingWith.trim();
+        if (name) {
+          combinedNotes = combinedNotes
+            ? `${combinedNotes} | Working With: ${name}`
+            : `Working With: ${name}`;
+        }
+      }
       await actor.addExpense(
         date,
         BigInt(kmVal),
@@ -201,7 +237,11 @@ export default function RSMWorkingDetails() {
                   </Badge>
                   <Badge
                     variant="outline"
-                    className={`text-xs ${plan.stationType === "plan" ? "bg-green-50 text-green-700 border-green-200" : "bg-orange-50 text-orange-700 border-orange-200"}`}
+                    className={`text-xs ${
+                      plan.stationType === "plan"
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : "bg-orange-50 text-orange-700 border-orange-200"
+                    }`}
                   >
                     {plan.stationType === "plan"
                       ? "As Per Working Plan"
@@ -213,6 +253,81 @@ export default function RSMWorkingDetails() {
           </CardContent>
         </Card>
       )}
+
+      {/* Working Mode Section */}
+      <Card className="border border-green-100 bg-green-50/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold text-green-800">
+            <Users size={16} className="text-green-600" />
+            Today's Working Mode
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Working Mode</Label>
+              <Select
+                value={workingMode}
+                onValueChange={(v) => {
+                  setWorkingMode(v);
+                  if (v === "alone") {
+                    setWorkingWith("");
+                    setUseOtherName(false);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alone">Alone</SelectItem>
+                  <SelectItem value="with">With Someone</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {workingMode === "with" && (
+              <div className="space-y-1.5">
+                <Label>Working With</Label>
+                <Select
+                  value={useOtherName ? "__other__" : workingWith}
+                  onValueChange={(v) => {
+                    if (v === "__other__") {
+                      setUseOtherName(true);
+                      setWorkingWith("");
+                    } else {
+                      setUseOtherName(false);
+                      setWorkingWith(v);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select person" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffNames.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__other__">
+                      Other (type manually)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {useOtherName && (
+                  <Input
+                    placeholder="Enter name manually"
+                    value={workingWith}
+                    onChange={(e) => setWorkingWith(e.target.value)}
+                    className="mt-2"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

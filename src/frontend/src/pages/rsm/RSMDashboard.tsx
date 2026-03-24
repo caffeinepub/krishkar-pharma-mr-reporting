@@ -11,6 +11,16 @@ import {
   Users,
   X,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { useActor } from "../../hooks/useActor";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
@@ -63,6 +73,15 @@ export default function RSMDashboard() {
     enabled: !!actor && !isFetching,
   });
 
+  const { data: allManagerProfiles = [] } = useQuery({
+    queryKey: ["rsm", "allManagerProfiles"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getAllManagerProfiles();
+    },
+    enabled: !!actor && !isFetching,
+  });
+
   const { data: allAreas = [] } = useQuery({
     queryKey: ["rsm", "allAreas"],
     queryFn: async () => {
@@ -108,8 +127,21 @@ export default function RSMDashboard() {
     ]),
   );
 
+  const managerProfileSet = new Set(
+    (allManagerProfiles as Array<[any, any]>).map(([p]) => p.toString()),
+  );
+
+  // Combined map for getUserName (includes both MRs and managers)
+  const managerProfileMap = new Map(
+    (allManagerProfiles as Array<[any, any]>).map(([p, profile]) => [
+      p.toString(),
+      profile.name as string,
+    ]),
+  );
+
   const getUserName = (principalStr: string) => {
-    const name = profileMap.get(principalStr);
+    const name =
+      profileMap.get(principalStr) ?? managerProfileMap.get(principalStr);
     if (name) return name;
     return `${principalStr.slice(0, 8)}...`;
   };
@@ -147,6 +179,140 @@ export default function RSMDashboard() {
   const pendingLeaves = allLeaves.filter((l) => l.entry.status === "Pending");
 
   const isLoading = loadingLeaves || loadingDetailing || loadingExpenses;
+
+  // Build chart data helper
+  const buildChartData = (entries: Array<[any, any[]]>) =>
+    entries.map(([principal, expList]) => {
+      const name = getUserName(principal.toString());
+      const doctorsVisited = expList.reduce((sum: number, e: any) => {
+        const match = (e.notes || "").match(/Doctors Visited: (\d+)/);
+        return sum + (match ? Number.parseInt(match[1]) : 0);
+      }, 0);
+      const totalKm = expList.reduce(
+        (sum: number, e: any) => sum + Number(e.kmTraveled) / 10,
+        0,
+      );
+      const totalTA = expList.reduce(
+        (sum: number, e: any) => sum + Number(e.taAmount) / 100,
+        0,
+      );
+      const totalDA = expList.reduce(
+        (sum: number, e: any) => sum + Number(e.daAmount),
+        0,
+      );
+      return {
+        name,
+        doctorsVisited,
+        totalKm: Number(totalKm.toFixed(1)),
+        totalTA: Number(totalTA.toFixed(2)),
+        totalDA,
+      };
+    });
+
+  // Split team expenses into MR vs ASM
+  const mrExpenses = (teamExpenses as Array<[any, any[]]>).filter(
+    ([principal]) => !managerProfileSet.has(principal.toString()),
+  );
+  const asmExpenses = (teamExpenses as Array<[any, any[]]>).filter(
+    ([principal]) => managerProfileSet.has(principal.toString()),
+  );
+
+  const mrChartData = buildChartData(mrExpenses);
+  const asmChartData = buildChartData(asmExpenses);
+
+  const renderCharts = (
+    data: ReturnType<typeof buildChartData>,
+    doctorColor: string,
+    kmColor: string,
+    label: string,
+  ) => {
+    if (data.length === 0) {
+      return (
+        <p className="text-sm text-gray-400 text-center py-8">
+          No {label} working data available yet.
+        </p>
+      );
+    }
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+              Doctors Visited per {label}
+            </p>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={data}
+                margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar
+                  dataKey="doctorsVisited"
+                  name="Doctors Visited"
+                  fill={doctorColor}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+              KM Traveled per {label}
+            </p>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={data}
+                margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar
+                  dataKey="totalKm"
+                  name="KM Traveled"
+                  fill={kmColor}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+            TA & DA Amount per {label} (₹)
+          </p>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart
+              data={data}
+              margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Legend />
+              <Bar
+                dataKey="totalTA"
+                name="TA (₹)"
+                fill="#d97706"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="totalDA"
+                name="DA (₹)"
+                fill="#16a34a"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div data-ocid="rsm_dashboard.section">
@@ -253,6 +419,40 @@ export default function RSMDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* MR Working Details Overview */}
+      <Card className="border border-[#E5EAF2] shadow-sm mb-8">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-purple-600" />
+            MR Working Details Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingExpenses ? (
+            <Skeleton className="h-40 w-full" />
+          ) : (
+            renderCharts(mrChartData, "#7c3aed", "#2563eb", "MR")
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ASM Working Details Overview */}
+      <Card className="border border-[#E5EAF2] shadow-sm mb-8">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-teal-600" />
+            ASM Working Details Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingExpenses ? (
+            <Skeleton className="h-40 w-full" />
+          ) : (
+            renderCharts(asmChartData, "#0d9488", "#0891b2", "ASM")
+          )}
+        </CardContent>
+      </Card>
 
       {/* Pending Leave Approvals */}
       <Card className="border border-[#E5EAF2] shadow-sm">

@@ -11,6 +11,16 @@ import {
   Users,
   X,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { useActor } from "../../hooks/useActor";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
@@ -148,6 +158,38 @@ export default function ASMDashboard() {
 
   const isLoading = loadingLeaves || loadingDetailing || loadingExpenses;
 
+  // Build chart data from teamExpenses
+  const mrChartData = (teamExpenses as Array<[any, any[]]>).map(
+    ([principal, entries]) => {
+      const name = getUserName(principal.toString());
+      const doctorsVisited = entries.reduce((sum: number, e: any) => {
+        const match = (e.notes || "").match(/Doctors Visited: (\d+)/);
+        return sum + (match ? Number.parseInt(match[1]) : 0);
+      }, 0);
+      const totalKm = entries.reduce(
+        (sum: number, e: any) => sum + Number(e.kmTraveled) / 10,
+        0,
+      );
+      const totalTA = entries.reduce(
+        (sum: number, e: any) => sum + Number(e.taAmount) / 100,
+        0,
+      );
+      const totalDA = entries.reduce(
+        (sum: number, e: any) => sum + Number(e.daAmount),
+        0,
+      );
+      return {
+        name,
+        doctorsVisited,
+        totalKm: Number(totalKm.toFixed(1)),
+        totalTA: Number(totalTA.toFixed(2)),
+        totalDA,
+      };
+    },
+  );
+
+  const hasChartData = mrChartData.length > 0;
+
   return (
     <div data-ocid="asm_dashboard.section">
       <div className="mb-6">
@@ -253,6 +295,110 @@ export default function ASMDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* MR Working Details Overview Charts */}
+      <Card className="border border-[#E5EAF2] shadow-sm mb-8">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-purple-600" />
+            MR Working Details Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingExpenses ? (
+            <div className="space-y-3">
+              <Skeleton className="h-40 w-full" />
+            </div>
+          ) : !hasChartData ? (
+            <p className="text-sm text-gray-400 text-center py-8">
+              No MR working data available yet.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Chart 1: Doctors Visited */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                    Doctors Visited per MR
+                  </p>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={mrChartData}
+                      margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Bar
+                        dataKey="doctorsVisited"
+                        name="Doctors Visited"
+                        fill="#7c3aed"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Chart 2: KM Traveled */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                    KM Traveled per MR
+                  </p>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={mrChartData}
+                      margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Bar
+                        dataKey="totalKm"
+                        name="KM Traveled"
+                        fill="#2563eb"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Chart 3: TA + DA Amount */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                  TA & DA Amount per MR (₹)
+                </p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart
+                    data={mrChartData}
+                    margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar
+                      dataKey="totalTA"
+                      name="TA (₹)"
+                      fill="#d97706"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="totalDA"
+                      name="DA (₹)"
+                      fill="#16a34a"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Pending Leave Approvals */}
       <Card className="border border-[#E5EAF2] shadow-sm">
