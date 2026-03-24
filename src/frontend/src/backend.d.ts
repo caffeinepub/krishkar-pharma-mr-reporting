@@ -43,6 +43,7 @@ export interface CRMDemand {
 export interface DoctorInput {
     station: string;
     name: string;
+    mobileNumber?: string;
     specialization: string;
     areaId: AreaId;
     qualification: string;
@@ -56,6 +57,13 @@ export interface WorkingPlan {
     workingWith?: string;
     stationType: string;
     principalId: Principal;
+}
+export interface GPSTrace {
+    latitude: number;
+    createdBy: Principal;
+    longitude: number;
+    timestamp: bigint;
+    accuracy: number;
 }
 export interface WorkingPlanInput {
     content: string;
@@ -81,6 +89,7 @@ export interface Doctor {
     id: DoctorId;
     station: string;
     name: string;
+    mobileNumber?: string;
     createdBy: Principal;
     specialization: string;
     areaId: AreaId;
@@ -98,10 +107,12 @@ export interface GiftDemandOrder {
     adminRemarks: string;
 }
 export interface ExpenseEntry {
+    latitude?: number;
     daType: string;
     daAmount: bigint;
     date: string;
     kmTraveled: bigint;
+    longitude?: number;
     notes: string;
     workingArea: string;
     taAmount: bigint;
@@ -141,6 +152,14 @@ export interface GiftArticle {
     id: GiftArticleId;
     name: string;
     description: string;
+}
+export interface LocationData {
+    latitude: number;
+    userName: string;
+    userRole: string;
+    longitude: number;
+    timestamp: bigint;
+    accuracy: number;
 }
 export interface Headquarter {
     id: bigint;
@@ -241,8 +260,9 @@ export interface backendInterface {
     addArea(name: string, headquarterId: bigint): Promise<AreaId>;
     addChemist(name: string, areaId: AreaId, address: string, contact: string): Promise<ChemistId>;
     addChemistOrder(chemistId: ChemistId, date: string, productId: ProductId, quantity: bigint, scheme: string): Promise<void>;
-    addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId): Promise<DoctorId>;
-    addExpense(date: string, kmTraveled: bigint, daAmount: bigint, notes: string, taAmountOpt: bigint | null, workingArea: string, daType: string): Promise<void>;
+    addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string]): Promise<DoctorId>;
+    addExpenseWithGeoTag(date: string, kmTraveled: bigint, daAmount: bigint, notes: string, taAmountOpt: bigint | null, workingArea: string, daType: string, latitude: number | null, longitude: number | null): Promise<void>;
+    addGPSTrace(latitude: number, longitude: number, accuracy: number): Promise<void>;
     addGiftArticle(name: string, description: string): Promise<GiftArticleId>;
     addHeadquarter(name: string): Promise<bigint>;
     addProduct(name: string, code: string): Promise<ProductId>;
@@ -252,6 +272,7 @@ export interface backendInterface {
     adminCreateOrUpdateMRProfile(mrPrincipal: Principal, employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
     adminGetAllWorkingPlans(): Promise<Array<WorkingPlan>>;
     adminGetTADASettings(): Promise<TADASettingsV3>;
+    adminResetAllReportData(): Promise<void>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     adminSetTADASettings(settings: TADASettingsV3): Promise<void>;
     applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string): Promise<void>;
@@ -266,8 +287,8 @@ export interface backendInterface {
     deleteManagerProfile(target: Principal): Promise<void>;
     deleteProduct(id: ProductId): Promise<void>;
     deleteWorkingPlan(planId: WorkingPlanId): Promise<void>;
-    adminResetAllReportData(): Promise<void>;
     emergencyRestoreAdmin(): Promise<void>;
+    getActiveUserLocations(): Promise<Array<[Principal, LocationData]>>;
     getActivitySummary(date: string): Promise<ActivitySummary>;
     getAllAreas(): Promise<Array<Area>>;
     getAllCRMDemands(): Promise<Array<CRMDemand>>;
@@ -284,6 +305,8 @@ export interface backendInterface {
     getAllProducts(): Promise<Array<Product>>;
     getAllSampleAllotments(): Promise<Array<SampleAllotment>>;
     getAllSampleDemandOrders(): Promise<Array<SampleDemandOrder>>;
+    getAllUserLatestLocations(): Promise<Array<[Principal, LocationData]>>;
+    getAllUserLatestLocationsByRole(): Promise<Array<[Principal, LocationData]>>;
     getAllUserProfiles(): Promise<Array<[Principal, UserProfile]>>;
     getCallerRoleInfo(): Promise<{
         managerRole?: string;
@@ -296,6 +319,8 @@ export interface backendInterface {
     getDetailingEntries(): Promise<Array<DetailingEntry>>;
     getDoctorsByArea(areaId: AreaId): Promise<Array<Doctor>>;
     getExpenseEntries(): Promise<Array<ExpenseEntry>>;
+    getGPSTraces(user: Principal): Promise<Array<GPSTrace>>;
+    getLatestLocation(user: Principal): Promise<LocationData | null>;
     getLeaveHistory(): Promise<Array<LeaveEntry>>;
     getMRProfile(): Promise<MRProfile>;
     getManagerAreas(target: Principal): Promise<ManagerAreaAssignment>;
@@ -312,6 +337,7 @@ export interface backendInterface {
     getTeamExpenseEntries(): Promise<Array<[Principal, Array<ExpenseEntry>]>>;
     getTeamLeaveApplications(): Promise<Array<[Principal, Array<LeaveEntry>]>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getUserTraceBetweenTimes(user: Principal, startTime: bigint, endTime: bigint): Promise<Array<GPSTrace>>;
     isAdminInitialized(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>): Promise<void>;
@@ -324,10 +350,11 @@ export interface backendInterface {
     saveManagerProfile(name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     updateArea(id: AreaId, name: string, headquarterId: bigint): Promise<void>;
     updateCRMDemandStatus(demandId: CRMDemandId, newStatus: CRMDemandStatus, adminRemarks: string): Promise<void>;
-    updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId): Promise<void>;
+    updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string]): Promise<void>;
     updateGiftArticle(id: GiftArticleId, name: string, description: string): Promise<void>;
     updateGiftDemandOrderStatus(orderId: GiftDemandOrderId, newStatus: GiftDemandOrderStatus, adminRemarks: string): Promise<void>;
     updateHeadquarter(id: bigint, name: string): Promise<void>;
+    updateLatestLocation(location: LocationData): Promise<void>;
     updateLeaveStatus(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;
     updateLeaveStatusByManager(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;
     updateProduct(id: ProductId, name: string, code: string): Promise<void>;

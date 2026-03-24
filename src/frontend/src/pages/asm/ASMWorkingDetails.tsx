@@ -173,7 +173,7 @@ export default function ASMWorkingDetails() {
             : `Working With: ${name}`;
         }
       }
-      await actor.addExpense(
+      await actor.addExpenseWithGeoTag(
         date,
         BigInt(kmVal),
         BigInt(daVal),
@@ -181,6 +181,8 @@ export default function ASMWorkingDetails() {
         BigInt(taVal),
         workingArea,
         daType,
+        null,
+        null,
       );
     },
     onSuccess: () => {

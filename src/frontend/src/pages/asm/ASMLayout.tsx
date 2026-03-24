@@ -12,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
+import { useGPSUpdater } from "../../hooks/useGPSUpdater";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 import WorkingPlanPage from "../WorkingPlanPage";
 import ASMCRMDemand from "./ASMCRMDemand";
@@ -50,6 +51,9 @@ export default function ASMLayout() {
   const { identity, clear } = useInternetIdentity();
   const [currentPage, setCurrentPage] = useState<ASMPage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Silently track GPS location in background
+  useGPSUpdater("ASM");
 
   const principal = identity?.getPrincipal().toString() ?? "";
   const shortPrincipal =

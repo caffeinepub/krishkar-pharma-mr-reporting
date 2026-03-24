@@ -20,6 +20,7 @@ import {
 import { useEffect, useState } from "react";
 import AccessPendingScreen from "./components/AccessPendingScreen";
 import { useActor } from "./hooks/useActor";
+import { useGPSUpdater } from "./hooks/useGPSUpdater";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useUserRole } from "./hooks/useUserRole";
 import Areas from "./pages/Areas";
@@ -149,6 +150,9 @@ function MRLayout() {
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const { actor } = useActor();
   const queryClient = useQueryClient();
+
+  // Silently track GPS location in background
+  useGPSUpdater("MR");
 
   const principal = identity?.getPrincipal().toString() ?? "";
   const shortPrincipal =

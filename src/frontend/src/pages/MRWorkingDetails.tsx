@@ -219,7 +219,7 @@ export default function MRWorkingDetails() {
   const expenseMutation = useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error("No actor");
-      await actor.addExpense(
+      await actor.addExpenseWithGeoTag(
         date,
         BigInt(expenseKm || "0"),
         BigInt(expenseDa),
@@ -227,6 +227,8 @@ export default function MRWorkingDetails() {
         BigInt(Math.round(Number.parseFloat(taAmount))),
         expenseWorkingArea,
         expenseDaType,
+        null,
+        null,
       );
     },
     onSuccess: () => {
@@ -659,7 +661,7 @@ export default function MRWorkingDetails() {
                         }
                       />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 overflow-y-auto">
                       {filteredDoctors.map((doc) => (
                         <SelectItem key={String(doc.id)} value={String(doc.id)}>
                           {doc.name} — {doc.qualification}
@@ -669,6 +671,29 @@ export default function MRWorkingDetails() {
                   </Select>
                 </div>
               </div>
+
+              {visitDoctorId &&
+                (() => {
+                  const selectedDoc = filteredDoctors.find(
+                    (d) => String(d.id) === visitDoctorId,
+                  );
+                  if (!selectedDoc) return null;
+                  return (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-semibold text-blue-900">
+                          {selectedDoc.name}
+                        </p>
+                        {selectedDoc.mobileNumber?.[0] && (
+                          <p className="text-sm text-blue-700 mt-0.5 flex items-center gap-1">
+                            <span>📞</span>
+                            <span>{selectedDoc.mobileNumber[0]}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
@@ -769,7 +794,7 @@ export default function MRWorkingDetails() {
                     >
                       <SelectValue placeholder="Select doctor..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 overflow-y-auto">
                       {assignedDoctors.map((doc) => (
                         <SelectItem key={String(doc.id)} value={String(doc.id)}>
                           {doc.name}
@@ -871,7 +896,7 @@ export default function MRWorkingDetails() {
                     >
                       <SelectValue placeholder="Select doctor..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 overflow-y-auto">
                       {assignedDoctors.map((doc) => (
                         <SelectItem key={String(doc.id)} value={String(doc.id)}>
                           {doc.name}

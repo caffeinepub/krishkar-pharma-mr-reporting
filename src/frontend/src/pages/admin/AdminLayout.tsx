@@ -13,6 +13,7 @@ import {
   LogOut,
   MapPin,
   Menu,
+  Navigation,
   Package,
   Shield,
   ShoppingBag,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useGPSUpdater } from "../../hooks/useGPSUpdater";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 import AdminAreas from "./AdminAreas";
@@ -41,6 +43,7 @@ import AdminTADASettings from "./AdminTADASettings";
 import AdminWorkingPlans from "./AdminWorkingPlans";
 import LeaveApprovals from "./LeaveApprovals";
 import MRManagement from "./MRManagement";
+import StaffGPSTracking from "./StaffGPSTracking";
 import UserManagement from "./UserManagement";
 
 type AdminPage =
@@ -59,7 +62,8 @@ type AdminPage =
   | "gift-articles"
   | "tada-settings"
   | "working-plans"
-  | "reset-data";
+  | "reset-data"
+  | "staff-gps";
 
 const adminNavItems: {
   id: AdminPage;
@@ -81,6 +85,7 @@ const adminNavItems: {
   { id: "gift-articles", label: "Gift Articles", icon: ShoppingBag },
   { id: "tada-settings", label: "TA/DA Settings", icon: IndianRupee },
   { id: "working-plans", label: "Working Plans", icon: CalendarRange },
+  { id: "staff-gps", label: "Staff GPS Tracking", icon: Navigation },
   { id: "reset-data", label: "Reset Data", icon: Trash2 },
 ];
 
@@ -100,6 +105,7 @@ const pageTitles: Record<AdminPage, string> = {
   "gift-articles": "Gift Articles Catalog",
   "tada-settings": "TA/DA Settings",
   "working-plans": "All Working Plans",
+  "staff-gps": "Staff GPS Tracking",
   "reset-data": "Reset Report Data",
 };
 
@@ -107,6 +113,9 @@ export default function AdminLayout() {
   const { identity, clear } = useInternetIdentity();
   const [currentPage, setCurrentPage] = useState<AdminPage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Track admin's own location silently
+  useGPSUpdater("admin");
 
   const principal = identity?.getPrincipal().toString() ?? "";
   const shortPrincipal =
@@ -153,6 +162,8 @@ export default function AdminLayout() {
         return <AdminTADASettings />;
       case "working-plans":
         return <AdminWorkingPlans />;
+      case "staff-gps":
+        return <StaffGPSTracking />;
       case "reset-data":
         return <AdminResetData />;
     }
@@ -208,6 +219,12 @@ export default function AdminLayout() {
               >
                 <Icon className="flex-shrink-0" size={18} />
                 {item.label}
+                {item.id === "staff-gps" && (
+                  <span className="ml-auto flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                )}
               </button>
             );
           })}

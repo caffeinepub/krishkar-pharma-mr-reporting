@@ -173,7 +173,7 @@ export default function RSMWorkingDetails() {
             : `Working With: ${name}`;
         }
       }
-      await actor.addExpense(
+      await actor.addExpenseWithGeoTag(
         date,
         BigInt(kmVal),
         BigInt(daVal),
@@ -181,6 +181,8 @@ export default function RSMWorkingDetails() {
         BigInt(taVal),
         workingArea,
         daType,
+        null,
+        null,
       );
     },
     onSuccess: () => {

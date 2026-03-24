@@ -65,6 +65,14 @@ export const DoctorInput = IDL.Record({
   'areaId' : AreaId,
   'qualification' : IDL.Text,
 });
+export const LocationData = IDL.Record({
+  'latitude' : IDL.Float64,
+  'userName' : IDL.Text,
+  'userRole' : IDL.Text,
+  'longitude' : IDL.Float64,
+  'timestamp' : IDL.Int,
+  'accuracy' : IDL.Float64,
+});
 export const ActivitySummary = IDL.Record({
   'leaveBalance' : IDL.Vec(IDL.Tuple(LeaveType, IDL.Nat)),
   'samplesGiven' : IDL.Nat,
@@ -108,6 +116,7 @@ export const Doctor = IDL.Record({
   'id' : DoctorId,
   'station' : IDL.Text,
   'name' : IDL.Text,
+  'mobileNumber' : IDL.Opt(IDL.Text),
   'createdBy' : IDL.Principal,
   'specialization' : IDL.Text,
   'areaId' : AreaId,
@@ -226,13 +235,22 @@ export const DetailingEntry = IDL.Record({
   'date' : IDL.Text,
 });
 export const ExpenseEntry = IDL.Record({
+  'latitude' : IDL.Opt(IDL.Float64),
   'daType' : IDL.Text,
   'daAmount' : IDL.Nat,
   'date' : IDL.Text,
   'kmTraveled' : IDL.Nat,
+  'longitude' : IDL.Opt(IDL.Float64),
   'notes' : IDL.Text,
   'workingArea' : IDL.Text,
   'taAmount' : IDL.Nat,
+});
+export const GPSTrace = IDL.Record({
+  'latitude' : IDL.Float64,
+  'createdBy' : IDL.Principal,
+  'longitude' : IDL.Float64,
+  'timestamp' : IDL.Int,
+  'accuracy' : IDL.Float64,
 });
 export const ManagerAreaAssignment = IDL.Record({
   'areaIds' : IDL.Vec(AreaId),
@@ -265,11 +283,11 @@ export const idlService = IDL.Service({
       [],
     ),
   'addDoctor' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text)],
       [DoctorId],
       [],
     ),
-  'addExpense' : IDL.Func(
+  'addExpenseWithGeoTag' : IDL.Func(
       [
         IDL.Text,
         IDL.Nat,
@@ -278,10 +296,13 @@ export const idlService = IDL.Service({
         IDL.Opt(IDL.Nat),
         IDL.Text,
         IDL.Text,
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
       ],
       [],
       [],
     ),
+  'addGPSTrace' : IDL.Func([IDL.Float64, IDL.Float64, IDL.Float64], [], []),
   'addGiftArticle' : IDL.Func([IDL.Text, IDL.Text], [GiftArticleId], []),
   'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
   'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
@@ -303,6 +324,7 @@ export const idlService = IDL.Service({
     ),
   'adminGetAllWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
   'adminGetTADASettings' : IDL.Func([], [TADASettingsV3], ['query']),
+  'adminResetAllReportData' : IDL.Func([], [], []),
   'adminSaveManagerProfile' : IDL.Func(
       [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
       [],
@@ -330,6 +352,11 @@ export const idlService = IDL.Service({
   'deleteProduct' : IDL.Func([ProductId], [], []),
   'deleteWorkingPlan' : IDL.Func([WorkingPlanId], [], []),
   'emergencyRestoreAdmin' : IDL.Func([], [], []),
+  'getActiveUserLocations' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, LocationData))],
+      ['query'],
+    ),
   'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
   'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
   'getAllCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
@@ -374,6 +401,16 @@ export const idlService = IDL.Service({
       [IDL.Vec(SampleDemandOrder)],
       ['query'],
     ),
+  'getAllUserLatestLocations' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, LocationData))],
+      ['query'],
+    ),
+  'getAllUserLatestLocationsByRole' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, LocationData))],
+      ['query'],
+    ),
   'getAllUserProfiles' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
@@ -396,6 +433,12 @@ export const idlService = IDL.Service({
   'getDetailingEntries' : IDL.Func([], [IDL.Vec(DetailingEntry)], ['query']),
   'getDoctorsByArea' : IDL.Func([AreaId], [IDL.Vec(Doctor)], ['query']),
   'getExpenseEntries' : IDL.Func([], [IDL.Vec(ExpenseEntry)], ['query']),
+  'getGPSTraces' : IDL.Func([IDL.Principal], [IDL.Vec(GPSTrace)], ['query']),
+  'getLatestLocation' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(LocationData)],
+      ['query'],
+    ),
   'getLeaveHistory' : IDL.Func([], [IDL.Vec(LeaveEntry)], ['query']),
   'getMRProfile' : IDL.Func([], [MRProfile], ['query']),
   'getManagerAreas' : IDL.Func(
@@ -440,6 +483,11 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'getUserTraceBetweenTimes' : IDL.Func(
+      [IDL.Principal, IDL.Int, IDL.Int],
+      [IDL.Vec(GPSTrace)],
+      ['query'],
+    ),
   'isAdminInitialized' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
@@ -477,7 +525,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateDoctor' : IDL.Func(
-      [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
+      [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text)],
       [],
       [],
     ),
@@ -488,6 +536,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateHeadquarter' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+  'updateLatestLocation' : IDL.Func([LocationData], [], []),
   'updateLeaveStatus' : IDL.Func([IDL.Principal, IDL.Nat, LeaveStatus], [], []),
   'updateLeaveStatusByManager' : IDL.Func(
       [IDL.Principal, IDL.Nat, LeaveStatus],
@@ -500,7 +549,6 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
-  'adminResetAllReportData' : IDL.Func([], [], []),
 });
 
 export const idlInitArgs = [];
@@ -563,6 +611,14 @@ export const idlFactory = ({ IDL }) => {
     'areaId' : AreaId,
     'qualification' : IDL.Text,
   });
+  const LocationData = IDL.Record({
+    'latitude' : IDL.Float64,
+    'userName' : IDL.Text,
+    'userRole' : IDL.Text,
+    'longitude' : IDL.Float64,
+    'timestamp' : IDL.Int,
+    'accuracy' : IDL.Float64,
+  });
   const ActivitySummary = IDL.Record({
     'leaveBalance' : IDL.Vec(IDL.Tuple(LeaveType, IDL.Nat)),
     'samplesGiven' : IDL.Nat,
@@ -606,6 +662,7 @@ export const idlFactory = ({ IDL }) => {
     'id' : DoctorId,
     'station' : IDL.Text,
     'name' : IDL.Text,
+    'mobileNumber' : IDL.Opt(IDL.Text),
     'createdBy' : IDL.Principal,
     'specialization' : IDL.Text,
     'areaId' : AreaId,
@@ -724,13 +781,22 @@ export const idlFactory = ({ IDL }) => {
     'date' : IDL.Text,
   });
   const ExpenseEntry = IDL.Record({
+    'latitude' : IDL.Opt(IDL.Float64),
     'daType' : IDL.Text,
     'daAmount' : IDL.Nat,
     'date' : IDL.Text,
     'kmTraveled' : IDL.Nat,
+    'longitude' : IDL.Opt(IDL.Float64),
     'notes' : IDL.Text,
     'workingArea' : IDL.Text,
     'taAmount' : IDL.Nat,
+  });
+  const GPSTrace = IDL.Record({
+    'latitude' : IDL.Float64,
+    'createdBy' : IDL.Principal,
+    'longitude' : IDL.Float64,
+    'timestamp' : IDL.Int,
+    'accuracy' : IDL.Float64,
   });
   const ManagerAreaAssignment = IDL.Record({ 'areaIds' : IDL.Vec(AreaId) });
   const SampleBalance = IDL.Record({
@@ -761,11 +827,11 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'addDoctor' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text)],
         [DoctorId],
         [],
       ),
-    'addExpense' : IDL.Func(
+    'addExpenseWithGeoTag' : IDL.Func(
         [
           IDL.Text,
           IDL.Nat,
@@ -774,10 +840,13 @@ export const idlFactory = ({ IDL }) => {
           IDL.Opt(IDL.Nat),
           IDL.Text,
           IDL.Text,
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
         ],
         [],
         [],
       ),
+    'addGPSTrace' : IDL.Func([IDL.Float64, IDL.Float64, IDL.Float64], [], []),
     'addGiftArticle' : IDL.Func([IDL.Text, IDL.Text], [GiftArticleId], []),
     'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
     'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
@@ -799,6 +868,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'adminGetAllWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
     'adminGetTADASettings' : IDL.Func([], [TADASettingsV3], ['query']),
+    'adminResetAllReportData' : IDL.Func([], [], []),
     'adminSaveManagerProfile' : IDL.Func(
         [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
         [],
@@ -830,6 +900,11 @@ export const idlFactory = ({ IDL }) => {
     'deleteProduct' : IDL.Func([ProductId], [], []),
     'deleteWorkingPlan' : IDL.Func([WorkingPlanId], [], []),
     'emergencyRestoreAdmin' : IDL.Func([], [], []),
+    'getActiveUserLocations' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, LocationData))],
+        ['query'],
+      ),
     'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
     'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
     'getAllCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
@@ -874,6 +949,16 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(SampleDemandOrder)],
         ['query'],
       ),
+    'getAllUserLatestLocations' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, LocationData))],
+        ['query'],
+      ),
+    'getAllUserLatestLocationsByRole' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, LocationData))],
+        ['query'],
+      ),
     'getAllUserProfiles' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
@@ -896,6 +981,12 @@ export const idlFactory = ({ IDL }) => {
     'getDetailingEntries' : IDL.Func([], [IDL.Vec(DetailingEntry)], ['query']),
     'getDoctorsByArea' : IDL.Func([AreaId], [IDL.Vec(Doctor)], ['query']),
     'getExpenseEntries' : IDL.Func([], [IDL.Vec(ExpenseEntry)], ['query']),
+    'getGPSTraces' : IDL.Func([IDL.Principal], [IDL.Vec(GPSTrace)], ['query']),
+    'getLatestLocation' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(LocationData)],
+        ['query'],
+      ),
     'getLeaveHistory' : IDL.Func([], [IDL.Vec(LeaveEntry)], ['query']),
     'getMRProfile' : IDL.Func([], [MRProfile], ['query']),
     'getManagerAreas' : IDL.Func(
@@ -944,6 +1035,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'getUserTraceBetweenTimes' : IDL.Func(
+        [IDL.Principal, IDL.Int, IDL.Int],
+        [IDL.Vec(GPSTrace)],
+        ['query'],
+      ),
     'isAdminInitialized' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
@@ -981,7 +1077,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateDoctor' : IDL.Func(
-        [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId],
+        [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text)],
         [],
         [],
       ),
@@ -992,6 +1088,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateHeadquarter' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+    'updateLatestLocation' : IDL.Func([LocationData], [], []),
     'updateLeaveStatus' : IDL.Func(
         [IDL.Principal, IDL.Nat, LeaveStatus],
         [],
@@ -1008,7 +1105,6 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
-    'adminResetAllReportData' : IDL.Func([], [], []),
   });
 };
 

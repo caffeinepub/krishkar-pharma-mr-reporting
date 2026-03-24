@@ -19,7 +19,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Car, IndianRupee, Loader2, MapPin, Receipt } from "lucide-react";
+import {
+  Car,
+  ExternalLink,
+  IndianRupee,
+  Loader2,
+  MapPin,
+  Receipt,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Area, ExpenseEntry, MRProfile, TADASettingsV3 } from "../backend";
@@ -35,6 +42,20 @@ function formatTA(stored: bigint | number): string {
   // heuristic: if value > 10000 it's likely paise-scaled
   // but we always treat as paise since new entries are always scaled
   return (n / TA_SCALE).toFixed(2);
+}
+
+async function captureGPS(): Promise<{ lat: number; lng: number } | null> {
+  return new Promise((resolve) => {
+    if (!navigator?.geolocation) {
+      resolve(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { timeout: 8000, maximumAge: 60000 },
+    );
+  });
 }
 
 export default function Expenses() {
@@ -175,7 +196,9 @@ export default function Expenses() {
       const taPaise = taManual
         ? BigInt(Math.round(Number.parseFloat(taManual) * TA_SCALE))
         : null;
-      await actor.addExpense(
+      // Silently try to get GPS location
+      const gps = await captureGPS();
+      await actor.addExpenseWithGeoTag(
         date,
         kmBig,
         daBig,
@@ -183,6 +206,8 @@ export default function Expenses() {
         taPaise,
         workingArea,
         daType,
+        gps ? gps.lat : null,
+        gps ? gps.lng : null,
       );
     },
     onSuccess: () => {
@@ -213,7 +238,8 @@ export default function Expenses() {
                 Log Daily Expense
               </CardTitle>
               <p className="text-xs text-gray-400">
-                TA auto-calculated from settings · DA by HQ / Out Station type
+                TA auto-calculated from settings · DA by HQ / Out Station type ·
+                Location geo-tagged automatically
               </p>
             </div>
           </div>
@@ -426,9 +452,17 @@ export default function Expenses() {
             </div>
           )}
 
+          <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
+            <MapPin className="w-3.5 h-3.5 text-emerald-500" />
+            <span>
+              GPS location will be automatically captured when you submit this
+              expense.
+            </span>
+          </div>
+
           <Button
             data-ocid="expenses.submit_button"
-            className="mt-5 bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
+            className="mt-4 bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !km || !date || !workingArea}
           >
@@ -494,73 +528,101 @@ export default function Expenses() {
                       Total
                     </TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500">
+                      Geo
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
                       Notes
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {expenses.map((e, idx) => (
-                    <TableRow
-                      key={`${e.date}-${idx}`}
-                      data-ocid={`expenses.item.${idx + 1}`}
-                      className="hover:bg-[#F8FAFC]"
-                    >
-                      <TableCell className="text-sm font-medium text-gray-700">
-                        {e.date}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {e.workingArea ? (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                            {e.workingArea}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {e.daType ? (
-                          <Badge
-                            variant="outline"
-                            className={
-                              e.daType === "HQ"
-                                ? "border-blue-200 text-blue-700 bg-blue-50 text-xs"
+                  {expenses.map((e, idx) => {
+                    const hasGeo =
+                      e.latitude != null &&
+                      e.longitude != null &&
+                      (e.latitude !== 0 || e.longitude !== 0);
+                    const mapsUrl = hasGeo
+                      ? `https://www.google.com/maps?q=${e.latitude},${e.longitude}`
+                      : null;
+                    return (
+                      <TableRow
+                        key={`${e.date}-${idx}`}
+                        data-ocid={`expenses.item.${idx + 1}`}
+                        className="hover:bg-[#F8FAFC]"
+                      >
+                        <TableCell className="text-sm font-medium text-gray-700">
+                          {e.date}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {e.workingArea ? (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                              {e.workingArea}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {e.daType ? (
+                            <Badge
+                              variant="outline"
+                              className={
+                                e.daType === "HQ"
+                                  ? "border-blue-200 text-blue-700 bg-blue-50 text-xs"
+                                  : e.daType === "ExStation"
+                                    ? "border-green-200 text-green-700 bg-green-50 text-xs"
+                                    : "border-orange-200 text-orange-700 bg-orange-50 text-xs"
+                              }
+                            >
+                              {e.daType === "HQ"
+                                ? "Head Quarter"
                                 : e.daType === "ExStation"
-                                  ? "border-green-200 text-green-700 bg-green-50 text-xs"
-                                  : "border-orange-200 text-orange-700 bg-orange-50 text-xs"
-                            }
-                          >
-                            {e.daType === "HQ"
-                              ? "Head Quarter"
-                              : e.daType === "ExStation"
-                                ? "Ex-Station"
-                                : "Out Station"}
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-400 text-sm">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {String(e.kmTraveled)} km
-                      </TableCell>
-                      <TableCell className="text-sm font-medium text-blue-600">
-                        ₹{formatTA(e.taAmount)}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium text-green-600">
-                        ₹{String(e.daAmount)}
-                      </TableCell>
-                      <TableCell className="text-sm font-bold text-purple-600">
-                        ₹
-                        {(
-                          Number(e.taAmount) / TA_SCALE +
-                          Number(e.daAmount)
-                        ).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-500 max-w-xs truncate">
-                        {e.notes || "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                  ? "Ex-Station"
+                                  : "Out Station"}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-400 text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {String(e.kmTraveled)} km
+                        </TableCell>
+                        <TableCell className="text-sm font-medium text-blue-600">
+                          ₹{formatTA(e.taAmount)}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium text-green-600">
+                          ₹{String(e.daAmount)}
+                        </TableCell>
+                        <TableCell className="text-sm font-bold text-purple-600">
+                          ₹
+                          {(
+                            Number(e.taAmount) / TA_SCALE +
+                            Number(e.daAmount)
+                          ).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          {hasGeo && mapsUrl ? (
+                            <a
+                              href={mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 hover:underline"
+                              title={`View location: ${e.latitude?.toFixed(4)}, ${e.longitude?.toFixed(4)}`}
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="text-gray-300 text-xs">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-500 max-w-xs truncate">
+                          {e.notes || "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

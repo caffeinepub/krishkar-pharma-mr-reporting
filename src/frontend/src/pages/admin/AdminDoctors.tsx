@@ -58,6 +58,7 @@ interface DoctorForm {
   station: string;
   specialization: string;
   areaId: string;
+  mobileNumber: string;
 }
 
 const emptyForm: DoctorForm = {
@@ -66,6 +67,7 @@ const emptyForm: DoctorForm = {
   station: "",
   specialization: "",
   areaId: "",
+  mobileNumber: "",
 };
 
 interface ParsedRow {
@@ -75,6 +77,7 @@ interface ParsedRow {
   specialization: string;
   areaName: string;
   areaId: number | null;
+  mobileNumber: string;
 }
 
 export default function AdminDoctors() {
@@ -119,6 +122,7 @@ export default function AdminDoctors() {
         form.station,
         form.specialization,
         BigInt(form.areaId),
+        form.mobileNumber ? [form.mobileNumber] : [],
       );
     },
     onSuccess: () => {
@@ -141,6 +145,7 @@ export default function AdminDoctors() {
         form.station,
         form.specialization,
         BigInt(form.areaId),
+        form.mobileNumber ? [form.mobileNumber] : [],
       );
     },
     onSuccess: () => {
@@ -176,6 +181,7 @@ export default function AdminDoctors() {
           station: r.station,
           specialization: r.specialization,
           areaId: BigInt(r.areaId as number),
+          mobileNumber: r.mobileNumber || undefined,
         })),
       );
       return result.length;
@@ -197,6 +203,7 @@ export default function AdminDoctors() {
       station: doc.station,
       specialization: doc.specialization,
       areaId: doc.areaId.toString(),
+      mobileNumber: doc.mobileNumber?.[0] ?? "",
     });
   };
 
@@ -204,6 +211,7 @@ export default function AdminDoctors() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadParsing(true);
+    setParsedRows([]);
     try {
       const XLSX = await loadXlsx();
       const arrayBuffer = await file.arrayBuffer();
@@ -227,6 +235,11 @@ export default function AdminDoctors() {
       const stationIdx = headers.indexOf("station");
       const specIdx = headers.indexOf("specialization");
       const areaIdx = headers.indexOf("area");
+      // Support "mobile number" or "mobile" column
+      const mobileIdx =
+        headers.indexOf("mobile number") !== -1
+          ? headers.indexOf("mobile number")
+          : headers.indexOf("mobile");
 
       const areaNameMap = new Map(
         (areas ?? []).map((a) => [a.name.toLowerCase().trim(), Number(a.id)]),
@@ -244,13 +257,23 @@ export default function AdminDoctors() {
             specialization: String(row[specIdx] ?? "").trim(),
             areaName,
             areaId,
+            mobileNumber:
+              mobileIdx !== -1 ? String(row[mobileIdx] ?? "").trim() : "",
           };
         })
         .filter((r) => r.name);
 
+      if (parsed.length === 0) {
+        toast.error(
+          "No valid rows found. Check that column headers match the expected format.",
+        );
+        return;
+      }
+
       setParsedRows(parsed);
+      toast.success(`Parsed ${parsed.length} row(s) from file.`);
     } catch (_err) {
-      toast.error("Failed to parse file. Please check format.");
+      toast.error("Failed to parse file. Please check the file format.");
     } finally {
       setUploadParsing(false);
     }
@@ -331,6 +354,17 @@ export default function AdminDoctors() {
           </SelectContent>
         </Select>
       </div>
+      <div>
+        <Label htmlFor="doc-mobile">Mobile Number (Optional)</Label>
+        <Input
+          id="doc-mobile"
+          type="tel"
+          value={form.mobileNumber}
+          onChange={(e) => setForm({ ...form, mobileNumber: e.target.value })}
+          placeholder="e.g. 9876543210"
+          className="mt-1"
+        />
+      </div>
     </div>
   );
 
@@ -404,6 +438,7 @@ export default function AdminDoctors() {
                     <TableHead>Station</TableHead>
                     <TableHead>Specialization</TableHead>
                     <TableHead>Area</TableHead>
+                    <TableHead>Mobile</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -440,6 +475,9 @@ export default function AdminDoctors() {
                         >
                           {areaMap.get(doc.areaId.toString()) ?? "Unknown"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-600 text-sm">
+                        {doc.mobileNumber?.[0] ?? "—"}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -595,25 +633,35 @@ export default function AdminDoctors() {
           <div className="space-y-4 py-2">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
               <strong>Expected columns:</strong> Name, Qualification, Station,
-              Specialization, Area (case-insensitive). Area must match an
-              existing area name exactly.
+              Specialization, Area, Mobile Number (optional) — column headers
+              are case-insensitive. Area must match an existing area name
+              exactly.
             </div>
 
             <div>
-              <Label htmlFor="bulk-file">Select Excel / CSV File</Label>
-              <Input
+              <Label htmlFor="bulk-file">
+                Select Excel File (.xlsx / .xls)
+              </Label>
+              <input
                 id="bulk-file"
                 ref={fileInputRef}
                 type="file"
                 accept=".xlsx,.xls,.csv"
-                data-ocid="admin_doctors.upload_button"
-                className="mt-1 cursor-pointer"
+                data-ocid="admin_doctors.dropzone"
+                className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-md p-1"
+                onClick={(e) => {
+                  // Reset value so re-selecting the same file triggers onChange
+                  (e.currentTarget as HTMLInputElement).value = "";
+                }}
                 onChange={handleFileSelect}
               />
             </div>
 
             {uploadParsing && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div
+                className="flex items-center gap-2 text-sm text-gray-500"
+                data-ocid="admin_doctors.loading_state"
+              >
                 <Loader2 className="h-4 w-4 animate-spin" /> Parsing file...
               </div>
             )}
@@ -640,6 +688,7 @@ export default function AdminDoctors() {
                         <TableHead>Station</TableHead>
                         <TableHead>Specialization</TableHead>
                         <TableHead>Area</TableHead>
+                        <TableHead>Mobile</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -673,6 +722,9 @@ export default function AdminDoctors() {
                               {row.areaName || "(blank)"}
                               {row.areaId === null && " ✗"}
                             </span>
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {row.mobileNumber || "—"}
                           </TableCell>
                         </TableRow>
                       ))}

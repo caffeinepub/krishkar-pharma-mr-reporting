@@ -8,10 +8,12 @@ import Order "mo:core/Order";
 import Nat32 "mo:core/Nat32";
 import Int "mo:core/Int";
 import Principal "mo:core/Principal";
+import Float "mo:core/Float";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-
+// Actor migration specification
 
 actor {
   // === Type Definitions ===
@@ -50,6 +52,16 @@ actor {
   };
 
   type DoctorId = Nat;
+  type DoctorExtended = {
+    id : DoctorId;
+    name : Text;
+    qualification : Text;
+    station : Text;
+    specialization : Text;
+    areaId : AreaId;
+    createdBy : Principal;
+    mobileNumber : ?Text;
+  };
   type Doctor = {
     id : DoctorId;
     name : Text;
@@ -102,6 +114,7 @@ actor {
     status : OrderStatus;
   };
 
+  // ExpenseEntry with new geoTag fields
   type ExpenseEntry = {
     date : Text;
     kmTraveled : Nat;
@@ -110,6 +123,8 @@ actor {
     notes : Text;
     workingArea : Text;
     daType : Text;
+    latitude : ?Float;
+    longitude : ?Float;
   };
 
   type LeaveType = {
@@ -169,6 +184,8 @@ actor {
     station : Text;
     specialization : Text;
     areaId : AreaId;
+    mobileNumber : ?Text;
+    // stored separately in doctorMobileNumbers map
   };
 
   type SampleBalance = {
@@ -302,12 +319,31 @@ actor {
     stationType : Text;
   };
 
+  // === GPS Location Tracking ===
+  public type LocationData = {
+    latitude : Float;
+    longitude : Float;
+    accuracy : Float;
+    timestamp : Int;
+    userName : Text;
+    userRole : Text;
+  };
+
+  public type GPSTrace = {
+    latitude : Float;
+    longitude : Float;
+    accuracy : Float;
+    timestamp : Int;
+    createdBy : Principal;
+  };
+
   // === Persistent Storage ===
   let userProfiles = Map.empty<Principal, UserProfile>();
   let mrProfiles = Map.empty<Principal, MRProfile>();
   let managerProfiles = Map.empty<Principal, ManagerProfile>();
   let areas = Map.empty<AreaId, Area>();
   let doctors = Map.empty<DoctorId, Doctor>();
+  let doctorMobileNumbers = Map.empty<DoctorId, Text>();
   let products = Map.empty<ProductId, Product>();
   let chemists = Map.empty<ChemistId, Chemist>();
   let detailingEntries = Map.empty<Principal, List.List<DetailingEntry>>();
@@ -324,6 +360,8 @@ actor {
   let giftDistributions = Map.empty<GiftDistributionId, GiftDistribution>();
   let giftDemandOrders = Map.empty<GiftDemandOrderId, GiftDemandOrder>();
   let workingPlans = Map.empty<WorkingPlanId, WorkingPlan>();
+  let locations = Map.empty<Principal, LocationData>();
+  let geoTraces = Map.empty<Principal, List.List<GPSTrace>>();
 
   // Legacy stable variable for migration — do not rename or remove
   var tadaSettings : TADASettingsLegacy = {
@@ -408,6 +446,164 @@ actor {
   // === Authorization ===
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  // === GPS FUNCTIONALITY ===
+
+  public shared ({ caller }) func updateLatestLocation(location : LocationData) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can update location");
+    };
+
+    if (location.latitude < -90.0 or location.latitude > 90.0) {
+      Runtime.trap("Latitude must be between -90 and 90");
+    };
+    if (location.longitude < -180.0 or location.longitude > 180.0) {
+      Runtime.trap("Longitude must be between -180 and 180");
+    };
+    if (location.accuracy < 0.0 or location.accuracy > 1000.0) {
+      Runtime.trap("Accuracy must be between 0 and 1000 meters");
+    };
+
+    let locationWithTimestamp = {
+      location with
+      timestamp = Time.now();
+    };
+
+    locations.add(caller, locationWithTimestamp);
+  };
+
+  public query ({ caller }) func getLatestLocation(user : Principal) : async ?LocationData {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can query locations");
+    };
+    // Users can only see their own location, admins can see any
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own location");
+    };
+    locations.get(user);
+  };
+
+  public query ({ caller }) func getAllUserLatestLocations() : async [(Principal, LocationData)] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can get all locations");
+    };
+    locations.entries().toArray();
+  };
+
+  // Add new GPS trace point
+  public shared ({ caller }) func addGPSTrace(latitude : Float, longitude : Float, accuracy : Float) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can add trace");
+    };
+
+    if (latitude < -90.0 or latitude > 90.0) {
+      Runtime.trap("Latitude must be between -90 and 90");
+    };
+    if (longitude < -180.0 or longitude > 180.0) {
+      Runtime.trap("Longitude must be between -180 and 180");
+    };
+    if (accuracy < 0.0 or accuracy > 1000.0) {
+      Runtime.trap("Accuracy must be between 0 and 1000 meters");
+    };
+
+    let newTrace : GPSTrace = {
+      latitude;
+      longitude;
+      accuracy;
+      timestamp = Time.now();
+      createdBy = caller;
+    };
+
+    let existing = switch (geoTraces.get(caller)) {
+      case (null) { List.empty<GPSTrace>() };
+      case (?list) { list };
+    };
+    existing.add(newTrace);
+    geoTraces.add(caller, existing);
+  };
+
+  // Get all GPS traces for a user
+  public query ({ caller }) func getGPSTraces(user : Principal) : async [GPSTrace] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can query GPS traces");
+    };
+    // Users can only see their own traces, admins can see any
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own GPS traces");
+    };
+    switch (geoTraces.get(user)) {
+      case (null) { [] };
+      case (?traces) { traces.toArray() };
+    };
+  };
+
+  // Get all latest locations for users in the same role or as admin
+  public query ({ caller }) func getAllUserLatestLocationsByRole() : async [(Principal, LocationData)] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can get locations by role");
+    };
+
+    let callerRole = AccessControl.getUserRole(accessControlState, caller);
+    let isAdmin = callerRole == #admin;
+
+    func isSameRole(role1 : AccessControl.UserRole, role2 : AccessControl.UserRole) : Bool {
+      switch (role1, role2) {
+        case (#admin, #admin) { true };
+        case (#user, #user) { true };
+        case (#guest, #guest) { true };
+        case (_, _) { false };
+      };
+    };
+
+    let filteredLocations = if (isAdmin) {
+      locations.entries().toArray();
+    } else {
+      locations.entries().filter(func((p, _)) { isSameRole(callerRole, AccessControl.getUserRole(accessControlState, p)) }).toArray();
+    };
+    filteredLocations;
+  };
+
+  // Get locations from active users only
+  public query ({ caller }) func getActiveUserLocations() : async [(Principal, LocationData)] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can get active user locations");
+    };
+
+    let maxLocationAge : Int = 24 * 60 * 60 * 1_000_000_000; // 24 hours in nanoseconds
+    let currentTime = Time.now();
+    let allLocations = locations.entries().toArray();
+
+    let activeLocations = allLocations.filter(
+      func((p, loc)) {
+        let role = AccessControl.getUserRole(accessControlState, p);
+        let isUser = role == #user;
+        let isRecent = (currentTime - loc.timestamp) <= maxLocationAge;
+        isUser and isRecent;
+      }
+    );
+
+    activeLocations;
+  };
+
+  // Get GPS trace between two times for a user
+  public query ({ caller }) func getUserTraceBetweenTimes(user : Principal, startTime : Int, endTime : Int) : async [GPSTrace] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can get trace");
+    };
+    // Users can only see their own traces, admins can see any
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own GPS traces");
+    };
+
+    switch (geoTraces.get(user)) {
+      case (null) { [] };
+      case (?traces) {
+        traces.toArray().filter(
+          func(trace) { trace.timestamp >= startTime and trace.timestamp <= endTime }
+        );
+      };
+    };
+  };
 
   // === Working Plan Functions ===
   public shared ({ caller }) func addWorkingPlan(input : WorkingPlanInput) : async WorkingPlanId {
@@ -494,7 +690,6 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can raise CRM demands");
     };
-    
     // CRM demands can only be raised by ASM/RSM managers
     if (not isManager(caller)) {
       Runtime.trap("Unauthorized: Only ASM/RSM managers can raise CRM demands");
@@ -995,28 +1190,29 @@ actor {
   };
 
   // --- Doctor Management ---
-  public shared ({ caller }) func addDoctor(name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId) : async DoctorId {
+  public shared ({ caller }) func addDoctor(name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId, mobileNumber : ?Text) : async DoctorId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add doctors");
     };
     let id = idCounters.nextDoctorId;
     doctors.add(id, { id; name; qualification; station; specialization; areaId; createdBy = caller });
+    switch (mobileNumber) { case (?m) { doctorMobileNumbers.add(id, m) }; case null {} };
     idCounters := { idCounters with nextDoctorId = id + 1 };
     id;
   };
 
-  public query ({ caller }) func getDoctorsByArea(areaId : AreaId) : async [Doctor] {
+  public query ({ caller }) func getDoctorsByArea(areaId : AreaId) : async [DoctorExtended] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view doctors");
     };
-    doctors.values().filter(func(d) { d.areaId == areaId }).toArray().sort();
+    doctors.values().filter(func(d) { d.areaId == areaId }).toArray().sort().map(func(d : Doctor) : DoctorExtended { { id = d.id; name = d.name; qualification = d.qualification; station = d.station; specialization = d.specialization; areaId = d.areaId; createdBy = d.createdBy; mobileNumber = doctorMobileNumbers.get(d.id) } });
   };
 
-  public query ({ caller }) func getAllDoctors() : async [Doctor] {
+  public query ({ caller }) func getAllDoctors() : async [DoctorExtended] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view doctors");
     };
-    doctors.values().toArray().sort();
+    doctors.values().toArray().sort().map(func(d : Doctor) : DoctorExtended { { id = d.id; name = d.name; qualification = d.qualification; station = d.station; specialization = d.specialization; areaId = d.areaId; createdBy = d.createdBy; mobileNumber = doctorMobileNumbers.get(d.id) } });
   };
 
   // --- Doctor Detailing ---
@@ -1135,12 +1331,22 @@ actor {
   };
 
   // --- Expense Entry ---
-  public shared ({ caller }) func addExpense(date : Text, kmTraveled : Nat, daAmount : Nat, notes : Text, taAmountOpt : ?Nat, workingArea : Text, daType : Text) : async () {
+  public shared ({ caller }) func addExpenseWithGeoTag(date : Text, kmTraveled : Nat, daAmount : Nat, notes : Text, taAmountOpt : ?Nat, workingArea : Text, daType : Text, latitude : ?Float, longitude : ?Float) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add expenses");
     };
     let taAmount = switch (taAmountOpt) { case (null) { 0 }; case (?v) { v } };
-    let entry : ExpenseEntry = { date; kmTraveled; taAmount; daAmount; notes; workingArea; daType };
+    let entry : ExpenseEntry = {
+      date;
+      kmTraveled;
+      taAmount;
+      daAmount;
+      notes;
+      workingArea;
+      daType;
+      latitude;
+      longitude;
+    };
     let existing = switch (expenseEntries.get(caller)) {
       case (null) { List.empty<ExpenseEntry>() };
       case (?e) { e };
@@ -1265,7 +1471,7 @@ actor {
   };
 
   // Admin: update doctor
-  public shared ({ caller }) func updateDoctor(id : DoctorId, name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId) : async () {
+  public shared ({ caller }) func updateDoctor(id : DoctorId, name : Text, qualification : Text, station : Text, specialization : Text, areaId : AreaId, mobileNumber : ?Text) : async () {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can update doctors");
     };
@@ -1273,6 +1479,7 @@ actor {
       case (null) { Runtime.trap("Doctor not found") };
       case (?existing) {
         doctors.add(id, { id; name; qualification; station; specialization; areaId; createdBy = existing.createdBy });
+        switch (mobileNumber) { case (?m) { doctorMobileNumbers.add(id, m) }; case null { doctorMobileNumbers.remove(id) } };
       };
     };
   };
@@ -1284,7 +1491,7 @@ actor {
     };
     switch (doctors.get(id)) {
       case (null) { Runtime.trap("Doctor not found") };
-      case (?_) { doctors.remove(id) };
+      case (?_) { doctors.remove(id); doctorMobileNumbers.remove(id) };
     };
   };
 
@@ -1432,6 +1639,7 @@ actor {
         let input = doctorsInput[i];
         let newId = idCounters.nextDoctorId;
         doctors.add(newId, { id = newId; name = input.name; qualification = input.qualification; station = input.station; specialization = input.specialization; areaId = input.areaId; createdBy = caller });
+        switch (input.mobileNumber) { case (?m) { doctorMobileNumbers.add(newId, m) }; case null {} };
         idCounters := { idCounters with nextDoctorId = newId + 1 };
         newId;
       },
@@ -1452,7 +1660,6 @@ actor {
   };
 
   // === ROLES API ===
-  // Single call to check both roles - never traps, returns guest for unknown principals
   public query ({ caller }) func getCallerRoleInfo() : async { baseRole : Text; managerRole : ?Text } {
     if (caller.isAnonymous()) {
       return { baseRole = "guest"; managerRole = null };
@@ -1503,4 +1710,3 @@ actor {
   };
 
 };
-

@@ -69,6 +69,7 @@ export interface Doctor {
   'id' : DoctorId,
   'station' : string,
   'name' : string,
+  'mobileNumber' : [] | [string],
   'createdBy' : Principal,
   'specialization' : string,
   'areaId' : AreaId,
@@ -78,18 +79,28 @@ export type DoctorId = bigint;
 export interface DoctorInput {
   'station' : string,
   'name' : string,
+  'mobileNumber' : [] | [string],
   'specialization' : string,
   'areaId' : AreaId,
   'qualification' : string,
 }
 export interface ExpenseEntry {
+  'latitude' : [] | [number],
   'daType' : string,
   'daAmount' : bigint,
   'date' : string,
   'kmTraveled' : bigint,
+  'longitude' : [] | [number],
   'notes' : string,
   'workingArea' : string,
   'taAmount' : bigint,
+}
+export interface GPSTrace {
+  'latitude' : number,
+  'createdBy' : Principal,
+  'longitude' : number,
+  'timestamp' : bigint,
+  'accuracy' : number,
 }
 export interface GiftArticle {
   'id' : GiftArticleId,
@@ -144,6 +155,14 @@ export type LeaveType = { 'WithoutPayLeave' : null } |
   { 'EarnedLeave' : null } |
   { 'SickLeave' : null } |
   { 'PrivilegeLeave' : null };
+export interface LocationData {
+  'latitude' : number,
+  'userName' : string,
+  'userRole' : string,
+  'longitude' : number,
+  'timestamp' : bigint,
+  'accuracy' : number,
+}
 export interface MRProfile {
   'employeeCode' : string,
   'assignedAreas' : Array<AreaId>,
@@ -245,11 +264,22 @@ export interface _SERVICE {
     [ChemistId, string, ProductId, bigint, string],
     undefined
   >,
-  'addDoctor' : ActorMethod<[string, string, string, string, AreaId], DoctorId>,
-  'addExpense' : ActorMethod<
-    [string, bigint, bigint, string, [] | [bigint], string, string],
+  'addDoctor' : ActorMethod<[string, string, string, string, AreaId, [] | [string]], DoctorId>,
+  'addExpenseWithGeoTag' : ActorMethod<
+    [
+      string,
+      bigint,
+      bigint,
+      string,
+      [] | [bigint],
+      string,
+      string,
+      [] | [number],
+      [] | [number],
+    ],
     undefined
   >,
+  'addGPSTrace' : ActorMethod<[number, number, number], undefined>,
   'addGiftArticle' : ActorMethod<[string, string], GiftArticleId>,
   'addHeadquarter' : ActorMethod<[string], bigint>,
   'addProduct' : ActorMethod<[string, string], ProductId>,
@@ -268,6 +298,7 @@ export interface _SERVICE {
   >,
   'adminGetAllWorkingPlans' : ActorMethod<[], Array<WorkingPlan>>,
   'adminGetTADASettings' : ActorMethod<[], TADASettingsV3>,
+  'adminResetAllReportData' : ActorMethod<[], undefined>,
   'adminSaveManagerProfile' : ActorMethod<
     [Principal, string, string, string, ManagerRole],
     undefined
@@ -292,6 +323,7 @@ export interface _SERVICE {
   'deleteProduct' : ActorMethod<[ProductId], undefined>,
   'deleteWorkingPlan' : ActorMethod<[WorkingPlanId], undefined>,
   'emergencyRestoreAdmin' : ActorMethod<[], undefined>,
+  'getActiveUserLocations' : ActorMethod<[], Array<[Principal, LocationData]>>,
   'getActivitySummary' : ActorMethod<[string], ActivitySummary>,
   'getAllAreas' : ActorMethod<[], Array<Area>>,
   'getAllCRMDemands' : ActorMethod<[], Array<CRMDemand>>,
@@ -311,6 +343,14 @@ export interface _SERVICE {
   'getAllProducts' : ActorMethod<[], Array<Product>>,
   'getAllSampleAllotments' : ActorMethod<[], Array<SampleAllotment>>,
   'getAllSampleDemandOrders' : ActorMethod<[], Array<SampleDemandOrder>>,
+  'getAllUserLatestLocations' : ActorMethod<
+    [],
+    Array<[Principal, LocationData]>
+  >,
+  'getAllUserLatestLocationsByRole' : ActorMethod<
+    [],
+    Array<[Principal, LocationData]>
+  >,
   'getAllUserProfiles' : ActorMethod<[], Array<[Principal, UserProfile]>>,
   'getCallerRoleInfo' : ActorMethod<
     [],
@@ -323,6 +363,8 @@ export interface _SERVICE {
   'getDetailingEntries' : ActorMethod<[], Array<DetailingEntry>>,
   'getDoctorsByArea' : ActorMethod<[AreaId], Array<Doctor>>,
   'getExpenseEntries' : ActorMethod<[], Array<ExpenseEntry>>,
+  'getGPSTraces' : ActorMethod<[Principal], Array<GPSTrace>>,
+  'getLatestLocation' : ActorMethod<[Principal], [] | [LocationData]>,
   'getLeaveHistory' : ActorMethod<[], Array<LeaveEntry>>,
   'getMRProfile' : ActorMethod<[], MRProfile>,
   'getManagerAreas' : ActorMethod<[Principal], ManagerAreaAssignment>,
@@ -348,6 +390,10 @@ export interface _SERVICE {
     Array<[Principal, Array<LeaveEntry>]>
   >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getUserTraceBetweenTimes' : ActorMethod<
+    [Principal, bigint, bigint],
+    Array<GPSTrace>
+  >,
   'isAdminInitialized' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'logDetailing' : ActorMethod<[DoctorId, string, Array<ProductId>], undefined>,
@@ -379,7 +425,7 @@ export interface _SERVICE {
     undefined
   >,
   'updateDoctor' : ActorMethod<
-    [DoctorId, string, string, string, string, AreaId],
+    [DoctorId, string, string, string, string, AreaId, [] | [string]],
     undefined
   >,
   'updateGiftArticle' : ActorMethod<[GiftArticleId, string, string], undefined>,
@@ -388,6 +434,7 @@ export interface _SERVICE {
     undefined
   >,
   'updateHeadquarter' : ActorMethod<[bigint, string], undefined>,
+  'updateLatestLocation' : ActorMethod<[LocationData], undefined>,
   'updateLeaveStatus' : ActorMethod<
     [Principal, bigint, LeaveStatus],
     undefined
@@ -401,7 +448,6 @@ export interface _SERVICE {
     [bigint, DemandOrderStatus],
     undefined
   >,
-  'adminResetAllReportData' : ActorMethod<[], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
