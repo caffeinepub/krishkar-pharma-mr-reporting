@@ -16,8 +16,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { useState } from "react";
-import * as XLSX from "xlsx";
+
 import { useActor } from "../../hooks/useActor";
+import { loadXlsx } from "../../lib/xlsxLoader";
 
 function daTypeBadge(daType: string) {
   if (daType === "Head Quarter" || daType === "HQ") {
@@ -255,7 +256,8 @@ export default function RSMTeamReports() {
   const filteredMrExpenseRows = filterByDate(mrExpenseRows, mrExpFrom, mrExpTo);
   const filteredAsmExpenseRows = filterByDate(asmExpenseRows, asmFrom, asmTo);
 
-  const exportMrDetailing = () => {
+  const exportMrDetailing = async () => {
+    const XLSX = await loadXlsx();
     const data = filteredMrDetailingRows.map(({ pStr, entry }, i) => ({
       "#": i + 1,
       "MR Name": getUserName(pStr),
@@ -269,7 +271,8 @@ export default function RSMTeamReports() {
     XLSX.writeFile(wb, "MR_Detailing_Report.xlsx");
   };
 
-  const exportMrExpenses = () => {
+  const exportMrExpenses = async () => {
+    const XLSX = await loadXlsx();
     const data = filteredMrExpenseRows.map(({ pStr, entry }, i) => ({
       "#": i + 1,
       "MR Name": getUserName(pStr),
@@ -287,7 +290,8 @@ export default function RSMTeamReports() {
     XLSX.writeFile(wb, "MR_Expenses_Report.xlsx");
   };
 
-  const exportAsmExpenses = () => {
+  const exportAsmExpenses = async () => {
+    const XLSX = await loadXlsx();
     const data = filteredAsmExpenseRows.map(({ pStr, entry }, i) => ({
       "#": i + 1,
       "ASM Name": getUserName(pStr),
