@@ -404,16 +404,20 @@ function MRLayout() {
 
 function RoleRouter() {
   const { role, isLoading } = useUserRole();
-  const [timedOut, setTimedOut] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const { clear } = useInternetIdentity();
 
+  // Track elapsed seconds so we can show a warming-up message early
+  // and only show the hard timeout after 60s.
   useEffect(() => {
     if (!isLoading && role !== null) return;
-    const t = setTimeout(() => setTimedOut(true), 20000);
-    return () => clearTimeout(t);
+    const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(interval);
   }, [isLoading, role]);
 
-  if (timedOut && (isLoading || role === null)) {
+  const timedOut = elapsed >= 60 && (isLoading || role === null);
+
+  if (timedOut) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 p-6">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
@@ -421,8 +425,8 @@ function RoleRouter() {
             Connection Timeout
           </p>
           <p className="text-gray-500 text-sm mb-5">
-            Unable to detect your role. This may be a network issue. Please try
-            logging out and back in.
+            Unable to reach the server. Please check your internet connection
+            and try again.
           </p>
           <Button
             onClick={clear}
@@ -439,7 +443,17 @@ function RoleRouter() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm text-gray-500">Detecting your role...</p>
+        <p className="text-sm text-gray-500">
+          {elapsed > 10
+            ? "Starting up, please wait..."
+            : "Detecting your role..."}
+        </p>
+        {elapsed > 10 && (
+          <p className="text-xs text-gray-400 max-w-xs text-center">
+            The server may be waking up. This can take up to 30 seconds on first
+            use.
+          </p>
+        )}
       </div>
     );
   }
