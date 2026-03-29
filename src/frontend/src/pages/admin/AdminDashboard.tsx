@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, MapPin, Package, Users } from "lucide-react";
+import HolidayCalendarWidget from "../../components/HolidayCalendarWidget";
 import { useActor } from "../../hooks/useActor";
 
 export default function AdminDashboard() {
@@ -223,6 +224,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+      <HolidayCalendarWidget />
     </div>
   );
 }

@@ -31,6 +31,14 @@ export const WorkingPlan = IDL.Record({
   'stationType' : IDL.Text,
   'principalId' : IDL.Principal,
 });
+export const HolidayId = IDL.Nat;
+export const Holiday = IDL.Record({
+  'id' : HolidayId,
+  'name' : IDL.Text,
+  'date' : IDL.Text,
+  'description' : IDL.Text,
+  'createdBy' : IDL.Principal,
+});
 export const TADASettingsV3 = IDL.Record({
   'mrTaPerKm' : IDL.Nat,
   'mrDaHQ' : IDL.Nat,
@@ -545,6 +553,10 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateProduct' : IDL.Func([ProductId, IDL.Text, IDL.Text], [], []),
+    'adminAddHoliday' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [HolidayId], []),
+    'adminUpdateHoliday' : IDL.Func([HolidayId, IDL.Text, IDL.Text, IDL.Text], [], []),
+    'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
+    'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
   'updateSampleDemandOrderStatus' : IDL.Func(
       [IDL.Nat, DemandOrderStatus],
       [],
@@ -577,6 +589,14 @@ export const idlFactory = ({ IDL }) => {
     'workingWith' : IDL.Opt(IDL.Text),
     'stationType' : IDL.Text,
     'principalId' : IDL.Principal,
+  });
+  const HolidayId = IDL.Nat;
+  const Holiday = IDL.Record({
+    'id' : HolidayId,
+    'name' : IDL.Text,
+    'date' : IDL.Text,
+    'description' : IDL.Text,
+    'createdBy' : IDL.Principal,
   });
   const TADASettingsV3 = IDL.Record({
     'mrTaPerKm' : IDL.Nat,
@@ -1101,6 +1121,14 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateProduct' : IDL.Func([ProductId, IDL.Text, IDL.Text], [], []),
+    'adminAddHoliday' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [HolidayId], []),
+    'adminUpdateHoliday' : IDL.Func([HolidayId, IDL.Text, IDL.Text, IDL.Text], [], []),
+    'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
+    'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
+    'adminAddHoliday' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [HolidayId], []),
+    'adminUpdateHoliday' : IDL.Func([HolidayId, IDL.Text, IDL.Text, IDL.Text], [], []),
+    'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
+    'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
     'updateSampleDemandOrderStatus' : IDL.Func(
         [IDL.Nat, DemandOrderStatus],
         [],

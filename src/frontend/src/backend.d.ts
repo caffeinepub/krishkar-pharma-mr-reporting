@@ -136,6 +136,14 @@ export interface Chemist {
 }
 export type GiftArticleId = bigint;
 export type WorkingPlanId = bigint;
+export type HolidayId = bigint;
+export interface Holiday {
+    id: HolidayId;
+    name: string;
+    date: string;
+    description: string;
+    createdBy: Principal;
+}
 export interface SampleEntry {
     doctorId: DoctorId;
     date: string;
@@ -361,4 +369,8 @@ export interface backendInterface {
     updateLeaveStatusByManager(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;
     updateProduct(id: ProductId, name: string, code: string): Promise<void>;
     updateSampleDemandOrderStatus(orderId: bigint, newStatus: DemandOrderStatus): Promise<void>;
+    adminAddHoliday(name: string, date: string, description: string): Promise<HolidayId>;
+    adminUpdateHoliday(id: HolidayId, name: string, date: string, description: string): Promise<void>;
+    adminDeleteHoliday(id: HolidayId): Promise<void>;
+    getAllHolidays(): Promise<Array<Holiday>>;
 }

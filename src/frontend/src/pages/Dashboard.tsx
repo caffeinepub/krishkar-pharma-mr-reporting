@@ -21,6 +21,7 @@ import {
   YAxis,
 } from "recharts";
 import type { ActivitySummary } from "../backend";
+import HolidayCalendarWidget from "../components/HolidayCalendarWidget";
 import { useActor } from "../hooks/useActor";
 
 const weeklyData = [
@@ -348,6 +349,7 @@ export default function Dashboard({
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </div>
       )}
+      <HolidayCalendarWidget />
     </div>
   );
 }

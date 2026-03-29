@@ -251,6 +251,14 @@ export interface WorkingPlan {
   'principalId' : Principal,
 }
 export type WorkingPlanId = bigint;
+export type HolidayId = bigint;
+export interface Holiday {
+  'id' : HolidayId,
+  'name' : string,
+  'date' : string,
+  'description' : string,
+  'createdBy' : Principal,
+}
 export interface WorkingPlanInput {
   'content' : string,
   'date' : string,
@@ -446,6 +454,10 @@ export interface _SERVICE {
     undefined
   >,
   'updateProduct' : ActorMethod<[ProductId, string, string], undefined>,
+  'adminAddHoliday' : ActorMethod<[string, string, string], HolidayId>,
+  'adminUpdateHoliday' : ActorMethod<[HolidayId, string, string, string], undefined>,
+  'adminDeleteHoliday' : ActorMethod<[HolidayId], undefined>,
+  'getAllHolidays' : ActorMethod<[], Array<Holiday>>,
   'updateSampleDemandOrderStatus' : ActorMethod<
     [bigint, DemandOrderStatus],
     undefined

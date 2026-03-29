@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
+import HolidayCalendarWidget from "../../components/HolidayCalendarWidget";
 import { useActor } from "../../hooks/useActor";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
@@ -555,6 +556,7 @@ export default function RSMDashboard() {
           )}
         </CardContent>
       </Card>
+      <HolidayCalendarWidget />
     </div>
   );
 }

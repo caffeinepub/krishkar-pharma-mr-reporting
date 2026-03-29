@@ -169,6 +169,15 @@ actor {
     nextWorkingPlanId : Nat;
   };
 
+  type HolidayId = Nat;
+  type Holiday = {
+    id : HolidayId;
+    name : Text;
+    date : Text;
+    description : Text;
+    createdBy : Principal;
+  };
+
   // --- New Types for Upgraded Features ---
   type SampleAllotment = {
     id : Nat;
@@ -363,6 +372,8 @@ actor {
   let giftDistributions = Map.empty<GiftDistributionId, GiftDistribution>();
   let giftDemandOrders = Map.empty<GiftDemandOrderId, GiftDemandOrder>();
   let workingPlans = Map.empty<WorkingPlanId, WorkingPlan>();
+  let holidays = Map.empty<HolidayId, Holiday>();
+  var nextHolidayId : Nat = 1;
   let locations = Map.empty<Principal, LocationData>();
   let geoTraces = Map.empty<Principal, List.List<GPSTrace>>();
 
@@ -1713,6 +1724,41 @@ actor {
     for (k in workingPlans.keys().toArray().vals()) { workingPlans.remove(k) };
     for (k in sampleDemandOrders.keys().toArray().vals()) { sampleDemandOrders.remove(k) };
     for (k in sampleAllotments.keys().toArray().vals()) { sampleAllotments.remove(k) };
+  };
+
+
+  // === Holiday Management ===
+  public shared ({ caller }) func adminAddHoliday(name : Text, date : Text, description : Text) : async HolidayId {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can add holidays");
+    };
+    let id = nextHolidayId;
+    holidays.add(id, { id; name; date; description; createdBy = caller });
+    nextHolidayId := id + 1;
+    id;
+  };
+
+  public shared ({ caller }) func adminUpdateHoliday(id : HolidayId, name : Text, date : Text, description : Text) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can update holidays");
+    };
+    switch (holidays.get(id)) {
+      case (null) { Runtime.trap("Holiday not found") };
+      case (?h) {
+        holidays.add(id, { h with name; date; description });
+      };
+    };
+  };
+
+  public shared ({ caller }) func adminDeleteHoliday(id : HolidayId) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can delete holidays");
+    };
+    holidays.remove(id);
+  };
+
+  public query func getAllHolidays() : async [Holiday] {
+    holidays.values().toArray();
   };
 
 };

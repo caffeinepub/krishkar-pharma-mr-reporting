@@ -35,6 +35,7 @@ import AdminDoctors from "./AdminDoctors";
 import AdminGiftArticles from "./AdminGiftArticles";
 import AdminGiftOrders from "./AdminGiftOrders";
 import AdminHeadquarters from "./AdminHeadquarters";
+import AdminHolidays from "./AdminHolidays";
 import AdminProducts from "./AdminProducts";
 import AdminReports from "./AdminReports";
 import AdminResetData from "./AdminResetData";
@@ -63,7 +64,8 @@ type AdminPage =
   | "tada-settings"
   | "working-plans"
   | "reset-data"
-  | "staff-gps";
+  | "staff-gps"
+  | "holidays";
 
 const adminNavItems: {
   id: AdminPage;
@@ -85,6 +87,7 @@ const adminNavItems: {
   { id: "gift-articles", label: "Gift Articles", icon: ShoppingBag },
   { id: "tada-settings", label: "TA/DA Settings", icon: IndianRupee },
   { id: "working-plans", label: "Working Plans", icon: CalendarRange },
+  { id: "holidays", label: "Holiday Calendar", icon: CalendarRange },
   { id: "staff-gps", label: "Staff GPS Tracking", icon: Navigation },
   { id: "reset-data", label: "Reset Data", icon: Trash2 },
 ];
@@ -106,6 +109,7 @@ const pageTitles: Record<AdminPage, string> = {
   "tada-settings": "TA/DA Settings",
   "working-plans": "All Working Plans",
   "staff-gps": "Staff GPS Tracking",
+  holidays: "Holiday Calendar",
   "reset-data": "Reset Report Data",
 };
 
@@ -162,6 +166,8 @@ export default function AdminLayout() {
         return <AdminTADASettings />;
       case "working-plans":
         return <AdminWorkingPlans />;
+      case "holidays":
+        return <AdminHolidays />;
       case "staff-gps":
         return <StaffGPSTracking />;
       case "reset-data":

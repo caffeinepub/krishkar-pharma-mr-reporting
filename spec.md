@@ -1,32 +1,28 @@
 # Krishkar Pharma MR Reporting
 
 ## Current State
-- MRWorkingDetails has 4 tabs: Doctor Activity (3 sub-cards: Visit/Detailing, Sample, Gift), Chemist Order, Expenses, Gift Demand
-- Doctor selection uses a dropdown with no search
-- 'Working With Someone' dropdown is disabled while staffNames loads, causing MRs to be unable to select
-- Chemists.tsx has no bulk upload option
-- AdminReports.tsx has no Chemist Orders/Call Report
-- No 'Add New Doctor' button in MR portal
+The app has dashboards for MR, ASM, RSM, and Admin roles. Admin can manage various entities. There is no holiday management feature.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Bulk Excel upload for Chemist list in Chemists.tsx (columns: Name, Area, Address, Contact)
-- Chemist Call Report (orders) export card in AdminReports.tsx
-- Doctor search/filter input in MRWorkingDetails doctor selection
-- 'Add New Doctor' button in MRWorkingDetails that opens an add-doctor dialog (calls actor.addDoctor)
+- `Holiday` type in backend: `{ id: HolidayId; name: Text; date: Text; description: Text; createdBy: Principal }`
+- Backend functions: `adminAddHoliday`, `adminUpdateHoliday`, `adminDeleteHoliday`, `getAllHolidays`
+- `AdminHolidays.tsx` page in admin portal for CRUD on holidays
+- Holiday calendar widget on Dashboard (MR portal), ASM Dashboard, RSM Dashboard, Admin Dashboard showing upcoming/current-year holidays
+- "Holidays" nav item in AdminLayout
 
 ### Modify
-- MRWorkingDetails: Merge Doctor Visit, Product Detailing, Sample Distribution, Gift Distribution, and Chemist Order into one unified 'Daily Activity' card/form
-- Fix 'Working With Others' dropdown: remove `disabled={staffNamesLoading}`, show loading text in placeholder only
+- `backend.d.ts` and `backend.did.js` / `backend.did.d.ts` to include holiday types and functions
+- `AdminLayout.tsx` to include `AdminHolidays` page and nav item
+- `Dashboard.tsx` (MR), `AdminDashboard.tsx`, ASM and RSM dashboards to show holiday list
 
 ### Remove
-- Separate tabs for Doctor Activity / Chemist Order (merged into one unified daily entry)
+- Nothing
 
 ## Implementation Plan
-1. Rewrite MRWorkingDetails.tsx:
-   - Unified daily entry card: area selector, doctor selector with search input, products detailing checkboxes, sample row (product+qty), gift row (article+qty), chemist order row (chemist+product+qty+scheme) - all in one form
-   - Fix Working With dropdown: remove disabled, placeholder shows loading state
-   - Add 'Add New Doctor' dialog using actor.addDoctor
-2. Update Chemists.tsx: add bulk Excel upload button + dialog (uses xlsxLoader, area name lookup, batch addChemist calls)
-3. Update AdminReports.tsx: add Chemist Orders report card using getChemistOrders() and getAllChemists()
+1. Add Holiday stable storage and CRUD functions to `main.mo`
+2. Update Candid binding files (`backend.did.js`, `backend.did.d.ts`, `backend.ts`/`backend.d.ts`)
+3. Create `AdminHolidays.tsx` with add/edit/delete dialog
+4. Add holiday section widget (reusable) shown on MR Dashboard, ASM Dashboard, RSM Dashboard, Admin Dashboard
+5. Wire `AdminHolidays` into `AdminLayout.tsx` nav and routing
