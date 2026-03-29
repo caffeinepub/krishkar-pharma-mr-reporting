@@ -444,6 +444,18 @@ export interface backendInterface {
     updateLeaveStatusByManager(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;
     updateProduct(id: ProductId, name: string, code: string): Promise<void>;
     updateSampleDemandOrderStatus(orderId: bigint, newStatus: DemandOrderStatus): Promise<void>;
+    adminAddAnnouncement(title: string, body: string, category: any): Promise<bigint>;
+    adminUpdateAnnouncement(id: bigint, title: string, body: string, category: any, isActive: boolean): Promise<boolean>;
+    adminDeleteAnnouncement(id: bigint): Promise<boolean>;
+    getActiveAnnouncements(): Promise<Array<any>>;
+    getAllAnnouncements(): Promise<Array<any>>;
+    recordUserAnnouncementView(dateKey: string): Promise<void>;
+    hasUserSeenAnnouncementsToday(dateKey: string): Promise<boolean>;
+    adminAddHoliday(name: string, date: string, description: string): Promise<bigint>;
+    adminUpdateHoliday(id: bigint, name: string, date: string, description: string): Promise<void>;
+    adminDeleteHoliday(id: bigint): Promise<void>;
+    getAllHolidays(): Promise<Array<any>>;
+
 }
 import type { ActivitySummary as _ActivitySummary, CRMDemand as _CRMDemand, CRMDemandId as _CRMDemandId, CRMDemandStatus as _CRMDemandStatus, ChemistId as _ChemistId, ChemistOrder as _ChemistOrder, DemandOrderStatus as _DemandOrderStatus, DoctorId as _DoctorId, ExpenseEntry as _ExpenseEntry, GiftArticleId as _GiftArticleId, GiftDemandOrder as _GiftDemandOrder, GiftDemandOrderId as _GiftDemandOrderId, GiftDemandOrderStatus as _GiftDemandOrderStatus, LeaveEntry as _LeaveEntry, LeaveStatus as _LeaveStatus, LeaveType as _LeaveType, LocationData as _LocationData, ManagerProfile as _ManagerProfile, ManagerRole as _ManagerRole, OrderStatus as _OrderStatus, ProductId as _ProductId, SampleDemandOrder as _SampleDemandOrder, UserProfile as _UserProfile, UserRole as _UserRole, WorkingPlan as _WorkingPlan, WorkingPlanId as _WorkingPlanId, WorkingPlanInput as _WorkingPlanInput } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -1851,6 +1863,162 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async adminAddAnnouncement(arg0: string, arg1: string, arg2: any, arg3?: any): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminAddAnnouncement(arg0, arg1, arg2, arg3 ?? []);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminAddAnnouncement(arg0, arg1, arg2, arg3 ?? []);
+            return result;
+        }
+    }
+    async adminUpdateAnnouncement(arg0: bigint, arg1: string, arg2: string, arg3: any, arg4: boolean, arg5?: any): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminUpdateAnnouncement(arg0, arg1, arg2, arg3, arg4, arg5 ?? []);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminUpdateAnnouncement(arg0, arg1, arg2, arg3, arg4, arg5 ?? []);
+            return result;
+        }
+    }
+    async adminDeleteAnnouncement(arg0: bigint): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminDeleteAnnouncement(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminDeleteAnnouncement(arg0);
+            return result;
+        }
+    }
+    async getActiveAnnouncements(): Promise<Array<any>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getActiveAnnouncements();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getActiveAnnouncements();
+            return result;
+        }
+    }
+    async getAllAnnouncements(): Promise<Array<any>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllAnnouncements();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllAnnouncements();
+            return result;
+        }
+    }
+    async recordUserAnnouncementView(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.recordUserAnnouncementView(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.recordUserAnnouncementView(arg0);
+            return result;
+        }
+    }
+    async hasUserSeenAnnouncementsToday(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.hasUserSeenAnnouncementsToday(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.hasUserSeenAnnouncementsToday(arg0);
+            return result;
+        }
+    }
+
+    async adminAddHoliday(arg0: string, arg1: string, arg2: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminAddHoliday(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminAddHoliday(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async adminUpdateHoliday(arg0: bigint, arg1: string, arg2: string, arg3: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminUpdateHoliday(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminUpdateHoliday(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async adminDeleteHoliday(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminDeleteHoliday(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminDeleteHoliday(arg0);
+            return result;
+        }
+    }
+    async getAllHolidays(): Promise<Array<any>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllHolidays();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllHolidays();
+            return result;
+        }
+    }
+
 }
 function from_candid_ActivitySummary_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ActivitySummary): ActivitySummary {
     return from_candid_record_n16(_uploadFile, _downloadFile, value);
@@ -2393,6 +2561,7 @@ function to_candid_variant_n64(_uploadFile: (file: ExternalBlob) => Promise<Uint
         Pending: null
     } : value;
 }
+
 export interface CreateActorOptions {
     agent?: Agent;
     agentOptions?: HttpAgentOptions;

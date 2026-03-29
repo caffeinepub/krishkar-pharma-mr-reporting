@@ -21,6 +21,7 @@ import {
   YAxis,
 } from "recharts";
 import type { ActivitySummary } from "../backend";
+import AnnouncementPopup from "../components/AnnouncementPopup";
 import HolidayCalendarWidget from "../components/HolidayCalendarWidget";
 import { useActor } from "../hooks/useActor";
 
@@ -140,216 +141,219 @@ export default function Dashboard({
     : 24;
 
   return (
-    <div className="space-y-6">
-      {/* Add Working Details CTA */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-gray-600">
-            Today's Overview
-          </h2>
-          <p className="text-xs text-gray-400">
-            {new Date().toLocaleDateString("en-IN", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
+    <>
+      <AnnouncementPopup actor={actor} />
+      <div className="space-y-6">
+        {/* Add Working Details CTA */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-600">
+              Today's Overview
+            </h2>
+            <p className="text-xs text-gray-400">
+              {new Date().toLocaleDateString("en-IN", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
+          {onAddWorkingDetails && (
+            <Button
+              data-ocid="dashboard.add_working_details.primary_button"
+              className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white font-semibold px-5"
+              onClick={onAddWorkingDetails}
+            >
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Add Working Details
+            </Button>
+          )}
         </div>
-        {onAddWorkingDetails && (
-          <Button
-            data-ocid="dashboard.add_working_details.primary_button"
-            className="bg-[#0D5BA6] hover:bg-[#0a4f96] text-white font-semibold px-5"
-            onClick={onAddWorkingDetails}
-          >
-            <ClipboardList className="mr-2 h-4 w-4" />
-            Add Working Details
-          </Button>
-        )}
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <KPICard
-          title="Doctors Visited"
-          value={isLoading ? "..." : String(summary?.doctorsVisited ?? 0)}
-          subtitle="Today"
-          icon={Stethoscope}
-          color="#2563EB"
-          bg="#EFF6FF"
-        />
-        <KPICard
-          title="Samples Given"
-          value={isLoading ? "..." : String(summary?.samplesGiven ?? 0)}
-          subtitle="Today"
-          icon={FlaskConical}
-          color="#14B8A6"
-          bg="#F0FDFA"
-        />
-        <KPICard
-          title="Chemist Orders"
-          value={isLoading ? "..." : String(summary?.chemistOrders ?? 0)}
-          subtitle="Pending"
-          icon={ShoppingBag}
-          color="#F59E0B"
-          bg="#FFFBEB"
-        />
-        <KPICard
-          title="Leave Balance"
-          value={isLoading ? "..." : leaveBalance}
-          subtitle="Days remaining"
-          icon={CalendarCheck}
-          color="#7C3AED"
-          bg="#F5F3FF"
-        />
-      </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <KPICard
+            title="Doctors Visited"
+            value={isLoading ? "..." : String(summary?.doctorsVisited ?? 0)}
+            subtitle="Today"
+            icon={Stethoscope}
+            color="#2563EB"
+            bg="#EFF6FF"
+          />
+          <KPICard
+            title="Samples Given"
+            value={isLoading ? "..." : String(summary?.samplesGiven ?? 0)}
+            subtitle="Today"
+            icon={FlaskConical}
+            color="#14B8A6"
+            bg="#F0FDFA"
+          />
+          <KPICard
+            title="Chemist Orders"
+            value={isLoading ? "..." : String(summary?.chemistOrders ?? 0)}
+            subtitle="Pending"
+            icon={ShoppingBag}
+            color="#F59E0B"
+            bg="#FFFBEB"
+          />
+          <KPICard
+            title="Leave Balance"
+            value={isLoading ? "..." : leaveBalance}
+            subtitle="Days remaining"
+            icon={CalendarCheck}
+            color="#7C3AED"
+            bg="#F5F3FF"
+          />
+        </div>
 
-      {/* Charts & Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        {/* Bar Chart */}
-        <Card className="lg:col-span-3 bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <CardTitle className="text-sm font-semibold text-gray-700">
-                Weekly Activity Overview
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={weeklyData} barSize={10} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                <XAxis
-                  dataKey="day"
-                  tick={{ fontSize: 12, fill: "#94A3B8" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 12, fill: "#94A3B8" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #E5EAF2",
-                    fontSize: "12px",
-                  }}
-                />
-                <Bar
-                  dataKey="doctors"
-                  fill="#2563EB"
-                  name="Doctors"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="samples"
-                  fill="#14B8A6"
-                  name="Samples"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="orders"
-                  fill="#F59E0B"
-                  name="Orders"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="flex gap-4 mt-2 justify-center">
-              {legendItems.map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ background: item.color }}
+        {/* Charts & Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          {/* Bar Chart */}
+          <Card className="lg:col-span-3 bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <CardTitle className="text-sm font-semibold text-gray-700">
+                  Weekly Activity Overview
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={weeklyData} barSize={10} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 12, fill: "#94A3B8" }}
+                    axisLine={false}
+                    tickLine={false}
                   />
-                  <span className="text-xs text-gray-500">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2 bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-primary" />
-              <CardTitle className="text-sm font-semibold text-gray-700">
-                Recent Activity
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-[#F1F5F9]">
-              {recentActivity.map((item, idx) => (
-                <div
-                  key={item.id}
-                  data-ocid={`activity.item.${idx + 1}`}
-                  className="px-5 py-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-700 truncate">
-                        {item.action}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {item.time} · {item.area}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${
-                        item.type === "Doctor Visit"
-                          ? "bg-blue-50 text-blue-600"
-                          : item.type === "Sample"
-                            ? "bg-teal-50 text-teal-600"
-                            : item.type === "Order"
-                              ? "bg-amber-50 text-amber-600"
-                              : "bg-purple-50 text-purple-600"
-                      }`}
-                    >
-                      {item.type}
-                    </span>
+                  <YAxis
+                    tick={{ fontSize: 12, fill: "#94A3B8" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid #E5EAF2",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Bar
+                    dataKey="doctors"
+                    fill="#2563EB"
+                    name="Doctors"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="samples"
+                    fill="#14B8A6"
+                    name="Samples"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="orders"
+                    fill="#F59E0B"
+                    name="Orders"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="flex gap-4 mt-2 justify-center">
+                {legendItems.map((item) => (
+                  <div key={item.label} className="flex items-center gap-1.5">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ background: item.color }}
+                    />
+                    <span className="text-xs text-gray-500">{item.label}</span>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Daily expense summary */}
-      {summary && Number(summary.dailyExpense) > 0 && (
-        <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-                <span className="text-green-600 font-bold text-sm">₹</span>
+                ))}
               </div>
-              <div>
-                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">
-                  Today's Expense
-                </p>
-                <p className="text-lg font-bold text-gray-900">
-                  ₹{Number(summary.dailyExpense).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
 
-      {isLoading && (
-        <div
-          className="flex justify-center py-4"
-          data-ocid="dashboard.loading_state"
-        >
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          {/* Recent Activity */}
+          <Card className="lg:col-span-2 bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary" />
+                <CardTitle className="text-sm font-semibold text-gray-700">
+                  Recent Activity
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-[#F1F5F9]">
+                {recentActivity.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    data-ocid={`activity.item.${idx + 1}`}
+                    className="px-5 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-700 truncate">
+                          {item.action}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {item.time} · {item.area}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${
+                          item.type === "Doctor Visit"
+                            ? "bg-blue-50 text-blue-600"
+                            : item.type === "Sample"
+                              ? "bg-teal-50 text-teal-600"
+                              : item.type === "Order"
+                                ? "bg-amber-50 text-amber-600"
+                                : "bg-purple-50 text-purple-600"
+                        }`}
+                      >
+                        {item.type}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      )}
-      <HolidayCalendarWidget />
-    </div>
+
+        {/* Daily expense summary */}
+        {summary && Number(summary.dailyExpense) > 0 && (
+          <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <span className="text-green-600 font-bold text-sm">₹</span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">
+                    Today's Expense
+                  </p>
+                  <p className="text-lg font-bold text-gray-900">
+                    ₹{Number(summary.dailyExpense).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isLoading && (
+          <div
+            className="flex justify-center py-4"
+            data-ocid="dashboard.loading_state"
+          >
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        )}
+        <HolidayCalendarWidget />
+      </div>
+    </>
   );
 }

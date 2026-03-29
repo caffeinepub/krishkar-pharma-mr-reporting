@@ -136,6 +136,19 @@ export interface Chemist {
 }
 export type GiftArticleId = bigint;
 export type WorkingPlanId = bigint;
+
+export type AnnouncementCategory = { 'LatestProduct': null } | { 'UpcomingProduct': null } | { 'LatestScheme': null } | { 'NewGiftArticle': null };
+export type AnnouncementId = bigint;
+export interface AdminAnnouncement {
+  id: AnnouncementId;
+  title: string;
+  body: string;
+  category: AnnouncementCategory;
+  createdAt: bigint;
+  isActive: boolean;
+  createdBy: Principal;
+  imageUrl: [] | [string];
+}
 export type HolidayId = bigint;
 export interface Holiday {
     id: HolidayId;
@@ -373,4 +386,11 @@ export interface backendInterface {
     adminUpdateHoliday(id: HolidayId, name: string, date: string, description: string): Promise<void>;
     adminDeleteHoliday(id: HolidayId): Promise<void>;
     getAllHolidays(): Promise<Array<Holiday>>;
+    adminAddAnnouncement(title: string, body: string, category: AnnouncementCategory, imageUrl: [] | [string]): Promise<AnnouncementId>;
+    adminUpdateAnnouncement(id: AnnouncementId, title: string, body: string, category: AnnouncementCategory, isActive: boolean, imageUrl: [] | [string]): Promise<boolean>;
+    adminDeleteAnnouncement(id: AnnouncementId): Promise<boolean>;
+    getActiveAnnouncements(): Promise<Array<AdminAnnouncement>>;
+    getAllAnnouncements(): Promise<Array<AdminAnnouncement>>;
+    recordUserAnnouncementView(dateKey: string): Promise<void>;
+    hasUserSeenAnnouncementsToday(dateKey: string): Promise<boolean>;
 }

@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   MapPin,
+  Megaphone,
   Menu,
   Navigation,
   Package,
@@ -28,6 +29,7 @@ import { toast } from "sonner";
 import { useGPSUpdater } from "../../hooks/useGPSUpdater";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
+import AdminAnnouncements from "./AdminAnnouncements";
 import AdminAreas from "./AdminAreas";
 import AdminCRMApprovals from "./AdminCRMApprovals";
 import AdminDashboard from "./AdminDashboard";
@@ -65,7 +67,8 @@ type AdminPage =
   | "working-plans"
   | "reset-data"
   | "staff-gps"
-  | "holidays";
+  | "holidays"
+  | "announcements";
 
 const adminNavItems: {
   id: AdminPage;
@@ -88,6 +91,7 @@ const adminNavItems: {
   { id: "tada-settings", label: "TA/DA Settings", icon: IndianRupee },
   { id: "working-plans", label: "Working Plans", icon: CalendarRange },
   { id: "holidays", label: "Holiday Calendar", icon: CalendarRange },
+  { id: "announcements", label: "Announcements", icon: Megaphone },
   { id: "staff-gps", label: "Staff GPS Tracking", icon: Navigation },
   { id: "reset-data", label: "Reset Data", icon: Trash2 },
 ];
@@ -110,6 +114,7 @@ const pageTitles: Record<AdminPage, string> = {
   "working-plans": "All Working Plans",
   "staff-gps": "Staff GPS Tracking",
   holidays: "Holiday Calendar",
+  announcements: "Announcements",
   "reset-data": "Reset Report Data",
 };
 
@@ -168,6 +173,8 @@ export default function AdminLayout() {
         return <AdminWorkingPlans />;
       case "holidays":
         return <AdminHolidays />;
+      case "announcements":
+        return <AdminAnnouncements />;
       case "staff-gps":
         return <StaffGPSTracking />;
       case "reset-data":

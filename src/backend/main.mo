@@ -178,6 +178,20 @@ actor {
     createdBy : Principal;
   };
 
+
+  type AnnouncementCategory = { #LatestProduct; #UpcomingProduct; #LatestScheme; #NewGiftArticle };
+  type AnnouncementId = Nat;
+  type AdminAnnouncement = {
+    id : AnnouncementId;
+    title : Text;
+    body : Text;
+    category : AnnouncementCategory;
+    createdAt : Int;
+    isActive : Bool;
+    createdBy : Principal;
+    imageUrl : ?Text;
+  };
+
   // --- New Types for Upgraded Features ---
   type SampleAllotment = {
     id : Nat;
@@ -374,6 +388,9 @@ actor {
   let workingPlans = Map.empty<WorkingPlanId, WorkingPlan>();
   let holidays = Map.empty<HolidayId, Holiday>();
   var nextHolidayId : Nat = 1;
+  let announcements = Map.empty<AnnouncementId, AdminAnnouncement>();
+  var nextAnnouncementId : AnnouncementId = 1;
+  let announcementViews = Map.empty<Text, Bool>(); // key = "principalId:dateKey"
   let locations = Map.empty<Principal, LocationData>();
   let geoTraces = Map.empty<Principal, List.List<GPSTrace>>();
 
@@ -1018,8 +1035,8 @@ actor {
   };
 
   public query ({ caller }) func getAllManagerProfiles() : async [(Principal, ManagerProfile)] {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
-      Runtime.trap("Unauthorized: Only admins can view all manager profiles");
+    if (not (AccessControl.isAdmin(accessControlState, caller)) and not isManager(caller)) {
+      Runtime.trap("Unauthorized: Only admins and managers can view all manager profiles");
     };
     managerProfiles.entries().toArray();
   };
@@ -1428,8 +1445,8 @@ actor {
 
   // Admin: view all MR profiles
   public query ({ caller }) func getAllMRProfiles() : async [(Principal, MRProfile)] {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
-      Runtime.trap("Unauthorized: Only admins can view all MR profiles");
+    if (not (AccessControl.isAdmin(accessControlState, caller)) and not isManager(caller)) {
+      Runtime.trap("Unauthorized: Only admins and managers can view all MR profiles");
     };
     mrProfiles.entries().toArray();
   };
@@ -1760,5 +1777,60 @@ actor {
   public query func getAllHolidays() : async [Holiday] {
     holidays.values().toArray();
   };
+
+
+  // === Admin Announcements ===
+  public shared ({ caller }) func adminAddAnnouncement(title : Text, body : Text, category : AnnouncementCategory, imageUrl : ?Text) : async AnnouncementId {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can add announcements");
+    };
+    let id = nextAnnouncementId;
+    announcements.add(id, { id; title; body; category; createdAt = Time.now(); isActive = true; createdBy = caller; imageUrl });
+    nextAnnouncementId := id + 1;
+    id;
+  };
+
+  public shared ({ caller }) func adminUpdateAnnouncement(id : AnnouncementId, title : Text, body : Text, category : AnnouncementCategory, isActive : Bool, imageUrl : ?Text) : async Bool {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can update announcements");
+    };
+    switch (announcements.get(id)) {
+      case (null) { false };
+      case (?a) {
+        announcements.add(id, { a with title; body; category; isActive; imageUrl });
+        true;
+      };
+    };
+  };
+
+  public shared ({ caller }) func adminDeleteAnnouncement(id : AnnouncementId) : async Bool {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can delete announcements");
+    };
+    announcements.remove(id);
+    true;
+  };
+
+  public query func getActiveAnnouncements() : async [AdminAnnouncement] {
+    announcements.values().filter(func(a) { a.isActive }).toArray();
+  };
+
+  public query func getAllAnnouncements() : async [AdminAnnouncement] {
+    announcements.values().toArray();
+  };
+
+  public shared ({ caller }) func recordUserAnnouncementView(dateKey : Text) : async () {
+    let key = caller.toText() # ":" # dateKey;
+    announcementViews.add(key, true);
+  };
+
+  public query ({ caller }) func hasUserSeenAnnouncementsToday(dateKey : Text) : async Bool {
+    let key = caller.toText() # ":" # dateKey;
+    switch (announcementViews.get(key)) {
+      case (?true) { true };
+      case (_) { false };
+    };
+  };
+
 
 };

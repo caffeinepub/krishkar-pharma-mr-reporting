@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { useState } from "react";
 
+import { MRWorkingOverview } from "../../components/MRWorkingOverview";
 import { useActor } from "../../hooks/useActor";
 import { loadXlsx } from "../../lib/xlsxLoader";
 
@@ -283,6 +284,18 @@ export default function RSMTeamReports() {
       "DA Type": entry.daType || "-",
       "Working Area": entry.workingArea || "-",
       "Total (₹)": (Number(entry.taAmount) + Number(entry.daAmount)).toFixed(2),
+      "GPS Latitude":
+        entry.latitude?.[0] != null
+          ? Number(entry.latitude[0]).toFixed(6)
+          : "-",
+      "GPS Longitude":
+        entry.longitude?.[0] != null
+          ? Number(entry.longitude[0]).toFixed(6)
+          : "-",
+      "GPS Location":
+        entry.latitude?.[0] != null && entry.longitude?.[0] != null
+          ? `https://maps.google.com/?q=${Number(entry.latitude[0]).toFixed(6)},${Number(entry.longitude[0]).toFixed(6)}`
+          : "-",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -302,6 +315,18 @@ export default function RSMTeamReports() {
       "DA Type": entry.daType || "-",
       "Working Area": entry.workingArea || "-",
       Notes: entry.notes || "-",
+      "GPS Latitude":
+        entry.latitude?.[0] != null
+          ? Number(entry.latitude[0]).toFixed(6)
+          : "-",
+      "GPS Longitude":
+        entry.longitude?.[0] != null
+          ? Number(entry.longitude[0]).toFixed(6)
+          : "-",
+      "GPS Location":
+        entry.latitude?.[0] != null && entry.longitude?.[0] != null
+          ? `https://maps.google.com/?q=${Number(entry.latitude[0]).toFixed(6)},${Number(entry.longitude[0]).toFixed(6)}`
+          : "-",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -331,6 +356,7 @@ export default function RSMTeamReports() {
             <TabsList className="mb-4">
               <TabsTrigger value="detailing">Detailing Visits</TabsTrigger>
               <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              <TabsTrigger value="overview">Working Overview</TabsTrigger>
             </TabsList>
 
             <TabsContent value="detailing">
@@ -532,6 +558,17 @@ export default function RSMTeamReports() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="overview">
+              <MRWorkingOverview
+                mrPrincipalSet={mrPrincipalSet}
+                teamDetailing={teamDetailing as Array<[any, any[]]>}
+                teamExpenses={teamExpenses as Array<[any, any[]]>}
+                getUserName={getUserName}
+                getDoctorName={getDoctorName}
+                getProductNames={getProductNames}
+              />
             </TabsContent>
           </Tabs>
         </TabsContent>

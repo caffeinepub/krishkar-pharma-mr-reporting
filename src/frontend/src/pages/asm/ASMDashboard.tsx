@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
+import AnnouncementPopup from "../../components/AnnouncementPopup";
 import HolidayCalendarWidget from "../../components/HolidayCalendarWidget";
 import { useActor } from "../../hooks/useActor";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
@@ -192,317 +193,323 @@ export default function ASMDashboard() {
   const hasChartData = mrChartData.length > 0;
 
   return (
-    <div data-ocid="asm_dashboard.section">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">ASM Dashboard</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Area overview — team performance and leave requests
-        </p>
-      </div>
+    <>
+      <AnnouncementPopup actor={actor} />
+      <div data-ocid="asm_dashboard.section">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">ASM Dashboard</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Area overview — team performance and leave requests
+          </p>
+        </div>
 
-      {/* Assigned Areas */}
-      <Card className="border border-[#E5EAF2] shadow-sm mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-purple-600" />
-            My Assigned Areas ({assignedAreaNames.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {assignedAreaNames.length === 0 ? (
-            <p className="text-sm text-gray-400">
-              No areas assigned yet. Contact Admin to assign areas.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {assignedAreaNames.map((name) => (
-                <Badge
-                  key={name}
-                  className="bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1 text-xs font-medium"
-                >
-                  {name}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <Card className="border border-[#E5EAF2] shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">
-                  Team Members
-                </p>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-16 mt-1" />
-                ) : (
-                  <p className="text-3xl font-bold text-gray-900 mt-1">
-                    {totalMembers}
-                  </p>
-                )}
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-[#E5EAF2] shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">
-                  Total Detailing Visits
-                </p>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-16 mt-1" />
-                ) : (
-                  <p className="text-3xl font-bold text-gray-900 mt-1">
-                    {totalVisits}
-                  </p>
-                )}
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-                <ClipboardList className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-[#E5EAF2] shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">
-                  Total Expenses
-                </p>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-24 mt-1" />
-                ) : (
-                  <p className="text-3xl font-bold text-gray-900 mt-1">
-                    ₹{totalExpense.toLocaleString("en-IN")}
-                  </p>
-                )}
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* MR Working Details Overview Charts */}
-      <Card className="border border-[#E5EAF2] shadow-sm mb-8">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-purple-600" />
-            MR Working Details Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingExpenses ? (
-            <div className="space-y-3">
-              <Skeleton className="h-40 w-full" />
-            </div>
-          ) : !hasChartData ? (
-            <p className="text-sm text-gray-400 text-center py-8">
-              No MR working data available yet.
-            </p>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Chart 1: Doctors Visited */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
-                    Doctors Visited per MR
-                  </p>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart
-                      data={mrChartData}
-                      margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Bar
-                        dataKey="doctorsVisited"
-                        name="Doctors Visited"
-                        fill="#7c3aed"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Chart 2: KM Traveled */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
-                    KM Traveled per MR
-                  </p>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart
-                      data={mrChartData}
-                      margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Bar
-                        dataKey="totalKm"
-                        name="KM Traveled"
-                        fill="#2563eb"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Chart 3: TA + DA Amount */}
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
-                  TA & DA Amount per MR (₹)
-                </p>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart
-                    data={mrChartData}
-                    margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar
-                      dataKey="totalTA"
-                      name="TA (₹)"
-                      fill="#d97706"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="totalDA"
-                      name="DA (₹)"
-                      fill="#16a34a"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pending Leave Approvals */}
-      <Card className="border border-[#E5EAF2] shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold text-gray-800">
-            Pending Leave Requests (
-            {loadingLeaves ? "..." : pendingLeaves.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingLeaves ? (
-            <div className="space-y-3" data-ocid="asm_dashboard.loading_state">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-20 w-full" />
-              ))}
-            </div>
-          ) : pendingLeaves.length === 0 ? (
-            <div
-              className="text-center py-10"
-              data-ocid="asm_dashboard.empty_state"
-            >
-              <p className="text-gray-400 text-sm">
-                No pending leave requests.
+        {/* Assigned Areas */}
+        <Card className="border border-[#E5EAF2] shadow-sm mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-purple-600" />
+              My Assigned Areas ({assignedAreaNames.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {assignedAreaNames.length === 0 ? (
+              <p className="text-sm text-gray-400">
+                No areas assigned yet. Contact Admin to assign areas.
               </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {pendingLeaves.map(({ principal, entry, idx }, listIdx) => {
-                const pStr = principal.toString();
-                return (
-                  <div
-                    key={`${pStr}-${idx}`}
-                    data-ocid={`asm_dashboard.item.${listIdx + 1}`}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-[#E5EAF2] bg-white"
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {assignedAreaNames.map((name) => (
+                  <Badge
+                    key={name}
+                    className="bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1 text-xs font-medium"
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-gray-800">
-                          {entry.leaveType}
-                        </span>
-                        <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-                          Pending
-                        </Badge>
-                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                          {Number(entry.days)} day
-                          {Number(entry.days) !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        <span className="font-medium">By:</span>{" "}
-                        {getUserName(pStr)}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        <span className="font-medium">Period:</span>{" "}
-                        {entry.fromDate} → {entry.toDate}
-                      </p>
-                      {entry.reason && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          <span className="font-medium">Reason:</span>{" "}
-                          {entry.reason}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-green-600 border-green-200 hover:bg-green-50"
-                        data-ocid={`asm_dashboard.confirm_button.${listIdx + 1}`}
-                        onClick={() =>
-                          updateLeaveStatus({
-                            principal,
-                            index: idx,
-                            status: LeaveStatus.Approved,
-                          })
-                        }
+                    {name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <Card className="border border-[#E5EAF2] shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">
+                    Team Members
+                  </p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                      {totalMembers}
+                    </p>
+                  )}
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-[#E5EAF2] shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">
+                    Total Detailing Visits
+                  </p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                      {totalVisits}
+                    </p>
+                  )}
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
+                  <ClipboardList className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-[#E5EAF2] shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">
+                    Total Expenses
+                  </p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                      ₹{totalExpense.toLocaleString("en-IN")}
+                    </p>
+                  )}
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* MR Working Details Overview Charts */}
+        <Card className="border border-[#E5EAF2] shadow-sm mb-8">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-purple-600" />
+              MR Working Details Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingExpenses ? (
+              <div className="space-y-3">
+                <Skeleton className="h-40 w-full" />
+              </div>
+            ) : !hasChartData ? (
+              <p className="text-sm text-gray-400 text-center py-8">
+                No MR working data available yet.
+              </p>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Chart 1: Doctors Visited */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                      Doctors Visited per MR
+                    </p>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart
+                        data={mrChartData}
+                        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                       >
-                        <Check className="w-4 h-4 mr-1" /> Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-200 hover:bg-red-50"
-                        data-ocid={`asm_dashboard.delete_button.${listIdx + 1}`}
-                        onClick={() =>
-                          updateLeaveStatus({
-                            principal,
-                            index: idx,
-                            status: LeaveStatus.Rejected,
-                          })
-                        }
-                      >
-                        <X className="w-4 h-4 mr-1" /> Reject
-                      </Button>
-                    </div>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Bar
+                          dataKey="doctorsVisited"
+                          name="Doctors Visited"
+                          fill="#7c3aed"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      <HolidayCalendarWidget />
-    </div>
+
+                  {/* Chart 2: KM Traveled */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                      KM Traveled per MR
+                    </p>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart
+                        data={mrChartData}
+                        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Bar
+                          dataKey="totalKm"
+                          name="KM Traveled"
+                          fill="#2563eb"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Chart 3: TA + DA Amount */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                    TA & DA Amount per MR (₹)
+                  </p>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={mrChartData}
+                      margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar
+                        dataKey="totalTA"
+                        name="TA (₹)"
+                        fill="#d97706"
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="totalDA"
+                        name="DA (₹)"
+                        fill="#16a34a"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pending Leave Approvals */}
+        <Card className="border border-[#E5EAF2] shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-gray-800">
+              Pending Leave Requests (
+              {loadingLeaves ? "..." : pendingLeaves.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingLeaves ? (
+              <div
+                className="space-y-3"
+                data-ocid="asm_dashboard.loading_state"
+              >
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-20 w-full" />
+                ))}
+              </div>
+            ) : pendingLeaves.length === 0 ? (
+              <div
+                className="text-center py-10"
+                data-ocid="asm_dashboard.empty_state"
+              >
+                <p className="text-gray-400 text-sm">
+                  No pending leave requests.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingLeaves.map(({ principal, entry, idx }, listIdx) => {
+                  const pStr = principal.toString();
+                  return (
+                    <div
+                      key={`${pStr}-${idx}`}
+                      data-ocid={`asm_dashboard.item.${listIdx + 1}`}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-[#E5EAF2] bg-white"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-gray-800">
+                            {entry.leaveType}
+                          </span>
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                            Pending
+                          </Badge>
+                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                            {Number(entry.days)} day
+                            {Number(entry.days) !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          <span className="font-medium">By:</span>{" "}
+                          {getUserName(pStr)}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          <span className="font-medium">Period:</span>{" "}
+                          {entry.fromDate} → {entry.toDate}
+                        </p>
+                        {entry.reason && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            <span className="font-medium">Reason:</span>{" "}
+                            {entry.reason}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-green-600 border-green-200 hover:bg-green-50"
+                          data-ocid={`asm_dashboard.confirm_button.${listIdx + 1}`}
+                          onClick={() =>
+                            updateLeaveStatus({
+                              principal,
+                              index: idx,
+                              status: LeaveStatus.Approved,
+                            })
+                          }
+                        >
+                          <Check className="w-4 h-4 mr-1" /> Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          data-ocid={`asm_dashboard.delete_button.${listIdx + 1}`}
+                          onClick={() =>
+                            updateLeaveStatus({
+                              principal,
+                              index: idx,
+                              status: LeaveStatus.Rejected,
+                            })
+                          }
+                        >
+                          <X className="w-4 h-4 mr-1" /> Reject
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <HolidayCalendarWidget />
+      </div>
+    </>
   );
 }

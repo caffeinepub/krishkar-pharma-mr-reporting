@@ -251,6 +251,19 @@ export interface WorkingPlan {
   'principalId' : Principal,
 }
 export type WorkingPlanId = bigint;
+
+export type AnnouncementCategory = { 'LatestProduct' : null } | { 'UpcomingProduct' : null } | { 'LatestScheme' : null } | { 'NewGiftArticle' : null };
+export type AnnouncementId = bigint;
+export interface AdminAnnouncement {
+  'id' : AnnouncementId,
+  'title' : string,
+  'body' : string,
+  'category' : AnnouncementCategory,
+  'createdAt' : bigint,
+  'isActive' : boolean,
+  'createdBy' : Principal,
+  'imageUrl' : [] | [string],
+}
 export type HolidayId = bigint;
 export interface Holiday {
   'id' : HolidayId,
@@ -458,6 +471,14 @@ export interface _SERVICE {
   'adminUpdateHoliday' : ActorMethod<[HolidayId, string, string, string], undefined>,
   'adminDeleteHoliday' : ActorMethod<[HolidayId], undefined>,
   'getAllHolidays' : ActorMethod<[], Array<Holiday>>,
+  'adminAddAnnouncement' : ActorMethod<[string, string, AnnouncementCategory, [] | [string]], AnnouncementId>,
+  'adminUpdateAnnouncement' : ActorMethod<[AnnouncementId, string, string, AnnouncementCategory, boolean, [] | [string]], boolean>,
+  'adminDeleteAnnouncement' : ActorMethod<[AnnouncementId], boolean>,
+  'getActiveAnnouncements' : ActorMethod<[], Array<AdminAnnouncement>>,
+  'getAllAnnouncements' : ActorMethod<[], Array<AdminAnnouncement>>,
+  'recordUserAnnouncementView' : ActorMethod<[string], undefined>,
+  'hasUserSeenAnnouncementsToday' : ActorMethod<[string], boolean>,
+
   'updateSampleDemandOrderStatus' : ActorMethod<
     [bigint, DemandOrderStatus],
     undefined

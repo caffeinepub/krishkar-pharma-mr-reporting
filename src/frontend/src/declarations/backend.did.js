@@ -39,6 +39,25 @@ export const Holiday = IDL.Record({
   'description' : IDL.Text,
   'createdBy' : IDL.Principal,
 });
+
+  const AnnouncementCategory = IDL.Variant({
+    'LatestProduct' : IDL.Null,
+    'UpcomingProduct' : IDL.Null,
+    'LatestScheme' : IDL.Null,
+    'NewGiftArticle' : IDL.Null,
+  });
+  const AnnouncementId = IDL.Nat;
+  const AdminAnnouncement = IDL.Record({
+    'id' : AnnouncementId,
+    'title' : IDL.Text,
+    'body' : IDL.Text,
+    'category' : AnnouncementCategory,
+    'createdAt' : IDL.Int,
+    'isActive' : IDL.Bool,
+    'createdBy' : IDL.Principal,
+    'imageUrl' : IDL.Opt(IDL.Text),
+  });
+
 export const TADASettingsV3 = IDL.Record({
   'mrTaPerKm' : IDL.Nat,
   'mrDaHQ' : IDL.Nat,
@@ -557,6 +576,14 @@ export const idlService = IDL.Service({
     'adminUpdateHoliday' : IDL.Func([HolidayId, IDL.Text, IDL.Text, IDL.Text], [], []),
     'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
     'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
+    'adminAddAnnouncement' : IDL.Func([IDL.Text, IDL.Text, AnnouncementCategory, IDL.Opt(IDL.Text)], [AnnouncementId], []),
+    'adminUpdateAnnouncement' : IDL.Func([AnnouncementId, IDL.Text, IDL.Text, AnnouncementCategory, IDL.Bool, IDL.Opt(IDL.Text)], [IDL.Bool], []),
+    'adminDeleteAnnouncement' : IDL.Func([AnnouncementId], [IDL.Bool], []),
+    'getActiveAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
+    'getAllAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
+    'recordUserAnnouncementView' : IDL.Func([IDL.Text], [], []),
+    'hasUserSeenAnnouncementsToday' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+
   'updateSampleDemandOrderStatus' : IDL.Func(
       [IDL.Nat, DemandOrderStatus],
       [],
@@ -597,6 +624,23 @@ export const idlFactory = ({ IDL }) => {
     'date' : IDL.Text,
     'description' : IDL.Text,
     'createdBy' : IDL.Principal,
+  });
+  const AnnouncementCategory = IDL.Variant({
+    'LatestProduct' : IDL.Null,
+    'UpcomingProduct' : IDL.Null,
+    'LatestScheme' : IDL.Null,
+    'NewGiftArticle' : IDL.Null,
+  });
+  const AnnouncementId = IDL.Nat;
+  const AdminAnnouncement = IDL.Record({
+    'id' : AnnouncementId,
+    'title' : IDL.Text,
+    'body' : IDL.Text,
+    'category' : AnnouncementCategory,
+    'createdAt' : IDL.Int,
+    'isActive' : IDL.Bool,
+    'createdBy' : IDL.Principal,
+    'imageUrl' : IDL.Opt(IDL.Text),
   });
   const TADASettingsV3 = IDL.Record({
     'mrTaPerKm' : IDL.Nat,
@@ -1098,7 +1142,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateDoctor' : IDL.Func(
-        [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text)],
+        [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
         [],
         [],
       ),
@@ -1125,10 +1169,13 @@ export const idlFactory = ({ IDL }) => {
     'adminUpdateHoliday' : IDL.Func([HolidayId, IDL.Text, IDL.Text, IDL.Text], [], []),
     'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
     'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
-    'adminAddHoliday' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [HolidayId], []),
-    'adminUpdateHoliday' : IDL.Func([HolidayId, IDL.Text, IDL.Text, IDL.Text], [], []),
-    'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
-    'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
+    'adminAddAnnouncement' : IDL.Func([IDL.Text, IDL.Text, AnnouncementCategory, IDL.Opt(IDL.Text)], [AnnouncementId], []),
+    'adminUpdateAnnouncement' : IDL.Func([AnnouncementId, IDL.Text, IDL.Text, AnnouncementCategory, IDL.Bool, IDL.Opt(IDL.Text)], [IDL.Bool], []),
+    'adminDeleteAnnouncement' : IDL.Func([AnnouncementId], [IDL.Bool], []),
+    'getActiveAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
+    'getAllAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
+    'recordUserAnnouncementView' : IDL.Func([IDL.Text], [], []),
+    'hasUserSeenAnnouncementsToday' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
     'updateSampleDemandOrderStatus' : IDL.Func(
         [IDL.Nat, DemandOrderStatus],
         [],

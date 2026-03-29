@@ -219,13 +219,23 @@ export default function AdminReports() {
 
   const expenseRows = teamExpenses.flatMap(([principal, entries]) =>
     entries.map((e) => ({
-      "MR Name": userMap.get(principal.toString())?.name ?? "N/A",
+      "Staff Name": userMap.get(principal.toString())?.name ?? "N/A",
       Date: e.date,
       "KM Traveled": Number(e.kmTraveled),
+      "DA Type": e.daType || "-",
+      "Working Area": e.workingArea || "-",
       "TA Amount": Number(e.taAmount),
       "DA Amount": Number(e.daAmount),
       Total: Number(e.taAmount) + Number(e.daAmount),
       Notes: e.notes,
+      "GPS Latitude":
+        e.latitude?.[0] != null ? Number(e.latitude[0]).toFixed(6) : "-",
+      "GPS Longitude":
+        e.longitude?.[0] != null ? Number(e.longitude[0]).toFixed(6) : "-",
+      "GPS Location":
+        e.latitude?.[0] != null && e.longitude?.[0] != null
+          ? `https://maps.google.com/?q=${Number(e.latitude[0]).toFixed(6)},${Number(e.longitude[0]).toFixed(6)}`
+          : "-",
     })),
   );
   const exportExpenses = () =>

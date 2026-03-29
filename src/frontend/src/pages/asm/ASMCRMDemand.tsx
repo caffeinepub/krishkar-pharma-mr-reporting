@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { IndianRupee, Loader2, PlusCircle } from "lucide-react";
-import { useMemo, useState } from "react";
+import { IndianRupee, Loader2, PlusCircle, Search, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../../hooks/useActor";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
@@ -60,12 +60,22 @@ export default function ASMCRMDemand() {
     notes: "",
     date: today,
   });
+  const [selectedAreaId, setSelectedAreaId] = useState("");
+  const [doctorSearch, setDoctorSearch] = useState("");
+  const [showDoctorList, setShowDoctorList] = useState(false);
+  const doctorSearchRef = useRef<HTMLDivElement>(null);
 
   const enabled = !!actor && !isFetching;
 
   const { data: allDoctors = [], isLoading: loadingDoctors } = useQuery({
     queryKey: ["all-doctors"],
     queryFn: () => actor!.getAllDoctors(),
+    enabled,
+  });
+
+  const { data: allAreas = [] } = useQuery({
+    queryKey: ["all-areas"],
+    queryFn: () => actor!.getAllAreas(),
     enabled,
   });
 
@@ -95,18 +105,47 @@ export default function ASMCRMDemand() {
     [managerAreas],
   );
 
-  const doctors = useMemo(
+  // Areas available to this manager
+  const assignedAreas = useMemo(
     () =>
       assignedAreaIds.size > 0
-        ? allDoctors.filter((d) => assignedAreaIds.has(String(d.areaId)))
-        : allDoctors,
-    [allDoctors, assignedAreaIds],
+        ? allAreas.filter((a) => assignedAreaIds.has(String(a.id)))
+        : allAreas,
+    [allAreas, assignedAreaIds],
   );
+
+  // Doctors filtered by manager's areas, then by selected area
+  const doctors = useMemo(() => {
+    let list =
+      assignedAreaIds.size > 0
+        ? allDoctors.filter((d) => assignedAreaIds.has(String(d.areaId)))
+        : allDoctors;
+    if (selectedAreaId) {
+      list = list.filter((d) => String(d.areaId) === selectedAreaId);
+    }
+    return list;
+  }, [allDoctors, assignedAreaIds, selectedAreaId]);
+
+  const filteredDoctors = useMemo(
+    () =>
+      doctorSearch.trim()
+        ? doctors.filter(
+            (d) =>
+              d.name.toLowerCase().includes(doctorSearch.toLowerCase()) ||
+              d.station.toLowerCase().includes(doctorSearch.toLowerCase()),
+          )
+        : doctors,
+    [doctors, doctorSearch],
+  );
+
+  const selectedDoctor =
+    doctors.find((d) => String(d.id) === form.doctorId) ??
+    allDoctors.find((d) => String(d.id) === form.doctorId);
 
   const raiseMutation = useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error("Not connected");
-      const doctor = doctors.find((d) => String(d.id) === form.doctorId);
+      const doctor = allDoctors.find((d) => String(d.id) === form.doctorId);
       if (!doctor) throw new Error("Doctor not found");
       const raiserName = profile?.name ?? "ASM";
       await actor.raiseCRMDemand(
@@ -121,6 +160,7 @@ export default function ASMCRMDemand() {
     onSuccess: () => {
       toast.success("CRM demand raised successfully!");
       setForm({ doctorId: "", amount: "", notes: "", date: today });
+      setDoctorSearch("");
       queryClient.invalidateQueries({ queryKey: ["my-crm-demands"] });
     },
     onError: (err: Error) => toast.error(`Failed: ${err.message}`),
@@ -142,7 +182,6 @@ export default function ASMCRMDemand() {
         </div>
       </div>
 
-      {/* Raise Demand Form */}
       <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
         <CardHeader className="border-b border-[#F1F5F9] pb-4">
           <div className="flex items-center gap-2">
@@ -154,24 +193,103 @@ export default function ASMCRMDemand() {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Select Doctor</Label>
+            {/* Area Filter */}
+            <div className="space-y-1.5 md:col-span-2">
+              <Label>Filter by Area</Label>
               <Select
-                value={form.doctorId}
-                onValueChange={(v) => setForm({ ...form, doctorId: v })}
+                value={selectedAreaId}
+                onValueChange={(v) => {
+                  setSelectedAreaId(v === "__all__" ? "" : v);
+                  setForm({ ...form, doctorId: "" });
+                  setDoctorSearch("");
+                }}
               >
-                <SelectTrigger className="border-[#E5EAF2]">
-                  <SelectValue placeholder="Select doctor..." />
+                <SelectTrigger className="border-[#E5EAF2] max-w-sm">
+                  <SelectValue placeholder="All assigned areas" />
                 </SelectTrigger>
                 <SelectContent>
-                  {doctors.map((d) => (
-                    <SelectItem key={String(d.id)} value={String(d.id)}>
-                      {d.name} — {d.station}
+                  <SelectItem value="__all__">All assigned areas</SelectItem>
+                  {assignedAreas.map((a) => (
+                    <SelectItem key={String(a.id)} value={String(a.id)}>
+                      {a.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Searchable Doctor Selector */}
+            <div className="space-y-1.5">
+              <Label>Select Doctor</Label>
+              <div className="relative" ref={doctorSearchRef}>
+                {selectedDoctor && !showDoctorList ? (
+                  <div className="flex items-center gap-2 border border-[#E5EAF2] rounded-md px-3 py-2 bg-white">
+                    <span className="flex-1 text-sm text-gray-800">
+                      {selectedDoctor.name} — {selectedDoctor.station}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({ ...form, doctorId: "" });
+                        setDoctorSearch("");
+                        setShowDoctorList(true);
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search doctor by name or station..."
+                      value={doctorSearch}
+                      onChange={(e) => {
+                        setDoctorSearch(e.target.value);
+                        setShowDoctorList(true);
+                      }}
+                      onFocus={() => setShowDoctorList(true)}
+                      className="pl-9 border-[#E5EAF2]"
+                    />
+                  </div>
+                )}
+                {showDoctorList && (
+                  <div className="absolute z-50 top-full mt-1 w-full bg-white border border-[#E5EAF2] rounded-md shadow-lg">
+                    <div className="max-h-52 overflow-y-auto">
+                      {loadingDoctors ? (
+                        <div className="px-3 py-2 text-sm text-gray-400">
+                          Loading doctors...
+                        </div>
+                      ) : filteredDoctors.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-400">
+                          No doctors found.
+                        </div>
+                      ) : (
+                        filteredDoctors.map((d) => (
+                          <button
+                            key={String(d.id)}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                            onClick={() => {
+                              setForm({ ...form, doctorId: String(d.id) });
+                              setDoctorSearch("");
+                              setShowDoctorList(false);
+                            }}
+                          >
+                            <span className="font-medium">{d.name}</span>
+                            <span className="text-gray-400 ml-2">
+                              — {d.station}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <Label>CRM Amount (₹)</Label>
               <Input
@@ -180,6 +298,7 @@ export default function ASMCRMDemand() {
                 placeholder="Enter amount in Rupees"
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                onFocus={() => setShowDoctorList(false)}
                 className="border-[#E5EAF2]"
               />
             </div>
@@ -189,6 +308,7 @@ export default function ASMCRMDemand() {
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
+                onFocus={() => setShowDoctorList(false)}
                 className="border-[#E5EAF2]"
               />
             </div>
@@ -198,6 +318,7 @@ export default function ASMCRMDemand() {
                 placeholder="Purpose or remarks..."
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                onFocus={() => setShowDoctorList(false)}
                 className="border-[#E5EAF2] resize-none"
                 rows={2}
               />
@@ -220,7 +341,6 @@ export default function ASMCRMDemand() {
         </CardContent>
       </Card>
 
-      {/* My Demands Table */}
       <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
         <CardHeader className="border-b border-[#F1F5F9] pb-4">
           <CardTitle className="text-base font-semibold text-gray-800">
