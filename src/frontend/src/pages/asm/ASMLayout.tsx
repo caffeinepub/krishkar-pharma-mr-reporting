@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
   CalendarCheck,
+  CalendarOff,
   CalendarRange,
   ClipboardList,
   IndianRupee,
@@ -14,6 +15,7 @@ import {
 import { useState } from "react";
 import { useGPSUpdater } from "../../hooks/useGPSUpdater";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
+import Leaves from "../Leaves";
 import WorkingPlanPage from "../WorkingPlanPage";
 import ASMCRMDemand from "./ASMCRMDemand";
 import ASMDashboard from "./ASMDashboard";
@@ -27,7 +29,8 @@ type ASMPage =
   | "team-reports"
   | "crm-demand"
   | "working-details"
-  | "working-plan";
+  | "working-plan"
+  | "my-leaves";
 
 const navItems: { id: ASMPage; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -36,6 +39,7 @@ const navItems: { id: ASMPage; label: string; icon: React.ElementType }[] = [
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
   { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
+  { id: "my-leaves", label: "My Leaves", icon: CalendarOff },
 ];
 
 const pageTitles: Record<ASMPage, string> = {
@@ -45,6 +49,7 @@ const pageTitles: Record<ASMPage, string> = {
   "leave-approvals": "Leave Approvals",
   "team-reports": "Team Reports",
   "crm-demand": "CRM Demand",
+  "my-leaves": "Leave Application",
 };
 
 export default function ASMLayout() {
@@ -75,6 +80,8 @@ export default function ASMLayout() {
         return <ASMTeamReports />;
       case "crm-demand":
         return <ASMCRMDemand />;
+      case "my-leaves":
+        return <Leaves />;
     }
   };
 

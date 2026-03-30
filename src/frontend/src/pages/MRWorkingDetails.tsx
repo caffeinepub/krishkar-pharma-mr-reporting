@@ -140,6 +140,35 @@ export default function MRWorkingDetails() {
 
   // Chemist order state (same area as doctor)
   const [orderChemistId, setOrderChemistId] = useState("");
+  // Add Chemist inline state
+  const [showAddChemist, setShowAddChemist] = useState(false);
+  const [newChemistName, setNewChemistName] = useState("");
+  const [newChemistAreaId, setNewChemistAreaId] = useState("");
+  const [newChemistAddress, setNewChemistAddress] = useState("");
+  const [newChemistContact, setNewChemistContact] = useState("");
+
+  const addChemistMutation = useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("No actor");
+      await actor.addChemist(
+        newChemistName,
+        BigInt(newChemistAreaId),
+        newChemistAddress,
+        newChemistContact,
+      );
+    },
+    onSuccess: () => {
+      toast.success("Chemist added");
+      setShowAddChemist(false);
+      setNewChemistName("");
+      setNewChemistAreaId("");
+      setNewChemistAddress("");
+      setNewChemistContact("");
+      queryClient.invalidateQueries({ queryKey: ["chemists"] });
+    },
+    onError: () => toast.error("Failed to add chemist"),
+  });
+
   const [orderProductId, setOrderProductId] = useState("");
   const [orderQty, setOrderQty] = useState("");
   const [orderScheme, setOrderScheme] = useState("");
@@ -967,32 +996,128 @@ export default function MRWorkingDetails() {
                     Chemist
                   </Label>
                 </div>
-                <div className="flex-1">
-                  <Select
-                    value={orderChemistId}
-                    onValueChange={setOrderChemistId}
-                  >
-                    <SelectTrigger
-                      data-ocid="working_details.order_chemist.select"
-                      className="border-[#E5EAF2]"
+                <div className="flex-1 flex items-center gap-2">
+                  <div className="flex-1">
+                    <Select
+                      value={orderChemistId}
+                      onValueChange={setOrderChemistId}
                     >
-                      <SelectValue
-                        placeholder={
-                          visitAreaId
-                            ? "Select chemist..."
-                            : "Select area first"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredChemists.map((c) => (
-                        <SelectItem key={String(c.id)} value={String(c.id)}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger
+                        data-ocid="working_details.order_chemist.select"
+                        className="border-[#E5EAF2]"
+                      >
+                        <SelectValue
+                          placeholder={
+                            visitAreaId
+                              ? "Select chemist..."
+                              : "Select area first"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredChemists.map((c) => (
+                          <SelectItem key={String(c.id)} value={String(c.id)}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 border-[#E5EAF2] text-blue-600 hover:text-blue-700"
+                    onClick={() => setShowAddChemist(true)}
+                    title="Add new chemist"
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> New
+                  </Button>
                 </div>
+                {/* Add Chemist Dialog */}
+                <Dialog open={showAddChemist} onOpenChange={setShowAddChemist}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add New Chemist</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3 mt-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium text-gray-600">
+                          Chemist Name
+                        </Label>
+                        <Input
+                          value={newChemistName}
+                          onChange={(e) => setNewChemistName(e.target.value)}
+                          placeholder="Enter chemist name"
+                          className="border-[#E5EAF2]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium text-gray-600">
+                          Area
+                        </Label>
+                        <Select
+                          value={newChemistAreaId}
+                          onValueChange={setNewChemistAreaId}
+                        >
+                          <SelectTrigger className="border-[#E5EAF2]">
+                            <SelectValue placeholder="Select area" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {areas.map((a) => (
+                              <SelectItem
+                                key={String(a.id)}
+                                value={String(a.id)}
+                              >
+                                {a.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium text-gray-600">
+                          Address
+                        </Label>
+                        <Input
+                          value={newChemistAddress}
+                          onChange={(e) => setNewChemistAddress(e.target.value)}
+                          placeholder="Enter address"
+                          className="border-[#E5EAF2]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium text-gray-600">
+                          Contact
+                        </Label>
+                        <Input
+                          value={newChemistContact}
+                          onChange={(e) => setNewChemistContact(e.target.value)}
+                          placeholder="Enter contact number"
+                          className="border-[#E5EAF2]"
+                        />
+                      </div>
+                      <Button
+                        className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white mt-2"
+                        onClick={() => addChemistMutation.mutate()}
+                        disabled={
+                          addChemistMutation.isPending ||
+                          !newChemistName ||
+                          !newChemistAreaId
+                        }
+                      >
+                        {addChemistMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                            Adding...
+                          </>
+                        ) : (
+                          "Add Chemist"
+                        )}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               {/* ── Row: Order Product + Qty + Scheme ── */}

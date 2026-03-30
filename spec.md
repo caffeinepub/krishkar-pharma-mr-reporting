@@ -1,28 +1,25 @@
 # Krishkar Pharma MR Reporting
 
 ## Current State
-The app has dashboards for MR, ASM, RSM, and Admin roles. Admin can manage various entities. There is no holiday management feature.
+- ASM and RSM portals have Leave Approvals but no way to apply for their own leaves.
+- MR Working Details has chemist order entry but no inline add-chemist option.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `Holiday` type in backend: `{ id: HolidayId; name: Text; date: Text; description: Text; createdBy: Principal }`
-- Backend functions: `adminAddHoliday`, `adminUpdateHoliday`, `adminDeleteHoliday`, `getAllHolidays`
-- `AdminHolidays.tsx` page in admin portal for CRUD on holidays
-- Holiday calendar widget on Dashboard (MR portal), ASM Dashboard, RSM Dashboard, Admin Dashboard showing upcoming/current-year holidays
-- "Holidays" nav item in AdminLayout
+- "My Leaves" page for ASM and RSM portals using existing Leaves component.
+- Nav items for "My Leaves" in ASMLayout and RSMLayout.
+- "Add New Chemist" dialog in MRWorkingDetails next to chemist selector.
 
 ### Modify
-- `backend.d.ts` and `backend.did.js` / `backend.did.d.ts` to include holiday types and functions
-- `AdminLayout.tsx` to include `AdminHolidays` page and nav item
-- `Dashboard.tsx` (MR), `AdminDashboard.tsx`, ASM and RSM dashboards to show holiday list
+- ASMLayout: add my-leaves page type, nav item, route.
+- RSMLayout: add my-leaves page type, nav item, route.
+- MRWorkingDetails: add inline Add Chemist dialog.
 
 ### Remove
-- Nothing
+- Nothing.
 
 ## Implementation Plan
-1. Add Holiday stable storage and CRUD functions to `main.mo`
-2. Update Candid binding files (`backend.did.js`, `backend.did.d.ts`, `backend.ts`/`backend.d.ts`)
-3. Create `AdminHolidays.tsx` with add/edit/delete dialog
-4. Add holiday section widget (reusable) shown on MR Dashboard, ASM Dashboard, RSM Dashboard, Admin Dashboard
-5. Wire `AdminHolidays` into `AdminLayout.tsx` nav and routing
+1. Add my-leaves to ASMLayout with nav item and Leaves component render.
+2. Add my-leaves to RSMLayout with nav item and Leaves component render.
+3. Add Add Chemist dialog in MRWorkingDetails near chemist selector.
