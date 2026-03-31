@@ -137,6 +137,16 @@ actor {
   };
   type LeaveStatus = { #Pending; #Approved; #Rejected };
 
+  // Legacy type kept for stable variable migration compatibility (do not remove)
+  type LeaveEntryV1 = {
+    leaveType : LeaveType;
+    fromDate : Text;
+    toDate : Text;
+    days : Nat;
+    reason : Text;
+    status : LeaveStatus;
+  };
+
   type LeaveEntry = {
     leaveType : LeaveType;
     fromDate : Text;
@@ -144,6 +154,8 @@ actor {
     days : Nat;
     reason : Text;
     status : LeaveStatus;
+    latitude : ?Float;
+    longitude : ?Float;
   };
 
   type ActivitySummary = {
@@ -376,7 +388,9 @@ actor {
   let sampleEntries = Map.empty<Principal, List.List<SampleEntry>>();
   let chemistOrders = Map.empty<Principal, List.List<ChemistOrder>>();
   let expenseEntries = Map.empty<Principal, List.List<ExpenseEntry>>();
-  let leaveEntries = Map.empty<Principal, List.List<LeaveEntry>>();
+  // Migration: keep old stable map for V1 data, new map stores V2 entries
+  let leaveEntries = Map.empty<Principal, List.List<LeaveEntryV1>>(); // stable migration source
+  let leaveEntriesV2 = Map.empty<Principal, List.List<LeaveEntry>>();
   let headquarters = Map.empty<Nat, Headquarter>();
   let sampleAllotments = Map.empty<Nat, SampleAllotment>();
   let sampleDemandOrders = Map.empty<Nat, SampleDemandOrder>();
@@ -515,8 +529,13 @@ actor {
   };
 
   public query ({ caller }) func getAllUserLatestLocations() : async [(Principal, LocationData)] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can get all locations");
+    let callerIsAdmin = AccessControl.isAdmin(accessControlState, caller);
+    let callerIsRSM = switch (managerProfiles.get(caller)) {
+      case (?p) { p.managerRole == #RSM };
+      case (null) { false };
+    };
+    if (not callerIsAdmin and not callerIsRSM) {
+      Runtime.trap("Unauthorized: Only admins and RSMs can get all locations");
     };
     locations.entries().toArray();
   };
@@ -1053,7 +1072,7 @@ actor {
     if (not (AccessControl.isAdmin(accessControlState, caller)) and not isManager(caller)) {
       Runtime.trap("Unauthorized: Only admins and managers can view team leave applications");
     };
-    leaveEntries.entries().map(func((p, list)) : (Principal, [LeaveEntry]) { (p, list.toArray()) }).toArray();
+    leaveEntriesV2.entries().map(func((p, list)) : (Principal, [LeaveEntry]) { (p, list.toArray()) }).toArray();
   };
 
   // RSM/ASM: update leave status
@@ -1061,7 +1080,7 @@ actor {
     if (not (AccessControl.isAdmin(accessControlState, caller)) and not isManager(caller)) {
       Runtime.trap("Unauthorized: Only admins and managers can update leave status");
     };
-    switch (leaveEntries.get(mrPrincipal)) {
+    switch (leaveEntriesV2.get(mrPrincipal)) {
       case (null) { Runtime.trap("No leave entries found") };
       case (?entries) {
         let arr = entries.toArray();
@@ -1073,7 +1092,7 @@ actor {
           if (i == leaveIndex) { newList.add(updatedEntry) } else { newList.add(arr[i]) };
           i += 1;
         };
-        leaveEntries.add(mrPrincipal, newList);
+        leaveEntriesV2.add(mrPrincipal, newList);
       };
     };
   };
@@ -1398,24 +1417,24 @@ actor {
   };
 
   // --- Leave Applications ---
-  public shared ({ caller }) func applyLeave(leaveType : LeaveType, fromDate : Text, toDate : Text, days : Nat, reason : Text) : async () {
+  public shared ({ caller }) func applyLeave(leaveType : LeaveType, fromDate : Text, toDate : Text, days : Nat, reason : Text, lat : ?Float, lng : ?Float) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can apply for leave");
     };
-    let entry : LeaveEntry = { leaveType; fromDate; toDate; days; reason; status = #Pending };
-    let existing = switch (leaveEntries.get(caller)) {
+    let entry : LeaveEntry = { leaveType; fromDate; toDate; days; reason; status = #Pending; latitude = lat; longitude = lng };
+    let existing = switch (leaveEntriesV2.get(caller)) {
       case (null) { List.empty<LeaveEntry>() };
       case (?e) { e };
     };
     existing.add(entry);
-    leaveEntries.add(caller, existing);
+    leaveEntriesV2.add(caller, existing);
   };
 
   public query ({ caller }) func getLeaveHistory() : async [LeaveEntry] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view leave history");
     };
-    switch (leaveEntries.get(caller)) {
+    switch (leaveEntriesV2.get(caller)) {
       case (null) { [] };
       case (?e) { e.toArray() };
     };
@@ -1426,7 +1445,7 @@ actor {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can update leave status");
     };
-    switch (leaveEntries.get(mrPrincipal)) {
+    switch (leaveEntriesV2.get(mrPrincipal)) {
       case (null) { Runtime.trap("No leave entries found") };
       case (?entries) {
         let arr = entries.toArray();
@@ -1438,7 +1457,7 @@ actor {
           if (i == leaveIndex) { newList.add(updatedEntry) } else { newList.add(arr[i]) };
           i += 1;
         };
-        leaveEntries.add(mrPrincipal, newList);
+        leaveEntriesV2.add(mrPrincipal, newList);
       };
     };
   };
@@ -1456,7 +1475,7 @@ actor {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can view all leave applications");
     };
-    leaveEntries.entries().map(func((p, list)) : (Principal, [LeaveEntry]) { (p, list.toArray()) }).toArray();
+    leaveEntriesV2.entries().map(func((p, list)) : (Principal, [LeaveEntry]) { (p, list.toArray()) }).toArray();
   };
 
   // --- Dashboard ---
@@ -1486,7 +1505,7 @@ actor {
         total;
       };
     };
-    let leaveBalance = switch (leaveEntries.get(caller)) {
+    let leaveBalance = switch (leaveEntriesV2.get(caller)) {
       case (null) { [] };
       case (?e) {
         let all = e.toArray();
@@ -1735,6 +1754,7 @@ actor {
     for (k in chemistOrders.keys().toArray().vals()) { chemistOrders.remove(k) };
     for (k in expenseEntries.keys().toArray().vals()) { expenseEntries.remove(k) };
     for (k in leaveEntries.keys().toArray().vals()) { leaveEntries.remove(k) };
+    for (k in leaveEntriesV2.keys().toArray().vals()) { leaveEntriesV2.remove(k) };
     for (k in crmDemands.keys().toArray().vals()) { crmDemands.remove(k) };
     for (k in giftDistributions.keys().toArray().vals()) { giftDistributions.remove(k) };
     for (k in giftDemandOrders.keys().toArray().vals()) { giftDemandOrders.remove(k) };
@@ -1832,5 +1852,33 @@ actor {
     };
   };
 
+
+
+  // === Stable Variable Migration ===
+  // Migrate LeaveEntryV1 (without GPS) to LeaveEntry (with GPS) on first upgrade
+  system func postupgrade() {
+    for ((principal, oldList) in leaveEntries.entries()) {
+      let newList = List.empty<LeaveEntry>();
+      for (old in oldList.toArray().vals()) {
+        newList.add({
+          leaveType = old.leaveType;
+          fromDate = old.fromDate;
+          toDate = old.toDate;
+          days = old.days;
+          reason = old.reason;
+          status = old.status;
+          latitude = null;
+          longitude = null;
+        });
+      };
+      if (newList.size() > 0) {
+        leaveEntriesV2.add(principal, newList);
+      };
+    };
+    // Clear the legacy map after migration
+    for (k in leaveEntries.keys().toArray().vals()) {
+      leaveEntries.remove(k);
+    };
+  };
 
 };

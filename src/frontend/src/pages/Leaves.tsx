@@ -26,6 +26,23 @@ import { LeaveType } from "../backend";
 import type { LeaveEntry } from "../backend";
 import { useActor } from "../hooks/useActor";
 
+async function captureGPSForLeave(): Promise<{
+  lat: number;
+  lng: number;
+} | null> {
+  return new Promise((resolve) => {
+    if (!navigator?.geolocation) {
+      resolve(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { timeout: 10000, maximumAge: 60000 },
+    );
+  });
+}
+
 const LeaveStatus = {
   Pending: "Pending" as const,
   Approved: "Approved" as const,
@@ -109,7 +126,18 @@ export default function Leaves() {
   const mutation = useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error("No actor");
-      await actor.applyLeave(leaveType, fromDate, toDate, BigInt(days), reason);
+      const gps = await captureGPSForLeave();
+      const lat: [] | [number] = gps ? [gps.lat] : [];
+      const lng: [] | [number] = gps ? [gps.lng] : [];
+      await actor.applyLeave(
+        leaveType,
+        fromDate,
+        toDate,
+        BigInt(days),
+        reason,
+        lat,
+        lng,
+      );
     },
     onSuccess: () => {
       toast.success("Leave applied successfully");

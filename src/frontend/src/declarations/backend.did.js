@@ -200,6 +200,8 @@ export const LeaveEntry = IDL.Record({
   'fromDate' : IDL.Text,
   'leaveType' : LeaveType,
   'reason' : IDL.Text,
+  'latitude' : IDL.Opt(IDL.Float64),
+  'longitude' : IDL.Opt(IDL.Float64),
 });
 export const MRProfile = IDL.Record({
   'employeeCode' : IDL.Text,
@@ -360,7 +362,7 @@ export const idlService = IDL.Service({
     ),
   'adminSetTADASettings' : IDL.Func([TADASettingsV3], [], []),
   'applyLeave' : IDL.Func(
-      [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
+      [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Opt(IDL.Float64), IDL.Opt(IDL.Float64)],
       [],
       [],
     ),
@@ -783,6 +785,8 @@ export const idlFactory = ({ IDL }) => {
     'fromDate' : IDL.Text,
     'leaveType' : LeaveType,
     'reason' : IDL.Text,
+    'latitude' : IDL.Opt(IDL.Float64),
+    'longitude' : IDL.Opt(IDL.Float64),
   });
   const MRProfile = IDL.Record({
     'employeeCode' : IDL.Text,
@@ -941,7 +945,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'adminSetTADASettings' : IDL.Func([TADASettingsV3], [], []),
     'applyLeave' : IDL.Func(
-        [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
+        [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Opt(IDL.Float64), IDL.Opt(IDL.Float64)],
         [],
         [],
       ),

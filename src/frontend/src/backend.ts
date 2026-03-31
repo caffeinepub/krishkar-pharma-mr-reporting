@@ -257,6 +257,8 @@ export interface LeaveEntry {
     fromDate: string;
     leaveType: LeaveType;
     reason: string;
+    latitude: [] | [number];
+    longitude: [] | [number];
 }
 export interface ChemistOrder {
     status: OrderStatus;
@@ -360,7 +362,7 @@ export interface backendInterface {
     adminResetAllReportData(): Promise<void>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     adminSetTADASettings(settings: TADASettingsV3): Promise<void>;
-    applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string): Promise<void>;
+    applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string, lat: [] | [number], lng: [] | [number]): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkAddDoctors(doctorsInput: Array<DoctorInput>): Promise<Array<DoctorId>>;
     createOrUpdateMRProfile(employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
@@ -726,17 +728,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async applyLeave(arg0: LeaveType, arg1: string, arg2: string, arg3: bigint, arg4: string): Promise<void> {
+    async applyLeave(arg0: LeaveType, arg1: string, arg2: string, arg3: bigint, arg4: string, arg5: [] | [number], arg6: [] | [number]): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.applyLeave(to_candid_LeaveType_n11(this._uploadFile, this._downloadFile, arg0), arg1, arg2, arg3, arg4);
+                const result = await this.actor.applyLeave(to_candid_LeaveType_n11(this._uploadFile, this._downloadFile, arg0), arg1, arg2, arg3, arg4, arg5, arg6);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.applyLeave(to_candid_LeaveType_n11(this._uploadFile, this._downloadFile, arg0), arg1, arg2, arg3, arg4);
+            const result = await this.actor.applyLeave(to_candid_LeaveType_n11(this._uploadFile, this._downloadFile, arg0), arg1, arg2, arg3, arg4, arg5, arg6);
             return result;
         }
     }

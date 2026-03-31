@@ -196,6 +196,8 @@ export interface LeaveEntry {
     fromDate: string;
     leaveType: LeaveType;
     reason: string;
+    latitude: [] | [number];
+    longitude: [] | [number];
 }
 export interface ChemistOrder {
     status: OrderStatus;
@@ -298,7 +300,7 @@ export interface backendInterface {
     adminResetAllReportData(): Promise<void>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     adminSetTADASettings(settings: TADASettingsV3): Promise<void>;
-    applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string): Promise<void>;
+    applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string, lat: [] | [number], lng: [] | [number]): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkAddDoctors(doctorsInput: Array<DoctorInput>): Promise<Array<DoctorId>>;
     createOrUpdateMRProfile(employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;

@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Navigation,
   TrendingUp,
   User,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import Leaves from "../Leaves";
 import WorkingPlanPage from "../WorkingPlanPage";
 import RSMCRMDemand from "./RSMCRMDemand";
 import RSMDashboard from "./RSMDashboard";
+import RSMGPSTracking from "./RSMGPSTracking";
 import RSMLeaveApprovals from "./RSMLeaveApprovals";
 import RSMTeamReports from "./RSMTeamReports";
 import RSMWorkingDetails from "./RSMWorkingDetails";
@@ -30,7 +32,8 @@ type RSMPage =
   | "crm-demand"
   | "working-details"
   | "working-plan"
-  | "my-leaves";
+  | "my-leaves"
+  | "staff-gps";
 
 const navItems: { id: RSMPage; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -40,6 +43,7 @@ const navItems: { id: RSMPage; label: string; icon: React.ElementType }[] = [
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
   { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
   { id: "my-leaves", label: "My Leaves", icon: CalendarOff },
+  { id: "staff-gps", label: "Staff GPS Tracking", icon: Navigation },
 ];
 
 const pageTitles: Record<RSMPage, string> = {
@@ -50,6 +54,7 @@ const pageTitles: Record<RSMPage, string> = {
   "team-reports": "Team Reports",
   "crm-demand": "CRM Demand",
   "my-leaves": "Leave Application",
+  "staff-gps": "Staff GPS Tracking",
 };
 
 export default function RSMLayout() {
@@ -82,6 +87,8 @@ export default function RSMLayout() {
         return <RSMCRMDemand />;
       case "my-leaves":
         return <Leaves />;
+      case "staff-gps":
+        return <RSMGPSTracking />;
     }
   };
 

@@ -148,6 +148,8 @@ export interface LeaveEntry {
   'fromDate' : string,
   'leaveType' : LeaveType,
   'reason' : string,
+  'latitude' : [] | [number],
+  'longitude' : [] | [number],
 }
 export type LeaveStatus = { 'Approved' : null } |
   { 'Rejected' : null } |
@@ -328,7 +330,7 @@ export interface _SERVICE {
   >,
   'adminSetTADASettings' : ActorMethod<[TADASettingsV3], undefined>,
   'applyLeave' : ActorMethod<
-    [LeaveType, string, string, bigint, string],
+    [LeaveType, string, string, bigint, string, [] | [number], [] | [number]],
     undefined
   >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
