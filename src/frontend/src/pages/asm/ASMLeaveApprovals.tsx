@@ -152,6 +152,20 @@ export default function ASMLeaveApprovals() {
                           {entry.reason}
                         </p>
                       )}
+                      {entry.gpsLat && entry.gpsLng && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          <span className="font-medium">Location:</span>{" "}
+                          <a
+                            href={`https://www.google.com/maps?q=${entry.gpsLat},${entry.gpsLng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline hover:text-blue-800"
+                          >
+                            {Number(entry.gpsLat).toFixed(5)},{" "}
+                            {Number(entry.gpsLng).toFixed(5)} (View on Map)
+                          </a>
+                        </p>
+                      )}
                     </div>
                     {entry.status === "Pending" && (
                       <div className="flex items-center gap-2 flex-shrink-0">

@@ -166,6 +166,21 @@ export default function LeaveApprovals() {
                           {entry.reason}
                         </p>
                       )}
+                      {(entry as any).gpsLat && (entry as any).gpsLng && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          <span className="font-medium">Location:</span>{" "}
+                          <a
+                            href={`https://www.google.com/maps?q=${(entry as any).gpsLat},${(entry as any).gpsLng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline hover:text-blue-800"
+                          >
+                            {Number((entry as any).gpsLat).toFixed(5)},{" "}
+                            {Number((entry as any).gpsLng).toFixed(5)} (View on
+                            Map)
+                          </a>
+                        </p>
+                      )}
                     </div>
 
                     {entryIsPending && (
