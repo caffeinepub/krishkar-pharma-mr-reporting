@@ -59,10 +59,10 @@ const LEAVE_LABELS: Record<LeaveType, string> = {
 };
 
 const LEAVE_ALLOCATIONS: Record<LeaveType, number> = {
-  [LeaveType.CasualLeave]: 12,
-  [LeaveType.SickLeave]: 10,
-  [LeaveType.EarnedLeave]: 15,
-  [LeaveType.PrivilegeLeave]: 10,
+  [LeaveType.CasualLeave]: 7,
+  [LeaveType.SickLeave]: 7,
+  [LeaveType.EarnedLeave]: 10,
+  [LeaveType.PrivilegeLeave]: 6,
   [LeaveType.WithoutPayLeave]: 0,
 };
 
