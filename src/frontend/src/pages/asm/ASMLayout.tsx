@@ -55,7 +55,9 @@ const pageTitles: Record<ASMPage, string> = {
 export default function ASMLayout() {
   const { identity, clear } = useInternetIdentity();
   const [currentPage, setCurrentPage] = useState<ASMPage>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 768,
+  );
 
   // Silently track GPS location in background
   useGPSUpdater("ASM");
@@ -65,6 +67,13 @@ export default function ASMLayout() {
     principal.length > 12
       ? `${principal.slice(0, 8)}...${principal.slice(-4)}`
       : principal;
+
+  const handleNav = (page: ASMPage) => {
+    setCurrentPage(page);
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
 
   const renderPage = () => {
     switch (currentPage) {
@@ -87,8 +96,23 @@ export default function ASMLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          onKeyDown={(e) => e.key === "Escape" && setSidebarOpen(false)}
+          role="button"
+          tabIndex={-1}
+          aria-label="Close sidebar"
+        />
+      )}
       <aside
-        className={`flex flex-col flex-shrink-0 transition-all duration-300 ${sidebarOpen ? "w-64" : "w-0 overflow-hidden"}`}
+        className={`flex flex-col flex-shrink-0 transition-all duration-300 fixed inset-y-0 left-0 z-50 w-64 md:relative md:inset-y-auto md:left-auto md:z-auto ${
+          sidebarOpen
+            ? "translate-x-0 md:w-64"
+            : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden"
+        }`}
         style={{
           background: "linear-gradient(180deg, #0B2F6B 0%, #06224F 100%)",
         }}
@@ -124,7 +148,7 @@ export default function ASMLayout() {
                 key={item.id}
                 type="button"
                 data-ocid={`asm_nav.${item.id}.link`}
-                onClick={() => setCurrentPage(item.id)}
+                onClick={() => handleNav(item.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium transition-all ${
                   isActive
                     ? "bg-[#0E5AA7] text-white shadow-lg"
@@ -165,22 +189,22 @@ export default function ASMLayout() {
           </Button>
         </div>
       </aside>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-[#E5EAF2] px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <header className="bg-white border-b border-[#E5EAF2] px-4 md:px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <button
               type="button"
               aria-label="Toggle sidebar"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 p-1"
             >
               <Menu size={20} />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-base md:text-xl font-bold text-gray-900 truncate max-w-[180px] sm:max-w-none">
                 {pageTitles[currentPage]}
               </h1>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-400 hidden sm:block">
                 Krishkar Pharmaceuticals · ASM Portal
               </p>
             </div>
@@ -199,8 +223,10 @@ export default function ASMLayout() {
             </p>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
-        <footer className="bg-white border-t border-[#E5EAF2] px-6 py-3 flex-shrink-0">
+        <main className="flex-1 overflow-y-auto p-3 md:p-6">
+          {renderPage()}
+        </main>
+        <footer className="bg-white border-t border-[#E5EAF2] px-4 md:px-6 py-3 flex-shrink-0">
           <p className="text-xs text-gray-400 text-center">
             © {new Date().getFullYear()}. Built with ❤️ using{" "}
             <a

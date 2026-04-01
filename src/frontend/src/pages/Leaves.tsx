@@ -308,58 +308,60 @@ export default function Leaves() {
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-[#F8FAFC]">
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Leave Type
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    From
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    To
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Days
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Reason
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Status
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {history.map((entry, idx) => (
-                  <TableRow
-                    key={`${entry.fromDate}-${entry.leaveType}-${idx}`}
-                    data-ocid={`leaves.item.${idx + 1}`}
-                    className="hover:bg-[#F8FAFC]"
-                  >
-                    <TableCell>
-                      <Badge variant="secondary" className="text-xs">
-                        {LEAVE_LABELS[entry.leaveType]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {entry.fromDate}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {entry.toDate}
-                    </TableCell>
-                    <TableCell className="text-sm font-medium text-gray-700">
-                      {String(entry.days)}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-500 max-w-xs truncate">
-                      {entry.reason}
-                    </TableCell>
-                    <TableCell>{statusBadge(entry.status)}</TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-[#F8FAFC]">
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Leave Type
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      From
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      To
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Days
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Reason
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Status
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {history.map((entry, idx) => (
+                    <TableRow
+                      key={`${entry.fromDate}-${entry.leaveType}-${idx}`}
+                      data-ocid={`leaves.item.${idx + 1}`}
+                      className="hover:bg-[#F8FAFC]"
+                    >
+                      <TableCell>
+                        <Badge variant="secondary" className="text-xs">
+                          {LEAVE_LABELS[entry.leaveType]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {entry.fromDate}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {entry.toDate}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-gray-700">
+                        {String(entry.days)}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500 max-w-xs truncate">
+                        {entry.reason}
+                      </TableCell>
+                      <TableCell>{statusBadge(entry.status)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

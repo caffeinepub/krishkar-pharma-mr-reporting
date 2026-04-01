@@ -672,7 +672,7 @@ export default function MRWorkingDetails() {
       </div>
 
       <Tabs defaultValue="daily-activity">
-        <TabsList className="grid w-full grid-cols-3 bg-[#F8FAFC] border border-[#E5EAF2]">
+        <TabsList className="grid w-full grid-cols-3 bg-[#F8FAFC] border border-[#E5EAF2] text-xs sm:text-sm">
           <TabsTrigger
             value="daily-activity"
             data-ocid="working_details.daily_activity.tab"
@@ -831,7 +831,7 @@ export default function MRWorkingDetails() {
                   </Label>
                 </div>
                 <div className="flex-1">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {allProducts.map((p) => (
                       <div
                         key={String(p.id)}
@@ -1215,7 +1215,7 @@ export default function MRWorkingDetails() {
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-gray-700">
                     KM Traveled
@@ -1252,7 +1252,7 @@ export default function MRWorkingDetails() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-gray-700">
                     Working Area <span className="text-red-500">*</span>
@@ -1309,7 +1309,7 @@ export default function MRWorkingDetails() {
                   <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">
                     TA Calculation
                   </p>
-                  <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="grid grid-cols-3 gap-3 text-center sm:grid-cols-3">
                     <div>
                       <p className="text-lg font-bold text-gray-900">
                         {expenseKm}
@@ -1391,7 +1391,7 @@ export default function MRWorkingDetails() {
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-gray-700">
                     Gift Article
@@ -1484,7 +1484,7 @@ export default function MRWorkingDetails() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5 col-span-2">
                 <Label className="text-xs font-medium text-gray-600">
                   Name <span className="text-red-500">*</span>

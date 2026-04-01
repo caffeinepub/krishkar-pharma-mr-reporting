@@ -272,75 +272,78 @@ export default function Chemists() {
               <p className="text-gray-500 font-medium">No chemists found</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-[#F8FAFC]">
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Chemist Name
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Area
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Address
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Contact
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Action
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((ch, idx) => (
-                  <TableRow
-                    key={String(ch.id)}
-                    data-ocid={`chemists.item.${idx + 1}`}
-                    className="hover:bg-[#F8FAFC]"
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center text-xs font-bold text-amber-600">
-                          {ch.name[0]}
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">
-                          {ch.name}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <MapPin className="w-3 h-3 text-gray-400" />{" "}
-                        {getAreaName(ch.areaId)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600 max-w-xs truncate">
-                      {ch.address}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <Phone className="w-3 h-3 text-gray-400" /> {ch.contact}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        data-ocid={`chemists.order.button.${idx + 1}`}
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-7 px-2 border-amber-200 text-amber-600 hover:bg-amber-50"
-                        onClick={() => {
-                          setSelectedChemist(ch);
-                          setShowOrder(true);
-                        }}
-                      >
-                        Place Order
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-[#F8FAFC]">
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Chemist Name
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Area
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Address
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Contact
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Action
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((ch, idx) => (
+                    <TableRow
+                      key={String(ch.id)}
+                      data-ocid={`chemists.item.${idx + 1}`}
+                      className="hover:bg-[#F8FAFC]"
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center text-xs font-bold text-amber-600">
+                            {ch.name[0]}
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">
+                            {ch.name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <MapPin className="w-3 h-3 text-gray-400" />{" "}
+                          {getAreaName(ch.areaId)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600 max-w-xs truncate">
+                        {ch.address}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <Phone className="w-3 h-3 text-gray-400" />{" "}
+                          {ch.contact}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          data-ocid={`chemists.order.button.${idx + 1}`}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 px-2 border-amber-200 text-amber-600 hover:bg-amber-50"
+                          onClick={() => {
+                            setSelectedChemist(ch);
+                            setShowOrder(true);
+                          }}
+                        >
+                          Place Order
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -354,7 +357,7 @@ export default function Chemists() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-600">
                   Name
@@ -479,7 +482,7 @@ export default function Chemists() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-600">
                   Quantity

@@ -192,92 +192,94 @@ export default function Doctors() {
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-[#F8FAFC]">
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Doctor
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Qualification
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Station
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Specialization
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Area
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDoctors.map((doc, idx) => (
-                  <TableRow
-                    key={String(doc.id)}
-                    data-ocid={`doctors.item.${idx + 1}`}
-                    className="hover:bg-[#F8FAFC]"
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-xs font-bold text-blue-600">
-                          {doc.name[0]}
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">
-                          Dr. {doc.name}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {doc.qualification}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {doc.station}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="text-xs">
-                        {doc.specialization}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {getAreaName(doc.areaId)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1.5">
-                        <Button
-                          data-ocid={`doctors.detail.button.${idx + 1}`}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-7 px-2 border-blue-200 text-blue-600 hover:bg-blue-50"
-                          onClick={() => {
-                            setSelectedDoctor(doc);
-                            setShowDetailing(true);
-                          }}
-                        >
-                          Detail
-                        </Button>
-                        <Button
-                          data-ocid={`doctors.sample.button.${idx + 1}`}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-7 px-2 border-teal-200 text-teal-600 hover:bg-teal-50"
-                          onClick={() => {
-                            setSelectedDoctor(doc);
-                            setShowSample(true);
-                          }}
-                        >
-                          <FlaskConical className="w-3 h-3 mr-1" /> Sample
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-[#F8FAFC]">
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Doctor
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Qualification
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Station
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Specialization
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Area
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Actions
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredDoctors.map((doc, idx) => (
+                    <TableRow
+                      key={String(doc.id)}
+                      data-ocid={`doctors.item.${idx + 1}`}
+                      className="hover:bg-[#F8FAFC]"
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-xs font-bold text-blue-600">
+                            {doc.name[0]}
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">
+                            Dr. {doc.name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {doc.qualification}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {doc.station}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-xs">
+                          {doc.specialization}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {getAreaName(doc.areaId)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1.5">
+                          <Button
+                            data-ocid={`doctors.detail.button.${idx + 1}`}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7 px-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+                            onClick={() => {
+                              setSelectedDoctor(doc);
+                              setShowDetailing(true);
+                            }}
+                          >
+                            Detail
+                          </Button>
+                          <Button
+                            data-ocid={`doctors.sample.button.${idx + 1}`}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7 px-2 border-teal-200 text-teal-600 hover:bg-teal-50"
+                            onClick={() => {
+                              setSelectedDoctor(doc);
+                              setShowSample(true);
+                            }}
+                          >
+                            <FlaskConical className="w-3 h-3 mr-1" /> Sample
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

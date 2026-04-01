@@ -91,58 +91,60 @@ export default function Areas() {
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-[#F8FAFC]">
-                  <TableHead className="text-xs font-semibold text-gray-500 w-16">
-                    #
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Area Name
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Headquarter
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500">
-                    Area ID
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {areas.map((area, idx) => (
-                  <TableRow
-                    key={String(area.id)}
-                    data-ocid={`areas.item.${idx + 1}`}
-                    className="hover:bg-[#F8FAFC]"
-                  >
-                    <TableCell className="text-xs text-gray-400">
-                      {idx + 1}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center">
-                          <MapPin className="w-3 h-3 text-blue-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">
-                          {area.name}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Building2 className="w-3 h-3 text-gray-400" />
-                        <span className="text-xs text-gray-600">
-                          {hqMap.get(area.headquarterId.toString()) ?? "—"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-400">
-                      #{String(area.id)}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-[#F8FAFC]">
+                    <TableHead className="text-xs font-semibold text-gray-500 w-16">
+                      #
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Area Name
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Headquarter
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500">
+                      Area ID
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {areas.map((area, idx) => (
+                    <TableRow
+                      key={String(area.id)}
+                      data-ocid={`areas.item.${idx + 1}`}
+                      className="hover:bg-[#F8FAFC]"
+                    >
+                      <TableCell className="text-xs text-gray-400">
+                        {idx + 1}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center">
+                            <MapPin className="w-3 h-3 text-blue-600" />
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">
+                            {area.name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="w-3 h-3 text-gray-400" />
+                          <span className="text-xs text-gray-600">
+                            {hqMap.get(area.headquarterId.toString()) ?? "—"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-400">
+                        #{String(area.id)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
