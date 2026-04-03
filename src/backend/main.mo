@@ -9,6 +9,8 @@ import Nat32 "mo:core/Nat32";
 import Int "mo:core/Int";
 import Principal "mo:core/Principal";
 import Float "mo:core/Float";
+import Nat "mo:core/Nat";
+import Text "mo:core/Text";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
@@ -102,6 +104,33 @@ actor {
     date : Text;
     productId : ProductId;
     quantity : Nat;
+  };
+
+
+  type SampleSummaryItem = {
+    productId : ProductId;
+    quantity : Nat;
+  };
+
+  type GiftSummaryItem = {
+    giftArticleName : Text;
+    quantity : Nat;
+  };
+
+  type DoctorCallSummary = {
+    date : Text;
+    productIds : [ProductId];
+    samples : [SampleSummaryItem];
+    gifts : [GiftSummaryItem];
+  };
+
+  type RecentDoctorCallEntry = {
+    date : Text;
+    doctorId : DoctorId;
+    areaId : AreaId;
+    productIds : [ProductId];
+    samples : [SampleSummaryItem];
+    gifts : [GiftSummaryItem];
   };
 
   type OrderStatus = { #pending; #fulfilled };
@@ -1779,6 +1808,142 @@ actor {
     for (k in sampleAllotments.keys().toArray().vals()) { sampleAllotments.remove(k) };
   };
 
+
+
+  // === Doctor Call History ===
+  public query ({ caller }) func getDoctorCallHistory(doctorId : DoctorId) : async [DoctorCallSummary] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    let myDetailings = switch (detailingEntries.get(caller)) {
+      case (null) { [] };
+      case (?e) { e.toArray() };
+    };
+    let mySamples = switch (sampleEntries.get(caller)) {
+      case (null) { [] };
+      case (?e) { e.toArray() };
+    };
+    let myGifts = giftDistributions.values().toArray().filter(func(g) { g.distributedBy == caller and g.doctorId == doctorId });
+
+    // Collect all dates for this doctor
+    let dateSet = Map.empty<Text, Bool>();
+    for (d in myDetailings.vals()) {
+      if (d.doctorId == doctorId) { dateSet.add(d.date, true) };
+    };
+    for (s in mySamples.vals()) {
+      if (s.doctorId == doctorId) { dateSet.add(s.date, true) };
+    };
+    for (g in myGifts.vals()) { dateSet.add(g.date, true) };
+
+    let dates = dateSet.keys().toArray();
+    // Sort descending using dot notation
+    let sortedDates = dates.sort(func(a : Text, b : Text) : Order.Order { Text.compare(b, a) });
+
+    let result = List.empty<DoctorCallSummary>();
+    for (date in sortedDates.vals()) {
+      let prods = myDetailings.filter(func(d) { d.doctorId == doctorId and d.date == date });
+      let productIds = if (prods.size() > 0) { prods[0].productIds } else { [] };
+      let samps = mySamples.filter(func(s) { s.doctorId == doctorId and s.date == date });
+      let samples : [SampleSummaryItem] = samps.map(func(s : SampleEntry) : SampleSummaryItem { { productId = s.productId; quantity = s.quantity } });
+      let giftsForDate = myGifts.filter(func(g) { g.date == date });
+      let gifts : [GiftSummaryItem] = giftsForDate.map(func(g : GiftDistribution) : GiftSummaryItem { { giftArticleName = g.giftArticleName; quantity = g.quantity } });
+      result.add({ date; productIds; samples; gifts });
+    };
+    result.toArray();
+  };
+
+  public query ({ caller }) func getRecentDoctorCalls(days : Nat) : async [RecentDoctorCallEntry] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    // Compute cutoff: get current time and subtract `days` days
+    let nowNs : Int = Time.now();
+    let dayNs : Int = 86_400_000_000_000; // 1 day in nanoseconds
+    let cutoffNs : Int = nowNs - (dayNs * (days : Int));
+
+    let myDetailings = switch (detailingEntries.get(caller)) {
+      case (null) { [] };
+      case (?e) { e.toArray() };
+    };
+    let mySamples = switch (sampleEntries.get(caller)) {
+      case (null) { [] };
+      case (?e) { e.toArray() };
+    };
+    let myGifts = giftDistributions.values().toArray().filter(func(g) { g.distributedBy == caller });
+
+    // Compute cutoff date string "YYYY-MM-DD" via Int arithmetic
+    let cutoffSecs : Int = cutoffNs / 1_000_000_000;
+    let totalDaysInt : Int = cutoffSecs / 86400;
+    let totalDays : Nat = Int.abs(totalDaysInt);
+    let y400 = totalDays / 146097;
+    let rem400 = totalDays % 146097;
+    let y100 = if (rem400 / 36524 < 3) { rem400 / 36524 } else { 3 };
+    let rem100 = rem400 - y100 * 36524;
+    let y4 = rem100 / 1461;
+    let rem4 = rem100 % 1461;
+    let y1 = if (rem4 / 365 < 3) { rem4 / 365 } else { 3 };
+    let rem1 = rem4 - y1 * 365;
+    let year = 1970 + y400 * 400 + y100 * 100 + y4 * 4 + y1;
+    let isLeap = (year % 4 == 0 and year % 100 != 0) or year % 400 == 0;
+    let daysInMonth = [31, if isLeap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    var month = 1;
+    var remaining = rem1;
+    var mi = 0;
+    while (mi < 12) {
+      if (remaining < daysInMonth[mi]) {
+        month := mi + 1;
+        mi := 12; // break
+      } else {
+        remaining -= daysInMonth[mi];
+        mi += 1;
+      };
+    };
+    let day = remaining + 1;
+    let pad2 = func(n : Nat) : Text {
+      if (n < 10) { "0" # n.toText() } else { n.toText() }
+    };
+    let cutoffDate : Text = year.toText() # "-" # pad2(month) # "-" # pad2(day);
+
+    // Collect all (doctorId, date) combos for entries >= cutoffDate
+    let dateSet = Map.empty<Text, Bool>(); // key = "doctorId:date"
+    for (d in myDetailings.vals()) {
+      if (d.date >= cutoffDate) { dateSet.add(d.doctorId.toText() # ":" # d.date, true) };
+    };
+    for (s in mySamples.vals()) {
+      if (s.date >= cutoffDate) { dateSet.add(s.doctorId.toText() # ":" # s.date, true) };
+    };
+    for (g in myGifts.vals()) {
+      if (g.date >= cutoffDate) { dateSet.add(g.doctorId.toText() # ":" # g.date, true) };
+    };
+
+    let result = List.empty<RecentDoctorCallEntry>();
+    for (key in dateSet.keys().toArray().vals()) {
+      // parse key "doctorId:date"
+      let partsArr = key.split(#char ':').toArray();
+      if (partsArr.size() >= 2) {
+        let doctorIdText = partsArr[0];
+        let date = partsArr[1];
+        switch (Nat.fromText(doctorIdText)) {
+          case (null) {};
+          case (?doctorId) {
+            let areaId = switch (doctors.get(doctorId)) {
+              case (null) { 0 };
+              case (?doc) { doc.areaId };
+            };
+            let prods = myDetailings.filter(func(d) { d.doctorId == doctorId and d.date == date });
+            let productIds = if (prods.size() > 0) { prods[0].productIds } else { [] };
+            let samps = mySamples.filter(func(s) { s.doctorId == doctorId and s.date == date });
+            let samples : [SampleSummaryItem] = samps.map(func(s : SampleEntry) : SampleSummaryItem { { productId = s.productId; quantity = s.quantity } });
+            let giftsForEntry = myGifts.filter(func(g) { g.doctorId == doctorId and g.date == date });
+            let gifts : [GiftSummaryItem] = giftsForEntry.map(func(g : GiftDistribution) : GiftSummaryItem { { giftArticleName = g.giftArticleName; quantity = g.quantity } });
+            result.add({ date; doctorId; areaId; productIds; samples; gifts });
+          };
+        };
+      };
+    };
+    let arr = result.toArray();
+    arr.sort(func(a : RecentDoctorCallEntry, b : RecentDoctorCallEntry) : Order.Order { Text.compare(b.date, a.date) });
+  };
 
   // === Holiday Management ===
   public shared ({ caller }) func adminAddHoliday(name : Text, date : Text, description : Text) : async HolidayId {

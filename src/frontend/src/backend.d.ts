@@ -157,6 +157,29 @@ export interface Holiday {
     description: string;
     createdBy: Principal;
 }
+
+export interface SampleSummaryItem {
+    productId: ProductId;
+    quantity: bigint;
+}
+export interface GiftSummaryItem {
+    giftArticleName: string;
+    quantity: bigint;
+}
+export interface DoctorCallSummary {
+    date: string;
+    productIds: Array<ProductId>;
+    samples: Array<SampleSummaryItem>;
+    gifts: Array<GiftSummaryItem>;
+}
+export interface RecentDoctorCallEntry {
+    date: string;
+    doctorId: DoctorId;
+    areaId: AreaId;
+    productIds: Array<ProductId>;
+    samples: Array<SampleSummaryItem>;
+    gifts: Array<GiftSummaryItem>;
+}
 export interface SampleEntry {
     doctorId: DoctorId;
     date: string;
@@ -358,6 +381,8 @@ export interface backendInterface {
     getMySampleDemandOrders(): Promise<Array<SampleDemandOrder>>;
     getMyWorkingPlans(): Promise<Array<WorkingPlan>>;
     getSampleEntries(): Promise<Array<SampleEntry>>;
+    getDoctorCallHistory(doctorId: DoctorId): Promise<Array<DoctorCallSummary>>;
+    getRecentDoctorCalls(days: bigint): Promise<Array<RecentDoctorCallEntry>>;
     getTeamDetailingEntries(): Promise<Array<[Principal, Array<DetailingEntry>]>>;
     getTeamExpenseEntries(): Promise<Array<[Principal, Array<ExpenseEntry>]>>;
     getTeamLeaveApplications(): Promise<Array<[Principal, Array<LeaveEntry>]>>;

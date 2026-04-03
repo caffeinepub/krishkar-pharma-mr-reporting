@@ -231,6 +231,30 @@ export interface DetailingEntry {
     productIds: Array<ProductId>;
     date: string;
 }
+
+export interface SampleSummaryItem {
+    productId: ProductId;
+    quantity: bigint;
+}
+export interface GiftSummaryItem {
+    giftArticleName: string;
+    quantity: bigint;
+}
+export interface DoctorCallSummary {
+    date: string;
+    productIds: Array<ProductId>;
+    samples: Array<SampleSummaryItem>;
+    gifts: Array<GiftSummaryItem>;
+}
+export interface RecentDoctorCallEntry {
+    date: string;
+    doctorId: DoctorId;
+    areaId: AreaId;
+    productIds: Array<ProductId>;
+    samples: Array<SampleSummaryItem>;
+    gifts: Array<GiftSummaryItem>;
+}
+
 export type ChemistId = bigint;
 export interface GiftArticle {
     id: GiftArticleId;
@@ -421,6 +445,8 @@ export interface backendInterface {
     getMySampleDemandOrders(): Promise<Array<SampleDemandOrder>>;
     getMyWorkingPlans(): Promise<Array<WorkingPlan>>;
     getSampleEntries(): Promise<Array<SampleEntry>>;
+    getDoctorCallHistory(doctorId: DoctorId): Promise<Array<DoctorCallSummary>>;
+    getRecentDoctorCalls(days: bigint): Promise<Array<RecentDoctorCallEntry>>;
     getTeamDetailingEntries(): Promise<Array<[Principal, Array<DetailingEntry>]>>;
     getTeamExpenseEntries(): Promise<Array<[Principal, Array<ExpenseEntry>]>>;
     getTeamLeaveApplications(): Promise<Array<[Principal, Array<LeaveEntry>]>>;
@@ -2032,6 +2058,35 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getAllHolidays();
+            return result;
+        }
+    }
+
+    async getDoctorCallHistory(arg0: DoctorId): Promise<Array<DoctorCallSummary>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDoctorCallHistory(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDoctorCallHistory(arg0);
+            return result;
+        }
+    }
+    async getRecentDoctorCalls(arg0: bigint): Promise<Array<RecentDoctorCallEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getRecentDoctorCalls(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getRecentDoctorCalls(arg0);
             return result;
         }
     }

@@ -5,6 +5,7 @@ import {
   CalendarOff,
   ClipboardList,
   FlaskConical,
+  History,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -26,6 +27,7 @@ import { useUserRole } from "./hooks/useUserRole";
 import Areas from "./pages/Areas";
 import Chemists from "./pages/Chemists";
 import Dashboard from "./pages/Dashboard";
+import DoctorCallHistoryPage from "./pages/DoctorCallHistoryPage";
 import Doctors from "./pages/Doctors";
 import Expenses from "./pages/Expenses";
 import Leaves from "./pages/Leaves";
@@ -52,11 +54,13 @@ type Page =
   | "expenses"
   | "leaves"
   | "samples"
-  | "working-plan";
+  | "working-plan"
+  | "call-history";
 
 const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "working-details", label: "Working Details", icon: ClipboardList },
+  { id: "call-history", label: "Call History", icon: History },
   { id: "working-plan", label: "Working Plan", icon: MapPin },
   { id: "profile", label: "MR Profile", icon: User },
   { id: "areas", label: "Areas", icon: MapPin },
@@ -72,6 +76,7 @@ const pageTitles: Record<Page, string> = {
   dashboard: "Dashboard",
   "working-details": "MR Working Details",
   "working-plan": "Working Plan",
+  "call-history": "Call History - Last 5 Days",
   profile: "MR Profile",
   areas: "Area Management",
   doctors: "Doctor Management",
@@ -213,6 +218,8 @@ function MRLayout() {
         return <Samples />;
       case "working-plan":
         return <WorkingPlanPage />;
+      case "call-history":
+        return <DoctorCallHistoryPage />;
     }
   };
 

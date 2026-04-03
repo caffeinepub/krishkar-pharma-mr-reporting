@@ -595,6 +595,29 @@ export const idlService = IDL.Service({
 
 export const idlInitArgs = [];
 
+
+export const SampleSummaryItem = IDL.Record({
+  'productId' : ProductId,
+  'quantity' : IDL.Nat,
+});
+export const GiftSummaryItem = IDL.Record({
+  'giftArticleName' : IDL.Text,
+  'quantity' : IDL.Nat,
+});
+export const DoctorCallSummary = IDL.Record({
+  'date' : IDL.Text,
+  'productIds' : IDL.Vec(ProductId),
+  'samples' : IDL.Vec(SampleSummaryItem),
+  'gifts' : IDL.Vec(GiftSummaryItem),
+});
+export const RecentDoctorCallEntry = IDL.Record({
+  'date' : IDL.Text,
+  'doctorId' : DoctorId,
+  'areaId' : AreaId,
+  'productIds' : IDL.Vec(ProductId),
+  'samples' : IDL.Vec(SampleSummaryItem),
+  'gifts' : IDL.Vec(GiftSummaryItem),
+});
 export const idlFactory = ({ IDL }) => {
   const AreaId = IDL.Nat;
   const ChemistId = IDL.Nat;
@@ -1180,6 +1203,16 @@ export const idlFactory = ({ IDL }) => {
     'getAllAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
     'recordUserAnnouncementView' : IDL.Func([IDL.Text], [], []),
     'hasUserSeenAnnouncementsToday' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'getDoctorCallHistory' : IDL.Func(
+        [DoctorId],
+        [IDL.Vec(DoctorCallSummary)],
+        ['query'],
+      ),
+    'getRecentDoctorCalls' : IDL.Func(
+        [IDL.Nat],
+        [IDL.Vec(RecentDoctorCallEntry)],
+        ['query'],
+      ),
     'updateSampleDemandOrderStatus' : IDL.Func(
         [IDL.Nat, DemandOrderStatus],
         [],

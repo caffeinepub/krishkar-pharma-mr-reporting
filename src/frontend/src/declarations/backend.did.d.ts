@@ -281,6 +281,29 @@ export interface WorkingPlanInput {
   'workingWith' : [] | [string],
   'stationType' : string,
 }
+
+export interface SampleSummaryItem {
+  productId: ProductId;
+  quantity: bigint;
+}
+export interface GiftSummaryItem {
+  giftArticleName: string;
+  quantity: bigint;
+}
+export interface DoctorCallSummary {
+  date: string;
+  productIds: Array<ProductId>;
+  samples: Array<SampleSummaryItem>;
+  gifts: Array<GiftSummaryItem>;
+}
+export interface RecentDoctorCallEntry {
+  date: string;
+  doctorId: DoctorId;
+  areaId: AreaId;
+  productIds: Array<ProductId>;
+  samples: Array<SampleSummaryItem>;
+  gifts: Array<GiftSummaryItem>;
+}
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addArea' : ActorMethod<[string, bigint], AreaId>,
@@ -482,6 +505,8 @@ export interface _SERVICE {
   'recordUserAnnouncementView' : ActorMethod<[string], undefined>,
   'hasUserSeenAnnouncementsToday' : ActorMethod<[string], boolean>,
 
+  'getDoctorCallHistory' : ActorMethod<[DoctorId], Array<DoctorCallSummary>>,
+  'getRecentDoctorCalls' : ActorMethod<[bigint], Array<RecentDoctorCallEntry>>,
   'updateSampleDemandOrderStatus' : ActorMethod<
     [bigint, DemandOrderStatus],
     undefined
