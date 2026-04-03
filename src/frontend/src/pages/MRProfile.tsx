@@ -38,6 +38,7 @@ export default function MRProfile() {
   const [employeeCode, setEmployeeCode] = useState("");
   const [name, setName] = useState("");
 
+  // Profile already exists — populate read-only fields
   useEffect(() => {
     if (profile) {
       setEmployeeCode(profile.employeeCode);
@@ -45,7 +46,7 @@ export default function MRProfile() {
     }
   }, [profile]);
 
-  // Auto-generate employee code for new signups
+  // Auto-generate employee code for brand new users (no profile yet)
   useEffect(() => {
     if (!isLoading && !profile && !employeeCode) {
       const now = new Date();
@@ -56,10 +57,12 @@ export default function MRProfile() {
     }
   }, [isLoading, profile, employeeCode]);
 
+  // Profile is locked once saved — only Admin can edit
+  const isLocked = !!profile;
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error("No actor");
-      // Preserve existing headQuarter — do not let user modify it
       const hq = profile?.headQuarter ?? "";
       await actor.saveCallerUserProfile({
         employeeCode,
@@ -71,7 +74,8 @@ export default function MRProfile() {
       toast.success("Profile saved successfully");
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
     },
-    onError: () => toast.error("Failed to save profile"),
+    onError: (err: Error) =>
+      toast.error(err.message || "Failed to save profile"),
   });
 
   const copyPrincipal = () => {
@@ -127,7 +131,7 @@ export default function MRProfile() {
         </CardContent>
       </Card>
 
-      {/* Profile Edit Card */}
+      {/* Profile Card */}
       <Card className="bg-white border border-[#E5EAF2] shadow-sm rounded-xl">
         <CardHeader className="border-b border-[#F1F5F9] pb-4">
           <div className="flex items-center gap-3">
@@ -139,12 +143,25 @@ export default function MRProfile() {
                 Personal Information
               </CardTitle>
               <p className="text-xs text-gray-400 mt-0.5">
-                Update your MR profile details
+                {isLocked
+                  ? "Profile is permanent. Contact Admin to make changes."
+                  : "Set your name and employee code once at first login"}
               </p>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-6 space-y-5">
+          {/* Locked notice */}
+          {isLocked && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+              <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <p className="text-sm text-amber-800">
+                Your name and employee number are permanent and can only be
+                changed by an <strong>Admin</strong>.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="name" className="text-sm font-medium text-gray-700">
               Full Name
@@ -156,6 +173,8 @@ export default function MRProfile() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your full name"
               className="border-[#E5EAF2]"
+              readOnly={isLocked}
+              disabled={isLocked}
             />
           </div>
 
@@ -165,7 +184,7 @@ export default function MRProfile() {
                 htmlFor="empCode"
                 className="text-sm font-medium text-gray-700"
               >
-                Employee Code
+                Employee Number
               </Label>
               <div className="relative">
                 <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -181,8 +200,8 @@ export default function MRProfile() {
                 <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
               </div>
               <p className="text-xs text-gray-400 mt-1">
-                {profile
-                  ? "System-assigned — cannot be changed"
+                {isLocked
+                  ? "System-assigned — Admin can update if needed"
                   : "Auto-generated on first save"}
               </p>
             </div>
@@ -223,19 +242,22 @@ export default function MRProfile() {
             </div>
           )}
 
-          <Button
-            data-ocid="profile.submit_button"
-            className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white gap-2"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !name.trim()}
-          >
-            {mutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {mutation.isPending ? "Saving..." : "Save Profile"}
-          </Button>
+          {/* Only show save button when no profile exists yet */}
+          {!isLocked && (
+            <Button
+              data-ocid="profile.submit_button"
+              className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white gap-2"
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending || !name.trim()}
+            >
+              {mutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {mutation.isPending ? "Saving..." : "Save Profile"}
+            </Button>
+          )}
         </CardContent>
       </Card>
     </div>

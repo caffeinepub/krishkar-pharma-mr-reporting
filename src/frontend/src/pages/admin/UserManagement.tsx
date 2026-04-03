@@ -7,6 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,8 +32,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Principal } from "@icp-sdk/core/principal";
+import type { Principal as PrincipalType } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ShieldCheck, Trash2, UserCog, Users } from "lucide-react";
+import {
+  Loader2,
+  Pencil,
+  ShieldCheck,
+  Trash2,
+  UserCog,
+  Users,
+} from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -43,6 +58,14 @@ export default function UserManagement() {
   const [selectedManagerPrincipal, setSelectedManagerPrincipal] =
     useState<string>("");
   const [managerAreaIds, setManagerAreaIds] = useState<bigint[]>([]);
+  const [editUserModal, setEditUserModal] = useState<{
+    principal: string;
+    name: string;
+    employeeCode: string;
+    headQuarter: string;
+    isManager: boolean;
+    managerRole?: string;
+  } | null>(null);
 
   const { data: mrProfiles, isLoading } = useQuery({
     queryKey: ["admin", "mrProfiles"],
@@ -125,20 +148,38 @@ export default function UserManagement() {
     }) => {
       if (!actor) throw new Error("Not connected");
       const principal = Principal.fromText(principalStr.trim());
+      // Preserve existing name and employeeCode across role changes
+      const existingName = nameMap.get(principalStr.trim()) ?? "";
+      // Look up existing manager profile for employee code preservation
+      const existingManagerProfile = managerProfiles.find(
+        ([p]: [any, any]) => p.toString() === principalStr.trim(),
+      );
+      const existingEmpCode =
+        (existingManagerProfile?.[1] as any)?.employeeCode ?? "";
       if (role === "rsm" || role === "asm") {
         await actor.assignCallerUserRole(principal, "user" as UserRole);
         await actor.adminSaveManagerProfile(
           principal,
-          "",
-          "",
+          existingName,
+          existingEmpCode,
           hq,
           role === "rsm" ? ManagerRole.RSM : ManagerRole.ASM,
         );
       } else if (role === "user") {
         await actor.assignCallerUserRole(principal, role as UserRole);
-        // Set HQ on the MR profile if HQ was selected
+        // Set HQ on the MR profile if HQ was selected; preserve existing name/empCode
         if (hq) {
-          await actor.adminCreateOrUpdateMRProfile(principal, "", hq, []);
+          const existingMR = mrProfiles?.find(
+            ([p]: [any, any]) => p.toString() === principalStr.trim(),
+          );
+          const existingMREmpCode =
+            (existingMR?.[1] as any)?.employeeCode ?? "";
+          await actor.adminCreateOrUpdateMRProfile(
+            principal,
+            existingMREmpCode,
+            hq,
+            [],
+          );
         }
       } else {
         await actor.assignCallerUserRole(principal, role as UserRole);
@@ -167,6 +208,44 @@ export default function UserManagement() {
       queryClient.invalidateQueries({ queryKey: ["admin", "managerProfiles"] });
     },
     onError: (err: Error) => toast.error(`Failed to delete: ${err.message}`),
+  });
+
+  const editUserMutation = useMutation({
+    mutationFn: async (data: {
+      principal: string;
+      name: string;
+      employeeCode: string;
+      headQuarter: string;
+      isManager: boolean;
+      managerRole?: string;
+    }) => {
+      if (!actor) throw new Error("Not connected");
+      const principal = Principal.fromText(data.principal);
+      // Always update the user profile (name + employeeCode)
+      await actor.adminSaveUserProfile(principal, {
+        name: data.name,
+        employeeCode: data.employeeCode,
+        headQuarter: data.headQuarter,
+      });
+      // If manager, also update manager profile to keep name in sync
+      if (data.isManager && data.managerRole) {
+        await actor.adminSaveManagerProfile(
+          principal,
+          data.name,
+          data.employeeCode,
+          data.headQuarter,
+          data.managerRole === "RSM" ? ManagerRole.RSM : ManagerRole.ASM,
+        );
+      }
+    },
+    onSuccess: () => {
+      toast.success("Profile updated successfully!");
+      setEditUserModal(null);
+      queryClient.invalidateQueries({ queryKey: ["admin", "allUserProfiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "managerProfiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "mrProfiles"] });
+    },
+    onError: (err: Error) => toast.error(`Failed to update: ${err.message}`),
   });
 
   const handleAssignRole = () => {
@@ -442,18 +521,46 @@ export default function UserManagement() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              data-ocid={`manager_profiles.delete_button.${idx + 1}`}
-                              className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50"
-                              onClick={() =>
-                                deleteManagerMutation.mutate(principal)
-                              }
-                              disabled={deleteManagerMutation.isPending}
-                            >
-                              <Trash2 size={13} className="mr-1" /> Delete
-                            </Button>
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                data-ocid={`manager_profiles.edit_button.${idx + 1}`}
+                                className="h-7 px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                onClick={() => {
+                                  const userP = p;
+                                  const existingName =
+                                    nameMap.get(userP) || profile.name || "";
+                                  setEditUserModal({
+                                    principal: userP,
+                                    name: existingName,
+                                    employeeCode: profile.employeeCode || "",
+                                    headQuarter: profile.headQuarter || "",
+                                    isManager: true,
+                                    managerRole:
+                                      typeof profile.managerRole === "string"
+                                        ? profile.managerRole
+                                        : profile.managerRole?.RSM !== undefined
+                                          ? "RSM"
+                                          : "ASM",
+                                  });
+                                }}
+                              >
+                                <Pencil size={13} className="mr-1" /> Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                data-ocid={`manager_profiles.delete_button.${idx + 1}`}
+                                className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={() =>
+                                  deleteManagerMutation.mutate(principal)
+                                }
+                                disabled={deleteManagerMutation.isPending}
+                              >
+                                <Trash2 size={13} className="mr-1" /> Delete
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -569,19 +676,37 @@ export default function UserManagement() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs h-7 px-2"
-                            onClick={() => {
-                              setPrincipalInput(p);
-                              toast.info(
-                                "Principal ID loaded into the form above",
-                              );
-                            }}
-                          >
-                            Change Role
-                          </Button>
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7 px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                              onClick={() => {
+                                setEditUserModal({
+                                  principal: p,
+                                  name: nameMap.get(p) || "",
+                                  employeeCode: profile.employeeCode || "",
+                                  headQuarter: profile.headQuarter || "",
+                                  isManager: false,
+                                });
+                              }}
+                            >
+                              <Pencil size={13} className="mr-1" /> Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7 px-2"
+                              onClick={() => {
+                                setPrincipalInput(p);
+                                toast.info(
+                                  "Principal ID loaded into the form above",
+                                );
+                              }}
+                            >
+                              Change Role
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -675,6 +800,84 @@ export default function UserManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit User Profile Dialog */}
+      <Dialog
+        open={!!editUserModal}
+        onOpenChange={(o) => !o && setEditUserModal(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Employee Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Full Name
+              </Label>
+              <Input
+                value={editUserModal?.name ?? ""}
+                onChange={(e) =>
+                  setEditUserModal((prev) =>
+                    prev ? { ...prev, name: e.target.value } : null,
+                  )
+                }
+                placeholder="Employee full name"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Employee Number
+              </Label>
+              <Input
+                value={editUserModal?.employeeCode ?? ""}
+                onChange={(e) =>
+                  setEditUserModal((prev) =>
+                    prev ? { ...prev, employeeCode: e.target.value } : null,
+                  )
+                }
+                placeholder="e.g. KP-2601-1234"
+                className="mt-1 font-mono"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700">
+                Head Quarter
+              </Label>
+              <Input
+                value={editUserModal?.headQuarter ?? ""}
+                onChange={(e) =>
+                  setEditUserModal((prev) =>
+                    prev ? { ...prev, headQuarter: e.target.value } : null,
+                  )
+                }
+                placeholder="Head Quarter"
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUserModal(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                editUserMutation.isPending || !editUserModal?.name.trim()
+              }
+              onClick={() =>
+                editUserModal && editUserMutation.mutate(editUserModal)
+              }
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {editUserMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {editUserMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -361,6 +361,7 @@ export interface backendInterface {
     adminGetTADASettings(): Promise<TADASettingsV3>;
     adminResetAllReportData(): Promise<void>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
+    adminSaveUserProfile(target: Principal, profile: UserProfile): Promise<void>;
     adminSetTADASettings(settings: TADASettingsV3): Promise<void>;
     applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string, lat: [] | [number], lng: [] | [number]): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
@@ -1680,6 +1681,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.raiseSampleDemandOrder(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async adminSaveUserProfile(arg0: Principal, arg1: UserProfile): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminSaveUserProfile(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminSaveUserProfile(arg0, arg1);
             return result;
         }
     }

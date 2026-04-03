@@ -371,6 +371,7 @@ export interface backendInterface {
     raiseCRMDemand(doctorId: DoctorId, doctorName: string, amount: bigint, notes: string, date: string, raiserName: string): Promise<void>;
     raiseGiftDemandOrder(giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, notes: string, date: string): Promise<void>;
     raiseSampleDemandOrder(productId: ProductId, requestedQty: bigint, date: string, notes: string): Promise<void>;
+    adminSaveUserProfile(target: Principal, profile: UserProfile): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveManagerProfile(name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     updateArea(id: AreaId, name: string, headquarterId: bigint): Promise<void>;

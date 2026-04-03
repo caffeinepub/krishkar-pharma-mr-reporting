@@ -1140,7 +1140,23 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
-    userProfiles.add(caller, profile);
+    // Only allow saving on first login (profile does not exist yet)
+    switch (userProfiles.get(caller)) {
+      case (?_existing) {
+        Runtime.trap("Profile already set. Contact Admin to update your name or employee code.");
+      };
+      case (null) {
+        userProfiles.add(caller, profile);
+      };
+    };
+  };
+
+  // Admin: edit any user's profile (name, employeeCode, headQuarter)
+  public shared ({ caller }) func adminSaveUserProfile(target : Principal, profile : UserProfile) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can edit user profiles");
+    };
+    userProfiles.add(target, profile);
   };
 
   // MR Profile Functions

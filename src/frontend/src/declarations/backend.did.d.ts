@@ -439,6 +439,7 @@ export interface _SERVICE {
     [ProductId, bigint, string, string],
     undefined
   >,
+  'adminSaveUserProfile' : ActorMethod<[Principal, UserProfile], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveManagerProfile' : ActorMethod<
     [string, string, string, ManagerRole],
