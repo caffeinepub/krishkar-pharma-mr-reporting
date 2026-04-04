@@ -263,6 +263,8 @@ export const DetailingEntry = IDL.Record({
   'doctorId' : DoctorId,
   'productIds' : IDL.Vec(ProductId),
   'date' : IDL.Text,
+  'latitude' : IDL.Opt(IDL.Float64),
+  'longitude' : IDL.Opt(IDL.Float64),
 });
 export const ExpenseEntry = IDL.Record({
   'latitude' : IDL.Opt(IDL.Float64),
@@ -520,7 +522,7 @@ export const idlService = IDL.Service({
     ),
   'isAdminInitialized' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
+  'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId), IDL.Opt(IDL.Float64), IDL.Opt(IDL.Float64)], [], []),
   'logGiftDistribution' : IDL.Func(
       [DoctorId, IDL.Text, GiftArticleId, IDL.Text, IDL.Nat, IDL.Text],
       [],
@@ -871,6 +873,8 @@ export const idlFactory = ({ IDL }) => {
     'doctorId' : DoctorId,
     'productIds' : IDL.Vec(ProductId),
     'date' : IDL.Text,
+    'latitude' : IDL.Opt(IDL.Float64),
+    'longitude' : IDL.Opt(IDL.Float64),
   });
   const ExpenseEntry = IDL.Record({
     'latitude' : IDL.Opt(IDL.Float64),
@@ -1134,7 +1138,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isAdminInitialized' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId)], [], []),
+    'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId), IDL.Opt(IDL.Float64), IDL.Opt(IDL.Float64)], [], []),
     'logGiftDistribution' : IDL.Func(
         [DoctorId, IDL.Text, GiftArticleId, IDL.Text, IDL.Nat, IDL.Text],
         [],

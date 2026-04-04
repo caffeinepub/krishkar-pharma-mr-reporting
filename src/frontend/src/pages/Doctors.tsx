@@ -109,7 +109,34 @@ export default function Doctors() {
     mutationFn: async () => {
       if (!actor || !selectedDoctor) throw new Error("No actor");
       const productIds = Array.from(selectedProductIds).map((id) => BigInt(id));
-      await actor.logDetailing(selectedDoctor.id, detailDate, productIds);
+      let lat: number | null = null;
+      let lng: number | null = null;
+      if (navigator?.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition | null>(
+            (resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                (p) => resolve(p),
+                () => resolve(null),
+                { timeout: 8000, maximumAge: 60000 },
+              );
+            },
+          );
+          if (pos) {
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+          }
+        } catch {
+          /* silently ignore */
+        }
+      }
+      await actor.logDetailing(
+        selectedDoctor.id,
+        detailDate,
+        productIds,
+        lat,
+        lng,
+      );
     },
     onSuccess: () => {
       toast.success("Detailing logged");

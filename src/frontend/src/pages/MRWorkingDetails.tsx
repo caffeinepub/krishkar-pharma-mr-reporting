@@ -240,7 +240,35 @@ export default function MRWorkingDetails() {
     mutationFn: async () => {
       if (!actor) throw new Error("No actor");
       const productIds = Array.from(selectedProductIds).map((id) => BigInt(id));
-      await actor.logDetailing(BigInt(visitDoctorId), date, productIds);
+      // Capture GPS coordinates at time of submission
+      let lat: number | null = null;
+      let lng: number | null = null;
+      if (navigator?.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition | null>(
+            (resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                (p) => resolve(p),
+                () => resolve(null),
+                { timeout: 8000, maximumAge: 60000 },
+              );
+            },
+          );
+          if (pos) {
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+          }
+        } catch {
+          // silently ignore
+        }
+      }
+      await actor.logDetailing(
+        BigInt(visitDoctorId),
+        date,
+        productIds,
+        lat,
+        lng,
+      );
     },
     onError: () => toast.error("Failed to log detailing"),
   });

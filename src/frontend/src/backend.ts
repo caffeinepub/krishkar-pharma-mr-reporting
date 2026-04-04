@@ -454,7 +454,7 @@ export interface backendInterface {
     getUserTraceBetweenTimes(user: Principal, startTime: bigint, endTime: bigint): Promise<Array<GPSTrace>>;
     isAdminInitialized(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
-    logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>): Promise<void>;
+    logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>, latitude: number | null, longitude: number | null): Promise<void>;
     logGiftDistribution(doctorId: DoctorId, doctorName: string, giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, date: string): Promise<void>;
     logSample(doctorId: DoctorId, date: string, productId: ProductId, quantity: bigint): Promise<void>;
     raiseCRMDemand(doctorId: DoctorId, doctorName: string, amount: bigint, notes: string, date: string, raiserName: string): Promise<void>;
@@ -1626,17 +1626,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async logDetailing(arg0: DoctorId, arg1: string, arg2: Array<ProductId>): Promise<void> {
+    async logDetailing(arg0: DoctorId, arg1: string, arg2: Array<ProductId>, arg3: number | null, arg4: number | null): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.logDetailing(arg0, arg1, arg2);
+                const result = await this.actor.logDetailing(arg0, arg1, arg2, arg3 != null ? [arg3] : [], arg4 != null ? [arg4] : []);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.logDetailing(arg0, arg1, arg2);
+            const result = await this.actor.logDetailing(arg0, arg1, arg2, arg3 != null ? [arg3] : [], arg4 != null ? [arg4] : []);
             return result;
         }
     }

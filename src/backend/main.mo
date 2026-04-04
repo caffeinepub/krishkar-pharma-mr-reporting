@@ -93,10 +93,19 @@ actor {
     createdBy : Principal;
   };
 
+  // Legacy type kept for stable variable migration compatibility (do not remove)
+  type DetailingEntryV1 = {
+    doctorId : DoctorId;
+    date : Text;
+    productIds : [ProductId];
+  };
+
   type DetailingEntry = {
     doctorId : DoctorId;
     date : Text;
     productIds : [ProductId];
+    latitude : ?Float;
+    longitude : ?Float;
   };
 
   type SampleEntry = {
@@ -413,7 +422,8 @@ actor {
   let doctorDOBs = Map.empty<DoctorId, Text>();
   let products = Map.empty<ProductId, Product>();
   let chemists = Map.empty<ChemistId, Chemist>();
-  let detailingEntries = Map.empty<Principal, List.List<DetailingEntry>>();
+  let detailingEntries = Map.empty<Principal, List.List<DetailingEntryV1>>(); // legacy stable migration source
+  let detailingEntriesV2 = Map.empty<Principal, List.List<DetailingEntry>>();
   let sampleEntries = Map.empty<Principal, List.List<SampleEntry>>();
   let chemistOrders = Map.empty<Principal, List.List<ChemistOrder>>();
   let expenseEntries = Map.empty<Principal, List.List<ExpenseEntry>>();
@@ -1131,7 +1141,7 @@ actor {
     if (not (AccessControl.isAdmin(accessControlState, caller)) and not isManager(caller)) {
       Runtime.trap("Unauthorized: Only admins and managers can view team detailing entries");
     };
-    detailingEntries.entries().map(func((p, list)) : (Principal, [DetailingEntry]) { (p, list.toArray()) }).toArray();
+    detailingEntriesV2.entries().map(func((p, list)) : (Principal, [DetailingEntry]) { (p, list.toArray()) }).toArray();
   };
 
   // RSM/ASM: get team expense entries
@@ -1312,24 +1322,24 @@ actor {
   };
 
   // --- Doctor Detailing ---
-  public shared ({ caller }) func logDetailing(doctorId : DoctorId, date : Text, productIds : [ProductId]) : async () {
+  public shared ({ caller }) func logDetailing(doctorId : DoctorId, date : Text, productIds : [ProductId], latitude : ?Float, longitude : ?Float) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can log detailing");
     };
-    let entry : DetailingEntry = { doctorId; date; productIds };
-    let existing = switch (detailingEntries.get(caller)) {
+    let entry : DetailingEntry = { doctorId; date; productIds; latitude; longitude };
+    let existing = switch (detailingEntriesV2.get(caller)) {
       case (null) { List.empty<DetailingEntry>() };
       case (?e) { e };
     };
     existing.add(entry);
-    detailingEntries.add(caller, existing);
+    detailingEntriesV2.add(caller, existing);
   };
 
   public query ({ caller }) func getDetailingEntries() : async [DetailingEntry] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view detailing entries");
     };
-    switch (detailingEntries.get(caller)) {
+    switch (detailingEntriesV2.get(caller)) {
       case (null) { [] };
       case (?e) { e.toArray() };
     };
@@ -1528,7 +1538,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view activity summary");
     };
-    let doctorsVisited = switch (detailingEntries.get(caller)) {
+    let doctorsVisited = switch (detailingEntriesV2.get(caller)) {
       case (null) { 0 };
       case (?e) { e.toArray().filter(func(x) { x.date == date }).size() };
     };
@@ -1795,6 +1805,7 @@ actor {
     };
     // Clear all transactional/report data
     for (k in detailingEntries.keys().toArray().vals()) { detailingEntries.remove(k) };
+    for (k in detailingEntriesV2.keys().toArray().vals()) { detailingEntriesV2.remove(k) };
     for (k in sampleEntries.keys().toArray().vals()) { sampleEntries.remove(k) };
     for (k in chemistOrders.keys().toArray().vals()) { chemistOrders.remove(k) };
     for (k in expenseEntries.keys().toArray().vals()) { expenseEntries.remove(k) };
@@ -1815,7 +1826,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized");
     };
-    let myDetailings = switch (detailingEntries.get(caller)) {
+    let myDetailings = switch (detailingEntriesV2.get(caller)) {
       case (null) { [] };
       case (?e) { e.toArray() };
     };
@@ -1861,7 +1872,7 @@ actor {
     let dayNs : Int = 86_400_000_000_000; // 1 day in nanoseconds
     let cutoffNs : Int = nowNs - (dayNs * (days : Int));
 
-    let myDetailings = switch (detailingEntries.get(caller)) {
+    let myDetailings = switch (detailingEntriesV2.get(caller)) {
       case (null) { [] };
       case (?e) { e.toArray() };
     };
@@ -2037,7 +2048,9 @@ actor {
 
   // === Stable Variable Migration ===
   // Migrate LeaveEntryV1 (without GPS) to LeaveEntry (with GPS) on first upgrade
+  // Migrate DetailingEntryV1 (without GPS) to DetailingEntry (with GPS) on upgrade
   system func postupgrade() {
+    // Migrate leave entries
     for ((principal, oldList) in leaveEntries.entries()) {
       let newList = List.empty<LeaveEntry>();
       for (old in oldList.toArray().vals()) {
@@ -2056,9 +2069,30 @@ actor {
         leaveEntriesV2.add(principal, newList);
       };
     };
-    // Clear the legacy map after migration
+    // Clear the legacy leave map after migration
     for (k in leaveEntries.keys().toArray().vals()) {
       leaveEntries.remove(k);
+    };
+
+    // Migrate detailing entries (V1 has no GPS fields)
+    for ((principal, oldList) in detailingEntries.entries()) {
+      let newList = List.empty<DetailingEntry>();
+      for (old in oldList.toArray().vals()) {
+        newList.add({
+          doctorId = old.doctorId;
+          date = old.date;
+          productIds = old.productIds;
+          latitude = null;
+          longitude = null;
+        });
+      };
+      if (newList.size() > 0) {
+        detailingEntriesV2.add(principal, newList);
+      };
+    };
+    // Clear the legacy detailing map after migration
+    for (k in detailingEntries.keys().toArray().vals()) {
+      detailingEntries.remove(k);
     };
   };
 

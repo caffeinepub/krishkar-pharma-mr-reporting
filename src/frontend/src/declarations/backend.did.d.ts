@@ -64,6 +64,8 @@ export interface DetailingEntry {
   'doctorId' : DoctorId,
   'productIds' : Array<ProductId>,
   'date' : string,
+  'latitude' : [] | [number],
+  'longitude' : [] | [number],
 }
 export interface Doctor {
   'id' : DoctorId,
@@ -444,7 +446,7 @@ export interface _SERVICE {
   >,
   'isAdminInitialized' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'logDetailing' : ActorMethod<[DoctorId, string, Array<ProductId>], undefined>,
+  'logDetailing' : ActorMethod<[DoctorId, string, Array<ProductId>, [] | [number], [] | [number]], undefined>,
   'logGiftDistribution' : ActorMethod<
     [DoctorId, string, GiftArticleId, string, bigint, string],
     undefined

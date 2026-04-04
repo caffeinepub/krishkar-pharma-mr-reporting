@@ -244,6 +244,14 @@ export default function ASMTeamReports() {
       Date: entry.date,
       Doctor: getDoctorName(entry.doctorId),
       "Products Detailed": getProductNames(entry.productIds),
+      "GPS Latitude":
+        entry.latitude != null ? Number(entry.latitude).toFixed(6) : "-",
+      "GPS Longitude":
+        entry.longitude != null ? Number(entry.longitude).toFixed(6) : "-",
+      "GPS Location":
+        entry.latitude != null && entry.longitude != null
+          ? `https://maps.google.com/?q=${Number(entry.latitude).toFixed(6)},${Number(entry.longitude).toFixed(6)}`
+          : "-",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();

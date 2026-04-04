@@ -212,6 +212,18 @@ export default function AdminReports() {
       "Products Detailed": e.productIds
         .map((id) => productMap.get(String(id)) ?? String(id))
         .join(", "),
+      "GPS Latitude":
+        (e as any).latitude != null
+          ? Number((e as any).latitude).toFixed(6)
+          : "-",
+      "GPS Longitude":
+        (e as any).longitude != null
+          ? Number((e as any).longitude).toFixed(6)
+          : "-",
+      "GPS Location":
+        (e as any).latitude != null && (e as any).longitude != null
+          ? `https://maps.google.com/?q=${Number((e as any).latitude).toFixed(6)},${Number((e as any).longitude).toFixed(6)}`
+          : "-",
     })),
   );
   const exportDetailings = () =>

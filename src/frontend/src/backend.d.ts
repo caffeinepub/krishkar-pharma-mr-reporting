@@ -192,6 +192,8 @@ export interface DetailingEntry {
     doctorId: DoctorId;
     productIds: Array<ProductId>;
     date: string;
+    latitude?: number;
+    longitude?: number;
 }
 export type ChemistId = bigint;
 export interface GiftArticle {
@@ -390,7 +392,7 @@ export interface backendInterface {
     getUserTraceBetweenTimes(user: Principal, startTime: bigint, endTime: bigint): Promise<Array<GPSTrace>>;
     isAdminInitialized(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
-    logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>): Promise<void>;
+    logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>, latitude: number | null, longitude: number | null): Promise<void>;
     logGiftDistribution(doctorId: DoctorId, doctorName: string, giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, date: string): Promise<void>;
     logSample(doctorId: DoctorId, date: string, productId: ProductId, quantity: bigint): Promise<void>;
     raiseCRMDemand(doctorId: DoctorId, doctorName: string, amount: bigint, notes: string, date: string, raiserName: string): Promise<void>;
