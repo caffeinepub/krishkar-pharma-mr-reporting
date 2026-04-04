@@ -26,10 +26,10 @@ import type {
 } from "../backend";
 import { useActor } from "../hooks/useActor";
 
-function getLast5DaysRange(): { start: string; end: string; dates: string[] } {
+function getLast15DaysRange(): { start: string; end: string; dates: string[] } {
   const end = new Date();
   const start = new Date();
-  start.setDate(start.getDate() - 4);
+  start.setDate(start.getDate() - 14);
   const dates: string[] = [];
   const cursor = new Date(start);
   while (cursor <= end) {
@@ -143,7 +143,7 @@ function CallEntryRow({ entry, products }: CallEntryRowProps) {
 export default function DoctorCallHistoryPage() {
   const { actor, isFetching } = useActor();
   const enabled = !!actor && !isFetching;
-  const { start, end } = getLast5DaysRange();
+  const { start, end } = getLast15DaysRange();
 
   const { data: recentCalls = [], isLoading: callsLoading } = useQuery<
     RecentDoctorCallEntry[]
@@ -151,7 +151,7 @@ export default function DoctorCallHistoryPage() {
     queryKey: ["recentDoctorCalls", 5],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getRecentDoctorCalls(BigInt(5));
+      return actor.getRecentDoctorCalls(BigInt(15));
     },
     enabled,
   });
@@ -218,7 +218,7 @@ export default function DoctorCallHistoryPage() {
         <div>
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <History className="w-5 h-5 text-[#0B2F6B]" />
-            Call History — Last 5 Days
+            Call History — Last 15 Days
           </h2>
           <p className="text-sm text-gray-400 mt-0.5">
             Doctor call activity from{" "}
@@ -263,7 +263,7 @@ export default function DoctorCallHistoryPage() {
               No doctor calls recorded
             </p>
             <p className="text-sm text-gray-400 max-w-xs">
-              No doctor call activity found in the last 5 days. Start logging
+              No doctor call activity found in the last 15 days. Start logging
               doctor visits in Working Details.
             </p>
           </CardContent>

@@ -228,13 +228,12 @@ export default function AdminReports() {
       "DA Amount": Number(e.daAmount),
       Total: Number(e.taAmount) + Number(e.daAmount),
       Notes: e.notes,
-      "GPS Latitude":
-        e.latitude?.[0] != null ? Number(e.latitude[0]).toFixed(6) : "-",
+      "GPS Latitude": e.latitude != null ? Number(e.latitude).toFixed(6) : "-",
       "GPS Longitude":
-        e.longitude?.[0] != null ? Number(e.longitude[0]).toFixed(6) : "-",
+        e.longitude != null ? Number(e.longitude).toFixed(6) : "-",
       "GPS Location":
-        e.latitude?.[0] != null && e.longitude?.[0] != null
-          ? `https://maps.google.com/?q=${Number(e.latitude[0]).toFixed(6)},${Number(e.longitude[0]).toFixed(6)}`
+        e.latitude != null && e.longitude != null
+          ? `https://maps.google.com/?q=${Number(e.latitude).toFixed(6)},${Number(e.longitude).toFixed(6)}`
           : "-",
     })),
   );

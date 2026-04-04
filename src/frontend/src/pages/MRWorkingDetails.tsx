@@ -42,10 +42,11 @@ import { toast } from "sonner";
 import type {
   DoctorCallSummary,
   MRProfile,
+  ManagerAreaAssignment,
   ManagerProfile,
-  UserProfile,
   WorkingPlan,
 } from "../backend";
+import { ManagerRole } from "../backend";
 import { useActor } from "../hooks/useActor";
 
 export default function MRWorkingDetails() {
@@ -421,23 +422,65 @@ export default function MRWorkingDetails() {
   const [savingHeader, setSavingHeader] = useState(false);
   const [useOtherName, setUseOtherName] = useState(false);
 
-  // Fetch all staff names for "Working With" dropdown
+  // Fetch ASM & RSM names for the selected/assigned area for "Working With" dropdown
   const { data: staffNames = [], isLoading: staffNamesLoading } = useQuery<
     string[]
   >({
-    queryKey: ["allStaffNames"],
+    queryKey: [
+      "asmRsmStaffNames",
+      visitAreaId,
+      mrProfile?.assignedAreas?.join(","),
+    ],
     queryFn: async () => {
       if (!actor) return [];
-      const [userProfiles, managerProfiles] = await Promise.all([
-        actor.getAllUserProfiles() as Promise<Array<[unknown, UserProfile]>>,
-        actor.getAllManagerProfiles() as Promise<
-          Array<[unknown, ManagerProfile]>
-        >,
-      ]);
-      const names = [
-        ...userProfiles.map(([, p]) => p.name),
-        ...managerProfiles.map(([, p]) => p.name),
-      ].filter((n) => n && n.trim().length > 0);
+      const managerProfiles = await (actor.getAllManagerProfiles() as Promise<
+        Array<[unknown, ManagerProfile]>
+      >);
+      // Only keep ASM and RSM roles
+      const asmRsmManagers = managerProfiles.filter(
+        ([, p]) =>
+          p.managerRole === ManagerRole.ASM ||
+          p.managerRole === ManagerRole.RSM,
+      );
+      if (asmRsmManagers.length === 0) return [];
+
+      // Fetch area assignments for all ASM/RSM in parallel
+      const areaAssignments = await Promise.all(
+        asmRsmManagers.map(([principal]) =>
+          (
+            actor.getManagerAreas(
+              principal as any,
+            ) as Promise<ManagerAreaAssignment>
+          ).catch(() => ({ areaIds: [] as bigint[] })),
+        ),
+      );
+
+      // Determine which area IDs to filter by
+      const filterAreaIds: Set<string> = new Set();
+      if (visitAreaId) {
+        filterAreaIds.add(String(visitAreaId));
+      } else if (mrProfile?.assignedAreas) {
+        for (const id of mrProfile.assignedAreas) {
+          filterAreaIds.add(String(id));
+        }
+      }
+
+      // Filter managers by area overlap
+      let filteredManagers = asmRsmManagers.filter((_, idx) => {
+        if (filterAreaIds.size === 0) return true;
+        return areaAssignments[idx].areaIds.some((id) =>
+          filterAreaIds.has(String(id)),
+        );
+      });
+
+      // Fallback: if no managers match, show all ASM/RSM
+      if (filteredManagers.length === 0) {
+        filteredManagers = asmRsmManagers;
+      }
+
+      const names = filteredManagers
+        .map(([, p]) => p.name)
+        .filter((n) => n && n.trim().length > 0);
       return Array.from(new Set(names)).sort();
     },
     enabled,
@@ -490,6 +533,13 @@ export default function MRWorkingDetails() {
 
   // ── Last 2 Doctor Calls ───────────────────────────────────
   const [lastCallsExpanded, setLastCallsExpanded] = useState(false);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+  useEffect(() => {
+    if (visitDoctorId) {
+      setLastCallsExpanded(true);
+    }
+  }, [visitDoctorId]);
 
   const { data: doctorCallHistory = [], isFetching: callHistoryFetching } =
     useQuery<DoctorCallSummary[]>({
@@ -553,7 +603,7 @@ export default function MRWorkingDetails() {
           {workingMode === "with" && (
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-gray-700">
-                Working With
+                Working With (ASM / RSM of Your Area)
               </Label>
               <Select
                 value={useOtherName ? "__other__" : workingWith}
@@ -573,7 +623,9 @@ export default function MRWorkingDetails() {
                 >
                   <SelectValue
                     placeholder={
-                      staffNamesLoading ? "Loading staff..." : "Select a person"
+                      staffNamesLoading
+                        ? "Loading ASM/RSM..."
+                        : "Select ASM/RSM or type manually"
                     }
                   />
                 </SelectTrigger>

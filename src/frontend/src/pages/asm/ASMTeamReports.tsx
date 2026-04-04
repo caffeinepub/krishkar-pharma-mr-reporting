@@ -264,16 +264,12 @@ export default function ASMTeamReports() {
       "Working Area": entry.workingArea || "-",
       "Total (₹)": (Number(entry.taAmount) + Number(entry.daAmount)).toFixed(2),
       "GPS Latitude":
-        entry.latitude?.[0] != null
-          ? Number(entry.latitude[0]).toFixed(6)
-          : "-",
+        entry.latitude != null ? Number(entry.latitude).toFixed(6) : "-",
       "GPS Longitude":
-        entry.longitude?.[0] != null
-          ? Number(entry.longitude[0]).toFixed(6)
-          : "-",
+        entry.longitude != null ? Number(entry.longitude).toFixed(6) : "-",
       "GPS Location":
-        entry.latitude?.[0] != null && entry.longitude?.[0] != null
-          ? `https://maps.google.com/?q=${Number(entry.latitude[0]).toFixed(6)},${Number(entry.longitude[0]).toFixed(6)}`
+        entry.latitude != null && entry.longitude != null
+          ? `https://maps.google.com/?q=${Number(entry.latitude).toFixed(6)},${Number(entry.longitude).toFixed(6)}`
           : "-",
     }));
     const ws = XLSX.utils.json_to_sheet(data);

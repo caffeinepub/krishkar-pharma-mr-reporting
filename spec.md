@@ -2,65 +2,58 @@
 
 ## Current State
 
-The MR Working Details screen allows MRs to select a doctor, log product detailing, sample distribution, gift distribution, and chemist orders under one unified table. Doctor data is stored across three separate tables: `DetailingEntry` (products shown), `SampleEntry` (samples given), and `GiftDistribution` (gifts given), all keyed by `(principal, doctorId, date)`. No call history or last-visit summary is currently shown anywhere.
-
-The backend has:
-- `getDetailingEntries()` - returns all caller's detailing entries
-- `getSampleEntries()` - returns all caller's sample entries
-- `getMyGiftDistributions()` - returns all caller's gift distributions
-- No `getDoctorCallHistory` or area-wise history function exists
+- MR Working Details has a "Today's Working Mode" card with Working Mode (Alone/With Someone), Station Type, and Working With dropdown
+- The "Working With" dropdown currently shows ALL registered staff names (MRs + all managers) from `getAllUserProfiles` + `getAllManagerProfiles`
+- Call History page (DoctorCallHistoryPage) shows last 5 days of doctor call activity using `getRecentDoctorCalls(BigInt(5))`
+- Working Details shows last 2 calls when a doctor is selected, fetched via `getDoctorCallHistory(doctorId)`, already shows products, samples, and gifts
+- Admin Reports exports: detailing rows are missing GPS latitude/longitude columns; ASM Team Reports detailing export also missing GPS columns
+- Chemist bulk upload from Excel already exists in the Chemists page (Admin portal)
 
 ## Requested Changes (Diff)
 
 ### Add
-
-1. **Last 2 Call Details on Doctor Selection (MR Working Screen)**
-   - When an MR selects a doctor from the dropdown on the Daily Working screen, immediately show the last 2 visit dates for that doctor with full call details: date, products detailed, samples (product + quantity), gifts (article + quantity)
-   - Display as a collapsible info panel right below the doctor info card
-   - If the doctor has never been visited before, show a friendly "No previous calls" message
-
-2. **New backend function: `getDoctorCallHistory(doctorId: DoctorId)`**
-   - Returns all detailing, sample, and gift entries for the given doctor by the caller MR
-   - Grouped and sorted by date descending
-   - Returns type: `Vec<DoctorCallSummary>` where each summary has date, productIds, samples (productId + qty), gifts (giftArticleName + qty)
-
-3. **Last 5 Days Area-wise Doctor Call History (new section/page)**
-   - Available in the MR portal as a new menu item or section: "Call History"
-   - Shows the last 5 calendar days (relative to today)
-   - Groups calls by Area → Doctor → Date
-   - For each doctor on each day shows: products detailed, samples given, gifts distributed
-   - Fetches data using existing queries + joins with `allDoctors` for area assignment
-   - New backend function `getRecentDoctorCalls(days: Nat)` that returns all call records for the caller in the last N days
+- In "Working With Someone" dropdown: fetch manager profiles AND their area assignments; filter to show only ASM and RSM whose assigned areas include the currently selected working area (visitAreaId or any assigned MR area); keep "Other (type manually)" option
+- GPS columns (Latitude, Longitude, Maps Link) to the detailing rows export in Admin Reports
+- GPS columns to the detailing export in ASM Team Reports
+- GPS columns to the detailing export in RSM Team Reports (if applicable)
 
 ### Modify
-
-- `MRWorkingDetails.tsx`: After doctor selection and the doctor info card, add the "Last 2 Calls" collapsible panel
-- MR sidebar/navigation: Add "Call History" menu entry linking to the new page
-- `App.tsx`: Add route for the new Call History page
+- Call History page: change from 5 days to 15 days (`getRecentDoctorCalls(BigInt(15))`, update `getLast5DaysRange` to `getLast15DaysRange`, update heading and labels)
+- Working With dropdown in MRWorkingDetails: instead of all staff names, only show ASM/RSM names whose area assignments overlap with the MR's working area(s). If no area selected, show all ASMs and RSMs. Keep "Other (type manually)" option and manual text input.
+- Working Details last 2 calls panel: already shows products/samples/gifts; ensure it auto-expands when a doctor is selected (remove need to manually click to expand)
 
 ### Remove
-
 - Nothing removed
 
 ## Implementation Plan
 
-1. **Backend** (`main.mo`):
-   - Add `DoctorCallSummary` type: `{ date: Text; productIds: [ProductId]; samples: [{ productId: ProductId; quantity: Nat }]; gifts: [{ giftArticleName: Text; quantity: Nat }] }`
-   - Add `getDoctorCallHistory(doctorId: DoctorId): async [DoctorCallSummary]` - merges detailing + sample + gift entries for that doctor, returns all dates sorted descending
-   - Add `getRecentDoctorCalls(days: Nat): async [{ date: Text; doctorId: DoctorId; areaId: AreaId; productIds: [ProductId]; samples: [{ productId: ProductId; quantity: Nat }]; gifts: [{ giftArticleName: Text; quantity: Nat }] }]` - returns last N days of call data for caller MR
+1. **MRWorkingDetails.tsx** - `Working With` dropdown:
+   - Fetch `getAllManagerProfiles()` + for each manager principal, call `getManagerAreas(principal)` to get their area assignments
+   - Filter to only managers with `managerRole` of ASM or RSM whose `areaIds` includes the currently selected `visitAreaId` (if set) or any of the MR's `assignedAreaIds`
+   - Expose their names in the dropdown with a labeled section "ASM / RSM of Your Area"
+   - Still include "Other (type manually)" option
+   - Also add manual text input when "Other" is selected (already exists)
+   - Do this with a single `useQuery` that also calls `getManagerAreas` for each manager (batch via Promise.all)
 
-2. **Candid bindings** (`backend.did.js`, `backend.did.d.ts`, `backend.ts`, `backend.d.ts`):
-   - Add new types and function signatures for the two new functions
+2. **DoctorCallHistoryPage.tsx**:
+   - Change `getLast5DaysRange` → `getLast15DaysRange` (sets `start = today - 14 days`)
+   - Change `actor.getRecentDoctorCalls(BigInt(5))` → `actor.getRecentDoctorCalls(BigInt(15))`
+   - Update heading text from "Last 5 Days" to "Last 15 Days"
+   - Update description text
 
-3. **Frontend - Last 2 Calls panel** (`MRWorkingDetails.tsx`):
-   - On doctor selection (`visitDoctorId` change), call `getDoctorCallHistory(doctorId)`
-   - Display collapsible panel below doctor info card: last 2 entries with date, products, samples, gifts
-   - Loading skeleton while fetching
+3. **MRWorkingDetails.tsx** - Last 2 calls panel:
+   - Set `lastCallsExpanded` to default `true` so it auto-opens when a doctor is selected
+   - Or auto-set to true when `visitDoctorId` changes
 
-4. **Frontend - Call History page** (new file `src/frontend/src/pages/DoctorCallHistory.tsx`):
-   - Calls `getRecentDoctorCalls(5)` (last 5 days)
-   - Fetches `getAllDoctors()` and `getAllAreas()` for name resolution
-   - Renders accordion/grouped list: Area name → Doctor name → Date → activity detail rows
-   - Shows product names (resolved from products list), sample qty, gift names and qty
+4. **AdminReports.tsx** - GPS columns in detailing export:
+   - Add GPS Latitude, GPS Longitude, GPS Location columns to `detailingRows` map
+   - Check if `DoctorVisitEntry` / team detailing entries have latitude/longitude fields
+   - If the backend type includes location fields, add them; otherwise note the field path
 
-5. **Navigation**: Add "Call History" to MR sidebar in `App.tsx` / MR layout
+5. **ASMTeamReports.tsx** - GPS in detailing export:
+   - Add GPS columns to the `exportDetailing` function data mapping
+
+6. **RSMTeamReports.tsx** - GPS in detailing export:
+   - Same as ASM
+
+7. **Chemist upload**: Already exists - no changes needed unless broken
