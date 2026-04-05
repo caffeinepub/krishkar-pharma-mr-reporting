@@ -1,34 +1,22 @@
 # Krishkar Pharma MR Reporting
 
 ## Current State
-The app has a `DoctorCallHistoryPage.tsx` used in the MR portal showing last 15 days of area-wise doctor call activity for the logged-in MR only. ASM, RSM, and Admin portals do NOT have any MR-wise last 15 days call details view.
+`MRCallDetailsPage.tsx` displays MR-wise call details for the last 15 days in a card/accordion UI. It is rendered in ASM, RSM, and Admin portals. The page has an HQ filter (Admin only) but no export functionality.
 
 ## Requested Changes (Diff)
 
 ### Add
-- A new page `MRCallDetailsPage.tsx` (reusable component) that shows last 15 days of doctor call activity **grouped by MR**, filtered to only show MRs whose assigned HQ matches the allotted HQ of the logged-in ASM/RSM (or all HQs for Admin).
-- The view displays: MR name, MR HQ, then per MR -> per date -> per doctor: products detailed, samples, gifts.
-- For Admin: shows all MRs across all HQs, with an HQ filter dropdown.
-- For ASM/RSM: auto-filters to their allotted HQ only (no HQ dropdown needed, but HQ label shown).
-- "MR Call Details" nav item in ASM, RSM, and Admin portals.
+- Excel export button on the MR Call Details page header
+- Export function that flattens the `mrCallEntries` data into rows: MR Name, Employee Code, HQ, Date, Doctor Name, Doctor Qualification, Doctor Station, Products Detailed (comma-separated)
+- Button uses `xlsx` (SheetJS) — already used elsewhere in the project
 
 ### Modify
-- `ASMLayout.tsx`: Add `mr-call-details` page type, nav item "MR Call Details" with History icon, render `MRCallDetailsPage`.
-- `RSMLayout.tsx`: Add `mr-call-details` page type, nav item "MR Call Details" with History icon, render `MRCallDetailsPage`.
-- `AdminLayout.tsx`: Add `mr-call-details` page type, nav item "MR Call Details" with History icon, render `MRCallDetailsPage` (admin mode).
+- `MRCallDetailsPage.tsx`: add an "Export to Excel" button in the header area (next to HQ filter/badge); wire it to the export function using already-computed `mrCallEntries`, `allDoctors`, and `allProducts`
 
 ### Remove
-- Nothing removed.
+- Nothing
 
 ## Implementation Plan
-1. Create `src/frontend/src/pages/MRCallDetailsPage.tsx`:
-   - Props: `role: 'ASM' | 'RSM' | 'admin'`
-   - Fetch: `getTeamDetailingEntries()` (returns `[Principal, DetailingEntry[]][]`), `getAllMRProfiles()` (returns `[Principal, MRProfile][]`), `getAllUserProfiles()` (returns `[Principal, UserProfile][]`), `getAllDoctors()`, `getAllProducts()`, `getAllAreas()`, `getManagerProfile()` (for ASM/RSM to get their own HQ)
-   - Filter last 15 days entries.
-   - For ASM/RSM: get logged-in manager's `headQuarter` from `getManagerProfile()`. Filter MRs whose `MRProfile.headQuarter === managerHQ`.
-   - For Admin: show HQ filter dropdown using all unique HQs from MR profiles.
-   - Group entries: MR (principal) -> date -> doctor entries.
-   - Display accordion: outer = MR card (name, HQ badge, total visits count), inner = date-grouped doctor calls with products/samples/gifts.
-   - Show date range header (last 15 days: start to end).
-   - Empty and loading states.
-2. Wire into `ASMLayout.tsx`, `RSMLayout.tsx`, `AdminLayout.tsx` with nav item and render case.
+1. In `MRCallDetailsPage.tsx`, add `exportToExcel` function that builds a flat array of rows from `mrCallEntries` (iterating day groups and calls) and uses `xlsx.utils.json_to_sheet` + `xlsx.writeFile`
+2. Add a `<Button>` with a `Download` icon in the page header; disabled when loading or no entries
+3. No backend changes needed — all data is already fetched

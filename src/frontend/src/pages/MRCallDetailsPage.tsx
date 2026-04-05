@@ -5,6 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -18,6 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Building2,
   CalendarDays,
+  Download,
   History,
   PhoneCall,
   Stethoscope,
@@ -33,6 +35,7 @@ import type {
   UserProfile,
 } from "../backend";
 import { useActor } from "../hooks/useActor";
+import { loadXlsx } from "../lib/xlsxLoader";
 
 export interface MRCallDetailsPageProps {
   viewerRole: "ASM" | "RSM" | "admin";
@@ -70,6 +73,18 @@ function formatDateRange(start: string, end: string): string {
     month: "short",
   });
   return `${s} to ${e}`;
+}
+
+function formatDateExcel(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = d.toLocaleDateString("en-US", { month: "short" });
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch {
+    return dateStr;
+  }
 }
 
 interface MRCallEntry {
@@ -133,6 +148,7 @@ export default function MRCallDetailsPage({
   const enabled = !!actor && !isFetching;
   const { start, end } = getLast15DaysRange();
   const [hqFilter, setHqFilter] = useState<string>("all");
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: teamDetailingRaw = [], isLoading: detailingLoading } = useQuery<
     [unknown, DetailingEntry[]][]
@@ -280,6 +296,44 @@ export default function MRCallDetailsPage({
     viewerRole,
   ]);
 
+  async function exportToExcel() {
+    setIsExporting(true);
+    try {
+      const XLSX = await loadXlsx();
+      const rows: Record<string, string>[] = [];
+
+      for (const mrEntry of mrCallEntries) {
+        const dayGroups = groupEntriesByDate(
+          mrEntry.entries,
+          allDoctors,
+          allProducts,
+        );
+        for (const { date, calls } of dayGroups) {
+          for (const call of calls) {
+            rows.push({
+              "MR Name": mrEntry.name,
+              "Employee Code": mrEntry.employeeCode,
+              HQ: mrEntry.headQuarter,
+              Date: formatDateExcel(date),
+              "Doctor Name": call.doctorName,
+              "Doctor Details": call.doctorDetails,
+              "Products Detailed": call.productIds.join(", "),
+            });
+          }
+        }
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "MR Call Details");
+
+      const today = formatDateExcel(new Date().toISOString().split("T")[0]);
+      XLSX.writeFile(workbook, `MR_Call_Details_${today}.xlsx`);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-5xl" data-ocid="mr_call_details.section">
       {/* Page Header */}
@@ -328,6 +382,18 @@ export default function MRCallDetailsPage({
               </Select>
             </div>
           )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportToExcel}
+            disabled={isLoading || isExporting || mrCallEntries.length === 0}
+            data-ocid="mr_call_details.button"
+            className="flex items-center gap-1.5 h-8 text-sm border-[#0B2F6B] text-[#0B2F6B] hover:bg-[#0B2F6B]/5"
+          >
+            <Download className="w-4 h-4" />
+            {isExporting ? "Exporting..." : "Export Excel"}
+          </Button>
         </div>
       </div>
 
