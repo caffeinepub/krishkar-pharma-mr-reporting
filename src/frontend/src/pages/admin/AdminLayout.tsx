@@ -8,6 +8,7 @@ import {
   Copy,
   FlaskConical,
   Gift,
+  History,
   IndianRupee,
   LayoutDashboard,
   LogOut,
@@ -29,6 +30,7 @@ import { toast } from "sonner";
 import { useGPSUpdater } from "../../hooks/useGPSUpdater";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
+import MRCallDetailsPage from "../MRCallDetailsPage";
 import AdminAnnouncements from "./AdminAnnouncements";
 import AdminAreas from "./AdminAreas";
 import AdminCRMApprovals from "./AdminCRMApprovals";
@@ -59,6 +61,7 @@ type AdminPage =
   | "admin-doctors"
   | "areas"
   | "reports"
+  | "mr-call-details"
   | "sample-management"
   | "crm-approvals"
   | "gift-orders"
@@ -84,6 +87,7 @@ const adminNavItems: {
   { id: "admin-doctors", label: "Doctors", icon: Stethoscope },
   { id: "areas", label: "Areas", icon: MapPin },
   { id: "reports", label: "Reports", icon: BarChart2 },
+  { id: "mr-call-details", label: "MR Call Details", icon: History },
   { id: "sample-management", label: "Sample Management", icon: FlaskConical },
   { id: "crm-approvals", label: "CRM Approvals", icon: IndianRupee },
   { id: "gift-orders", label: "Gift Orders", icon: Gift },
@@ -106,6 +110,7 @@ const pageTitles: Record<AdminPage, string> = {
   "admin-doctors": "Doctor Management",
   areas: "Area Management",
   reports: "Export Reports",
+  "mr-call-details": "MR Call Details — Last 15 Days",
   "sample-management": "Sample Management",
   "crm-approvals": "CRM Approvals",
   "gift-orders": "Gift Article Orders",
@@ -168,6 +173,8 @@ export default function AdminLayout() {
         return <AdminAreas />;
       case "reports":
         return <AdminReports />;
+      case "mr-call-details":
+        return <MRCallDetailsPage viewerRole="admin" />;
       case "sample-management":
         return <AdminSampleManagement />;
       case "crm-approvals":
@@ -254,49 +261,37 @@ export default function AdminLayout() {
               >
                 <Icon className="flex-shrink-0" size={18} />
                 {item.label}
-                {item.id === "staff-gps" && (
-                  <span className="ml-auto flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                  </span>
-                )}
               </button>
             );
           })}
         </nav>
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <User className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-white text-xs font-semibold truncate">
-                  Administrator
+                  Admin
                 </p>
-                <span className="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
+                <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
                   ADMIN
                 </span>
               </div>
+              <p className="text-white/50 text-xs truncate">{shortPrincipal}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 mb-3 bg-white/10 rounded-md px-2 py-1.5">
-            <p
-              className="text-white/60 text-xs truncate flex-1 font-mono"
-              title={principal}
-            >
-              {shortPrincipal || "Loading..."}
-            </p>
-            <button
-              type="button"
-              data-ocid="admin_sidebar.copy_principal_button"
-              onClick={handleCopyPrincipal}
-              className="flex-shrink-0 text-white/50 hover:text-white transition-colors"
-              title="Copy full Principal ID"
-            >
-              <Copy size={12} />
-            </button>
-          </div>
+          <button
+            type="button"
+            data-ocid="admin_copy_principal.button"
+            onClick={handleCopyPrincipal}
+            className="w-full flex items-center gap-1.5 text-white/50 hover:text-white/80 text-xs mb-2 transition-colors"
+            title="Copy Principal ID"
+          >
+            <Copy size={11} />
+            <span className="truncate">{shortPrincipal}</span>
+          </button>
           <Button
             data-ocid="admin_logout.button"
             variant="ghost"
@@ -324,13 +319,13 @@ export default function AdminLayout() {
                 {pageTitles[currentPage]}
               </h1>
               <p className="text-xs text-gray-400 hidden sm:block">
-                Krishkar Pharmaceuticals · Admin Panel
+                Krishkar Pharmaceuticals · Admin Portal
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
-              <Shield size={14} /> Admin Portal
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-full">
+              🛡️ Admin Portal
             </span>
             <p className="text-xs text-gray-400 hidden md:block">
               {new Date().toLocaleDateString("en-IN", {

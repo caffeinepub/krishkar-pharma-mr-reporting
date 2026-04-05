@@ -5,6 +5,7 @@ import {
   CalendarOff,
   CalendarRange,
   ClipboardList,
+  History,
   IndianRupee,
   LayoutDashboard,
   LogOut,
@@ -17,6 +18,7 @@ import { useState } from "react";
 import { useGPSUpdater } from "../../hooks/useGPSUpdater";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 import Leaves from "../Leaves";
+import MRCallDetailsPage from "../MRCallDetailsPage";
 import WorkingPlanPage from "../WorkingPlanPage";
 import RSMCRMDemand from "./RSMCRMDemand";
 import RSMDashboard from "./RSMDashboard";
@@ -29,6 +31,7 @@ type RSMPage =
   | "dashboard"
   | "leave-approvals"
   | "team-reports"
+  | "mr-call-details"
   | "crm-demand"
   | "working-details"
   | "working-plan"
@@ -41,6 +44,7 @@ const navItems: { id: RSMPage; label: string; icon: React.ElementType }[] = [
   { id: "working-plan", label: "Working Plan", icon: CalendarRange },
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
+  { id: "mr-call-details", label: "MR Call Details", icon: History },
   { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
   { id: "my-leaves", label: "My Leaves", icon: CalendarOff },
   { id: "staff-gps", label: "Staff GPS Tracking", icon: Navigation },
@@ -52,6 +56,7 @@ const pageTitles: Record<RSMPage, string> = {
   "working-plan": "Working Plan",
   "leave-approvals": "Leave Approvals",
   "team-reports": "Team Reports",
+  "mr-call-details": "MR Call Details — Last 15 Days",
   "crm-demand": "CRM Demand",
   "my-leaves": "Leave Application",
   "staff-gps": "Staff GPS Tracking",
@@ -92,6 +97,8 @@ export default function RSMLayout() {
         return <RSMLeaveApprovals />;
       case "team-reports":
         return <RSMTeamReports />;
+      case "mr-call-details":
+        return <MRCallDetailsPage viewerRole="RSM" />;
       case "crm-demand":
         return <RSMCRMDemand />;
       case "my-leaves":
@@ -218,7 +225,7 @@ export default function RSMLayout() {
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
-              📊 RSM Portal
+              🗂 RSM Portal
             </span>
             <p className="text-xs text-gray-400 hidden md:block">
               {new Date().toLocaleDateString("en-IN", {

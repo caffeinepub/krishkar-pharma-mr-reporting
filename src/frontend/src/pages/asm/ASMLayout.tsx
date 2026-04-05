@@ -5,6 +5,7 @@ import {
   CalendarOff,
   CalendarRange,
   ClipboardList,
+  History,
   IndianRupee,
   LayoutDashboard,
   LogOut,
@@ -16,6 +17,7 @@ import { useState } from "react";
 import { useGPSUpdater } from "../../hooks/useGPSUpdater";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 import Leaves from "../Leaves";
+import MRCallDetailsPage from "../MRCallDetailsPage";
 import WorkingPlanPage from "../WorkingPlanPage";
 import ASMCRMDemand from "./ASMCRMDemand";
 import ASMDashboard from "./ASMDashboard";
@@ -27,6 +29,7 @@ type ASMPage =
   | "dashboard"
   | "leave-approvals"
   | "team-reports"
+  | "mr-call-details"
   | "crm-demand"
   | "working-details"
   | "working-plan"
@@ -38,6 +41,7 @@ const navItems: { id: ASMPage; label: string; icon: React.ElementType }[] = [
   { id: "working-plan", label: "Working Plan", icon: CalendarRange },
   { id: "leave-approvals", label: "Leave Approvals", icon: CalendarCheck },
   { id: "team-reports", label: "Team Reports", icon: TrendingUp },
+  { id: "mr-call-details", label: "MR Call Details", icon: History },
   { id: "crm-demand", label: "CRM Demand", icon: IndianRupee },
   { id: "my-leaves", label: "My Leaves", icon: CalendarOff },
 ];
@@ -48,6 +52,7 @@ const pageTitles: Record<ASMPage, string> = {
   "working-plan": "Working Plan",
   "leave-approvals": "Leave Approvals",
   "team-reports": "Team Reports",
+  "mr-call-details": "MR Call Details — Last 15 Days",
   "crm-demand": "CRM Demand",
   "my-leaves": "Leave Application",
 };
@@ -87,6 +92,8 @@ export default function ASMLayout() {
         return <ASMLeaveApprovals />;
       case "team-reports":
         return <ASMTeamReports />;
+      case "mr-call-details":
+        return <MRCallDetailsPage viewerRole="ASM" />;
       case "crm-demand":
         return <ASMCRMDemand />;
       case "my-leaves":
