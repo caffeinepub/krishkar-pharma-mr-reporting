@@ -17,8 +17,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { useState } from "react";
 
+import { useActor } from "@caffeineai/core-infrastructure";
+import { createActor } from "../../backend";
 import { MRWorkingOverview } from "../../components/MRWorkingOverview";
-import { useActor } from "../../hooks/useActor";
 import { loadXlsx } from "../../lib/xlsxLoader";
 
 function daTypeBadge(daType: string) {
@@ -107,7 +108,7 @@ function filterByDate(rows: any[], fromDate: string, toDate: string) {
 }
 
 export default function ASMTeamReports() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const enabled = !!actor && !isFetching;
 
   const [detailFrom, setDetailFrom] = useState("");

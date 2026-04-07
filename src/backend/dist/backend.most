@@ -1,0 +1,483 @@
+// Version: 1.0.0
+type AdminAnnouncement__554112045 =
+  {
+    body : Text;
+    category : AnnouncementCategory__825403416;
+    createdAt : Int;
+    createdBy : Principal;
+    id : AnnouncementId__114497973;
+    imageUrl : ?Text;
+    isActive : Bool;
+    title : Text
+  };
+type AnnouncementCategory__825403416 =
+  {#LatestProduct; #LatestScheme; #NewGiftArticle; #UpcomingProduct};
+type AnnouncementId__114497973 = Nat;
+type AreaId__923332494 = Nat;
+type Area__623379090 =
+  {
+    createdBy : Principal;
+    headquarterId : Nat;
+    id : AreaId__923332494;
+    name : Text
+  };
+type CRMDemandId__440495838 = Nat;
+type CRMDemandStatus__619825002 = {#Approved; #Pending; #Rejected};
+type CRMDemand__317332516 =
+  {
+    adminRemarks : Text;
+    amount : Nat;
+    date : Text;
+    doctorId : DoctorId__829580406;
+    doctorName : Text;
+    id : CRMDemandId__440495838;
+    notes : Text;
+    raisedBy : Principal;
+    raiserName : Text;
+    status : CRMDemandStatus__619825002
+  };
+type ChemistId__81126851 = Nat;
+type ChemistOrder__153004573 =
+  {
+    chemistId : ChemistId__81126851;
+    date : Text;
+    productId : ProductId__779996770;
+    quantity : Nat;
+    scheme : Text;
+    status : OrderStatus__838108808
+  };
+type Chemist__644361108 =
+  {
+    address : Text;
+    areaId : AreaId__923332494;
+    contact : Text;
+    createdBy : Principal;
+    id : ChemistId__81126851;
+    name : Text
+  };
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type DemandOrderStatus__662754644 = {#Approved; #Pending; #Rejected};
+type DetailingEntryV1__1005291192 =
+  {
+    date : Text;
+    doctorId : DoctorId__829580406;
+    productIds : [ProductId__779996770]
+  };
+type DetailingEntry__284872242 =
+  {
+    date : Text;
+    doctorId : DoctorId__829580406;
+    latitude : ?Float;
+    longitude : ?Float;
+    productIds : [ProductId__779996770]
+  };
+type DoctorId__829580406 = Nat;
+type Doctor__322314920 =
+  {
+    areaId : AreaId__923332494;
+    createdBy : Principal;
+    id : DoctorId__829580406;
+    name : Text;
+    qualification : Text;
+    specialization : Text;
+    station : Text
+  };
+type ExpenseEntry__804719860 =
+  {
+    daAmount : Nat;
+    daType : Text;
+    date : Text;
+    kmTraveled : Nat;
+    latitude : ?Float;
+    longitude : ?Float;
+    notes : Text;
+    taAmount : Nat;
+    workingArea : Text
+  };
+type GPSTrace__424253218 =
+  {
+    accuracy : Float;
+    createdBy : Principal;
+    latitude : Float;
+    longitude : Float;
+    timestamp : Int
+  };
+type GiftArticleId__224035598 = Nat;
+type GiftArticle__955596682 =
+  {description : Text; id : GiftArticleId__224035598; name : Text};
+type GiftDemandOrderId__379133251 = Nat;
+type GiftDemandOrderStatus__639334017 = {#Approved; #Pending; #Rejected};
+type GiftDemandOrder__1041913058 =
+  {
+    adminRemarks : Text;
+    date : Text;
+    giftArticleId : GiftArticleId__224035598;
+    giftArticleName : Text;
+    id : GiftDemandOrderId__379133251;
+    mrPrincipal : Principal;
+    notes : Text;
+    quantity : Nat;
+    status : GiftDemandOrderStatus__639334017
+  };
+type GiftDistributionId__1025010514 = Nat;
+type GiftDistribution__515963784 =
+  {
+    date : Text;
+    distributedBy : Principal;
+    doctorId : DoctorId__829580406;
+    doctorName : Text;
+    giftArticleId : GiftArticleId__224035598;
+    giftArticleName : Text;
+    id : GiftDistributionId__1025010514;
+    quantity : Nat
+  };
+type Headquarter__133254687 = {createdBy : Principal; id : Nat; name : Text};
+type HolidayId__312557816 = Nat;
+type Holiday__491596039 =
+  {
+    createdBy : Principal;
+    date : Text;
+    description : Text;
+    id : HolidayId__312557816;
+    name : Text
+  };
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type LeaveEntryV1__840821172 =
+  {
+    days : Nat;
+    fromDate : Text;
+    leaveType : LeaveType__823686114;
+    reason : Text;
+    status : LeaveStatus__819333917;
+    toDate : Text
+  };
+type LeaveEntry__96293810 =
+  {
+    days : Nat;
+    fromDate : Text;
+    latitude : ?Float;
+    leaveType : LeaveType__823686114;
+    longitude : ?Float;
+    reason : Text;
+    status : LeaveStatus__819333917;
+    toDate : Text
+  };
+type LeaveStatus__819333917 = {#Approved; #Pending; #Rejected};
+type LeaveType__823686114 =
+  {#CasualLeave; #EarnedLeave; #PrivilegeLeave; #SickLeave; #WithoutPayLeave};
+type List__415060402<T> = List__790383201<T>;
+type List__790383201<T> =
+  {
+    var blockIndex : Nat__490723111;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__490723111
+  };
+type LocationData__718802263 =
+  {
+    accuracy : Float;
+    latitude : Float;
+    longitude : Float;
+    timestamp : Int;
+    userName : Text;
+    userRole : Text
+  };
+type MRProfile__769553374 =
+  {
+    assignedAreas : [AreaId__923332494];
+    employeeCode : Text;
+    headQuarter : Text
+  };
+type ManagerAreaAssignment__849433809 = {areaIds : [AreaId__923332494]};
+type ManagerProfile__488637556 =
+  {
+    employeeCode : Text;
+    headQuarter : Text;
+    managerRole : ManagerRole__920084216;
+    name : Text
+  };
+type ManagerRole__920084216 = {#ASM; #RSM};
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type OrderStatus__838108808 = {#fulfilled; #pending};
+type ProductId__779996770 = Nat;
+type Product__853085059 =
+  {
+    code : Text;
+    createdBy : Principal;
+    id : ProductId__779996770;
+    name : Text
+  };
+type SampleAllotment__292267204 =
+  {
+    allocatedBy : Principal;
+    date : Text;
+    id : Nat;
+    productId : ProductId__779996770;
+    quantity : Nat;
+    targetPrincipal : Principal
+  };
+type SampleDemandOrder__569891929 =
+  {
+    date : Text;
+    id : Nat;
+    mrPrincipal : Principal;
+    notes : Text;
+    productId : ProductId__779996770;
+    requestedQty : Nat;
+    status : DemandOrderStatus__662754644
+  };
+type SampleEntry__394273684 =
+  {
+    date : Text;
+    doctorId : DoctorId__829580406;
+    productId : ProductId__779996770;
+    quantity : Nat
+  };
+type UserProfile__491224006 =
+  {employeeCode : Text; headQuarter : Text; name : Text};
+type UserRole__521596351 = {#admin; #guest; #user};
+type WorkingPlanId__86788682 = Nat;
+type WorkingPlan__392341331 =
+  {
+    content : Text;
+    createdAt : Int;
+    date : Text;
+    id : WorkingPlanId__86788682;
+    principalId : Principal;
+    stationType : Text;
+    workingMode : Text;
+    workingWith : ?Text
+  };
+actor {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__605269027<Principal, UserRole__521596351>
+    };
+  stable announcementViews :
+    {var root : Node__46230540<Text, Bool>; var size : Nat__490723111};
+  stable announcements :
+    {
+      var root :
+        Node__46230540<AnnouncementId__114497973,
+                        AdminAnnouncement__554112045>;
+      var size : Nat__490723111
+    };
+  stable areas :
+    {
+      var root : Node__46230540<AreaId__923332494, Area__623379090>;
+      var size : Nat__490723111
+    };
+  stable chemistOrders :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<ChemistOrder__153004573>>;
+      var size : Nat__490723111
+    };
+  stable chemists :
+    {
+      var root : Node__46230540<ChemistId__81126851, Chemist__644361108>;
+      var size : Nat__490723111
+    };
+  stable crmDemands :
+    {
+      var root : Node__46230540<CRMDemandId__440495838, CRMDemand__317332516>;
+      var size : Nat__490723111
+    };
+  stable detailingEntries :
+    {
+      var root :
+        Node__46230540<Principal,
+                        List__415060402<DetailingEntryV1__1005291192>>;
+      var size : Nat__490723111
+    };
+  stable detailingEntriesV2 :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<DetailingEntry__284872242>>;
+      var size : Nat__490723111
+    };
+  stable doctorDOBs :
+    {
+      var root : Node__46230540<DoctorId__829580406, Text>;
+      var size : Nat__490723111
+    };
+  stable doctorMobileNumbers :
+    {
+      var root : Node__46230540<DoctorId__829580406, Text>;
+      var size : Nat__490723111
+    };
+  stable doctors :
+    {
+      var root : Node__46230540<DoctorId__829580406, Doctor__322314920>;
+      var size : Nat__490723111
+    };
+  stable expenseEntries :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<ExpenseEntry__804719860>>;
+      var size : Nat__490723111
+    };
+  stable geoTraces :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<GPSTrace__424253218>>;
+      var size : Nat__490723111
+    };
+  stable giftArticles :
+    {
+      var root :
+        Node__46230540<GiftArticleId__224035598, GiftArticle__955596682>;
+      var size : Nat__490723111
+    };
+  stable giftDemandOrders :
+    {
+      var root :
+        Node__46230540<GiftDemandOrderId__379133251,
+                        GiftDemandOrder__1041913058>;
+      var size : Nat__490723111
+    };
+  stable giftDistributions :
+    {
+      var root :
+        Node__46230540<GiftDistributionId__1025010514,
+                        GiftDistribution__515963784>;
+      var size : Nat__490723111
+    };
+  stable headquarters :
+    {
+      var root : Node__46230540<Nat, Headquarter__133254687>;
+      var size : Nat__490723111
+    };
+  stable holidays :
+    {
+      var root : Node__46230540<HolidayId__312557816, Holiday__491596039>;
+      var size : Nat__490723111
+    };
+  stable var idCounters :
+    {
+      nextAreaId : Nat;
+      nextCRMDemandId : Nat;
+      nextChemistId : Nat;
+      nextDemandOrderId : Nat;
+      nextDoctorId : Nat;
+      nextGiftArticleId : Nat;
+      nextGiftDemandOrderId : Nat;
+      nextGiftDistributionId : Nat;
+      nextHeadquarterId : Nat;
+      nextProductId : Nat;
+      nextSampleAllotmentId : Nat;
+      nextWorkingPlanId : Nat
+    };
+  stable leaveEntries :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<LeaveEntryV1__840821172>>;
+      var size : Nat__490723111
+    };
+  stable leaveEntriesV2 :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<LeaveEntry__96293810>>;
+      var size : Nat__490723111
+    };
+  stable locations :
+    {
+      var root : Node__46230540<Principal, LocationData__718802263>;
+      var size : Nat__490723111
+    };
+  stable managerAreaAssignments :
+    {
+      var root : Node__46230540<Principal, ManagerAreaAssignment__849433809>;
+      var size : Nat__490723111
+    };
+  stable managerProfiles :
+    {
+      var root : Node__46230540<Principal, ManagerProfile__488637556>;
+      var size : Nat__490723111
+    };
+  stable mrProfiles :
+    {
+      var root : Node__46230540<Principal, MRProfile__769553374>;
+      var size : Nat__490723111
+    };
+  stable var nextAnnouncementId : Nat;
+  stable var nextHolidayId : Nat;
+  stable products :
+    {
+      var root : Node__46230540<ProductId__779996770, Product__853085059>;
+      var size : Nat__490723111
+    };
+  stable sampleAllotments :
+    {
+      var root : Node__46230540<Nat, SampleAllotment__292267204>;
+      var size : Nat__490723111
+    };
+  stable sampleDemandOrders :
+    {
+      var root : Node__46230540<Nat, SampleDemandOrder__569891929>;
+      var size : Nat__490723111
+    };
+  stable sampleEntries :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<SampleEntry__394273684>>;
+      var size : Nat__490723111
+    };
+  stable var tadaSettings :
+    {
+      asmDaDefault : Nat;
+      asmTaPerKm : Nat;
+      mrDaDefault : Nat;
+      mrTaPerKm : Nat;
+      rsmDaDefault : Nat;
+      rsmTaPerKm : Nat
+    };
+  stable var tadaSettingsV2 :
+    {
+      asmDaHQ : Nat;
+      asmDaOutStation : Nat;
+      asmTaPerKm : Nat;
+      mrDaHQ : Nat;
+      mrDaOutStation : Nat;
+      mrTaPerKm : Nat;
+      rsmDaHQ : Nat;
+      rsmDaOutStation : Nat;
+      rsmTaPerKm : Nat
+    };
+  stable var tadaSettingsV3 :
+    {
+      asmDaExStation : Nat;
+      asmDaHQ : Nat;
+      asmDaOutStation : Nat;
+      asmTaPerKm : Nat;
+      mrDaExStation : Nat;
+      mrDaHQ : Nat;
+      mrDaOutStation : Nat;
+      mrTaPerKm : Nat;
+      rsmDaExStation : Nat;
+      rsmDaHQ : Nat;
+      rsmDaOutStation : Nat;
+      rsmTaPerKm : Nat
+    };
+  stable userProfiles :
+    {
+      var root : Node__46230540<Principal, UserProfile__491224006>;
+      var size : Nat__490723111
+    };
+  stable workingPlans :
+    {
+      var root :
+        Node__46230540<WorkingPlanId__86788682, WorkingPlan__392341331>;
+      var size : Nat__490723111
+    }
+};

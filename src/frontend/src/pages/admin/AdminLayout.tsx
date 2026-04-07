@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import {
   BarChart2,
   Building2,
@@ -28,7 +29,6 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { useGPSUpdater } from "../../hooks/useGPSUpdater";
-import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 import MRCallDetailsPage from "../MRCallDetailsPage";
 import AdminAnnouncements from "./AdminAnnouncements";

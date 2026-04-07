@@ -29,15 +29,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { createActor } from "../../backend";
 import type { Headquarter } from "../../backend.d";
-import { useActor } from "../../hooks/useActor";
 
 export default function AdminHeadquarters() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [addOpen, setAddOpen] = useState(false);

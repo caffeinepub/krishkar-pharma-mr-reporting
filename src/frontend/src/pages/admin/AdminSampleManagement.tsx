@@ -19,11 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, FlaskConical, Loader2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
 
 function truncatePrincipal(p: string) {
   if (p.length <= 16) return p;
@@ -53,7 +54,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function AdminSampleManagement() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [allotForm, setAllotForm] = useState({

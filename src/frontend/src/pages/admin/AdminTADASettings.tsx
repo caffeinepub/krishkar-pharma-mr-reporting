@@ -2,10 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { createActor } from "../../backend";
 import type { TADASettingsV3 } from "../../backend.d";
-import { useActor } from "../../hooks/useActor";
 
 const TA_SCALE = 100;
 
@@ -67,7 +68,7 @@ function fromForm(f: SettingsForm): TADASettingsV3 {
 }
 
 export default function AdminTADASettingsV3() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const [form, setForm] = useState<SettingsForm>(DEFAULT_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

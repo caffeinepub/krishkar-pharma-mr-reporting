@@ -43,6 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -57,8 +58,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { createActor } from "../../backend";
 import type { UserRole } from "../../backend.d";
-import { useActor } from "../../hooks/useActor";
 
 interface MRProfileForm {
   principalStr: string;
@@ -75,7 +76,7 @@ const emptyMRForm: MRProfileForm = {
 };
 
 export default function MRManagement() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [principalInput, setPrincipalInput] = useState("");

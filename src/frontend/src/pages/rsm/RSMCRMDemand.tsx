@@ -20,12 +20,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IndianRupee, Loader2, PlusCircle, Search, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useActor } from "../../hooks/useActor";
-import { useInternetIdentity } from "../../hooks/useInternetIdentity";
+import { createActor } from "../../backend";
 
 function StatusBadge({ status }: { status: string }) {
   const s = String(status);
@@ -49,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function RSMCRMDemand() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const { identity } = useInternetIdentity();
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];

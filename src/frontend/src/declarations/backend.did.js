@@ -21,6 +21,14 @@ export const WorkingPlanInput = IDL.Record({
   'stationType' : IDL.Text,
 });
 export const WorkingPlanId = IDL.Nat;
+export const AnnouncementCategory = IDL.Variant({
+  'NewGiftArticle' : IDL.Null,
+  'UpcomingProduct' : IDL.Null,
+  'LatestProduct' : IDL.Null,
+  'LatestScheme' : IDL.Null,
+});
+export const AnnouncementId = IDL.Nat;
+export const HolidayId = IDL.Nat;
 export const WorkingPlan = IDL.Record({
   'id' : WorkingPlanId,
   'content' : IDL.Text,
@@ -31,33 +39,6 @@ export const WorkingPlan = IDL.Record({
   'stationType' : IDL.Text,
   'principalId' : IDL.Principal,
 });
-export const HolidayId = IDL.Nat;
-export const Holiday = IDL.Record({
-  'id' : HolidayId,
-  'name' : IDL.Text,
-  'date' : IDL.Text,
-  'description' : IDL.Text,
-  'createdBy' : IDL.Principal,
-});
-
-  const AnnouncementCategory = IDL.Variant({
-    'LatestProduct' : IDL.Null,
-    'UpcomingProduct' : IDL.Null,
-    'LatestScheme' : IDL.Null,
-    'NewGiftArticle' : IDL.Null,
-  });
-  const AnnouncementId = IDL.Nat;
-  const AdminAnnouncement = IDL.Record({
-    'id' : AnnouncementId,
-    'title' : IDL.Text,
-    'body' : IDL.Text,
-    'category' : AnnouncementCategory,
-    'createdAt' : IDL.Int,
-    'isActive' : IDL.Bool,
-    'createdBy' : IDL.Principal,
-    'imageUrl' : IDL.Opt(IDL.Text),
-  });
-
 export const TADASettingsV3 = IDL.Record({
   'mrTaPerKm' : IDL.Nat,
   'mrDaHQ' : IDL.Nat,
@@ -73,6 +54,11 @@ export const TADASettingsV3 = IDL.Record({
   'mrDaOutStation' : IDL.Nat,
 });
 export const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
+export const UserProfile = IDL.Record({
+  'employeeCode' : IDL.Text,
+  'name' : IDL.Text,
+  'headQuarter' : IDL.Text,
+});
 export const LeaveType = IDL.Variant({
   'WithoutPayLeave' : IDL.Null,
   'CasualLeave' : IDL.Null,
@@ -86,11 +72,23 @@ export const UserRole = IDL.Variant({
   'guest' : IDL.Null,
 });
 export const DoctorInput = IDL.Record({
+  'dob' : IDL.Opt(IDL.Text),
   'station' : IDL.Text,
   'name' : IDL.Text,
+  'mobileNumber' : IDL.Opt(IDL.Text),
   'specialization' : IDL.Text,
   'areaId' : AreaId,
   'qualification' : IDL.Text,
+});
+export const AdminAnnouncement = IDL.Record({
+  'id' : AnnouncementId,
+  'title' : IDL.Text,
+  'body' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'createdBy' : IDL.Principal,
+  'isActive' : IDL.Bool,
+  'imageUrl' : IDL.Opt(IDL.Text),
+  'category' : AnnouncementCategory,
 });
 export const LocationData = IDL.Record({
   'latitude' : IDL.Float64,
@@ -139,13 +137,13 @@ export const Chemist = IDL.Record({
   'address' : IDL.Text,
   'areaId' : AreaId,
 });
-export const Doctor = IDL.Record({
+export const DoctorExtended = IDL.Record({
   'id' : DoctorId,
+  'dob' : IDL.Opt(IDL.Text),
   'station' : IDL.Text,
   'name' : IDL.Text,
-  'mobileNumber' : IDL.Opt(IDL.Text),
-  'dob' : IDL.Opt(IDL.Text),
   'createdBy' : IDL.Principal,
+  'mobileNumber' : IDL.Opt(IDL.Text),
   'specialization' : IDL.Text,
   'areaId' : AreaId,
   'qualification' : IDL.Text,
@@ -188,6 +186,13 @@ export const Headquarter = IDL.Record({
   'name' : IDL.Text,
   'createdBy' : IDL.Principal,
 });
+export const Holiday = IDL.Record({
+  'id' : HolidayId,
+  'date' : IDL.Text,
+  'name' : IDL.Text,
+  'createdBy' : IDL.Principal,
+  'description' : IDL.Text,
+});
 export const LeaveStatus = IDL.Variant({
   'Approved' : IDL.Null,
   'Rejected' : IDL.Null,
@@ -195,13 +200,13 @@ export const LeaveStatus = IDL.Variant({
 });
 export const LeaveEntry = IDL.Record({
   'status' : LeaveStatus,
+  'latitude' : IDL.Opt(IDL.Float64),
   'days' : IDL.Nat,
   'toDate' : IDL.Text,
+  'longitude' : IDL.Opt(IDL.Float64),
   'fromDate' : IDL.Text,
   'leaveType' : LeaveType,
   'reason' : IDL.Text,
-  'latitude' : IDL.Opt(IDL.Float64),
-  'longitude' : IDL.Opt(IDL.Float64),
 });
 export const MRProfile = IDL.Record({
   'employeeCode' : IDL.Text,
@@ -242,11 +247,6 @@ export const SampleDemandOrder = IDL.Record({
   'requestedQty' : IDL.Nat,
   'notes' : IDL.Text,
 });
-export const UserProfile = IDL.Record({
-  'employeeCode' : IDL.Text,
-  'name' : IDL.Text,
-  'headQuarter' : IDL.Text,
-});
 export const OrderStatus = IDL.Variant({
   'pending' : IDL.Null,
   'fulfilled' : IDL.Null,
@@ -260,11 +260,25 @@ export const ChemistOrder = IDL.Record({
   'quantity' : IDL.Nat,
 });
 export const DetailingEntry = IDL.Record({
+  'latitude' : IDL.Opt(IDL.Float64),
   'doctorId' : DoctorId,
   'productIds' : IDL.Vec(ProductId),
   'date' : IDL.Text,
-  'latitude' : IDL.Opt(IDL.Float64),
   'longitude' : IDL.Opt(IDL.Float64),
+});
+export const SampleSummaryItem = IDL.Record({
+  'productId' : ProductId,
+  'quantity' : IDL.Nat,
+});
+export const GiftSummaryItem = IDL.Record({
+  'giftArticleName' : IDL.Text,
+  'quantity' : IDL.Nat,
+});
+export const DoctorCallSummary = IDL.Record({
+  'productIds' : IDL.Vec(ProductId),
+  'date' : IDL.Text,
+  'samples' : IDL.Vec(SampleSummaryItem),
+  'gifts' : IDL.Vec(GiftSummaryItem),
 });
 export const ExpenseEntry = IDL.Record({
   'latitude' : IDL.Opt(IDL.Float64),
@@ -294,6 +308,14 @@ export const SampleBalance = IDL.Record({
   'productName' : IDL.Text,
   'totalAllotted' : IDL.Nat,
 });
+export const RecentDoctorCallEntry = IDL.Record({
+  'doctorId' : DoctorId,
+  'productIds' : IDL.Vec(ProductId),
+  'date' : IDL.Text,
+  'samples' : IDL.Vec(SampleSummaryItem),
+  'gifts' : IDL.Vec(GiftSummaryItem),
+  'areaId' : AreaId,
+});
 export const SampleEntry = IDL.Record({
   'doctorId' : DoctorId,
   'date' : IDL.Text,
@@ -315,7 +337,15 @@ export const idlService = IDL.Service({
       [],
     ),
   'addDoctor' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        AreaId,
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+      ],
       [DoctorId],
       [],
     ),
@@ -339,6 +369,12 @@ export const idlService = IDL.Service({
   'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
   'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
   'addWorkingPlan' : IDL.Func([WorkingPlanInput], [WorkingPlanId], []),
+  'adminAddAnnouncement' : IDL.Func(
+      [IDL.Text, IDL.Text, AnnouncementCategory, IDL.Opt(IDL.Text)],
+      [AnnouncementId],
+      [],
+    ),
+  'adminAddHoliday' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [HolidayId], []),
   'adminAllotSamples' : IDL.Func(
       [IDL.Principal, ProductId, IDL.Nat, IDL.Text],
       [],
@@ -354,6 +390,8 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'adminDeleteAnnouncement' : IDL.Func([AnnouncementId], [IDL.Bool], []),
+  'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
   'adminGetAllWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
   'adminGetTADASettings' : IDL.Func([], [TADASettingsV3], ['query']),
   'adminResetAllReportData' : IDL.Func([], [], []),
@@ -362,9 +400,35 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'adminSaveUserProfile' : IDL.Func([IDL.Principal, UserProfile], [], []),
   'adminSetTADASettings' : IDL.Func([TADASettingsV3], [], []),
+  'adminUpdateAnnouncement' : IDL.Func(
+      [
+        AnnouncementId,
+        IDL.Text,
+        IDL.Text,
+        AnnouncementCategory,
+        IDL.Bool,
+        IDL.Opt(IDL.Text),
+      ],
+      [IDL.Bool],
+      [],
+    ),
+  'adminUpdateHoliday' : IDL.Func(
+      [HolidayId, IDL.Text, IDL.Text, IDL.Text],
+      [],
+      [],
+    ),
   'applyLeave' : IDL.Func(
-      [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Opt(IDL.Float64), IDL.Opt(IDL.Float64)],
+      [
+        LeaveType,
+        IDL.Text,
+        IDL.Text,
+        IDL.Nat,
+        IDL.Text,
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+      ],
       [],
       [],
     ),
@@ -384,16 +448,22 @@ export const idlService = IDL.Service({
   'deleteProduct' : IDL.Func([ProductId], [], []),
   'deleteWorkingPlan' : IDL.Func([WorkingPlanId], [], []),
   'emergencyRestoreAdmin' : IDL.Func([], [], []),
+  'getActiveAnnouncements' : IDL.Func(
+      [],
+      [IDL.Vec(AdminAnnouncement)],
+      ['query'],
+    ),
   'getActiveUserLocations' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, LocationData))],
       ['query'],
     ),
   'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
+  'getAllAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
   'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
   'getAllCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
   'getAllChemists' : IDL.Func([], [IDL.Vec(Chemist)], ['query']),
-  'getAllDoctors' : IDL.Func([], [IDL.Vec(Doctor)], ['query']),
+  'getAllDoctors' : IDL.Func([], [IDL.Vec(DoctorExtended)], ['query']),
   'getAllGiftArticles' : IDL.Func([], [IDL.Vec(GiftArticle)], ['query']),
   'getAllGiftDemandOrders' : IDL.Func(
       [],
@@ -406,6 +476,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getAllHeadquarters' : IDL.Func([], [IDL.Vec(Headquarter)], ['query']),
+  'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
   'getAllLeaveApplications' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(LeaveEntry)))],
@@ -463,7 +534,12 @@ export const idlService = IDL.Service({
   'getChemistOrders' : IDL.Func([], [IDL.Vec(ChemistOrder)], ['query']),
   'getChemistsByArea' : IDL.Func([AreaId], [IDL.Vec(Chemist)], ['query']),
   'getDetailingEntries' : IDL.Func([], [IDL.Vec(DetailingEntry)], ['query']),
-  'getDoctorsByArea' : IDL.Func([AreaId], [IDL.Vec(Doctor)], ['query']),
+  'getDoctorCallHistory' : IDL.Func(
+      [DoctorId],
+      [IDL.Vec(DoctorCallSummary)],
+      ['query'],
+    ),
+  'getDoctorsByArea' : IDL.Func([AreaId], [IDL.Vec(DoctorExtended)], ['query']),
   'getExpenseEntries' : IDL.Func([], [IDL.Vec(ExpenseEntry)], ['query']),
   'getGPSTraces' : IDL.Func([IDL.Principal], [IDL.Vec(GPSTrace)], ['query']),
   'getLatestLocation' : IDL.Func(
@@ -494,6 +570,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getMyWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
+  'getRecentDoctorCalls' : IDL.Func(
+      [IDL.Nat],
+      [IDL.Vec(RecentDoctorCallEntry)],
+      ['query'],
+    ),
   'getSampleEntries' : IDL.Func([], [IDL.Vec(SampleEntry)], ['query']),
   'getTeamDetailingEntries' : IDL.Func(
       [],
@@ -520,9 +601,20 @@ export const idlService = IDL.Service({
       [IDL.Vec(GPSTrace)],
       ['query'],
     ),
+  'hasUserSeenAnnouncementsToday' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   'isAdminInitialized' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId), IDL.Opt(IDL.Float64), IDL.Opt(IDL.Float64)], [], []),
+  'logDetailing' : IDL.Func(
+      [
+        DoctorId,
+        IDL.Text,
+        IDL.Vec(ProductId),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+      ],
+      [],
+      [],
+    ),
   'logGiftDistribution' : IDL.Func(
       [DoctorId, IDL.Text, GiftArticleId, IDL.Text, IDL.Nat, IDL.Text],
       [],
@@ -544,6 +636,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'recordUserAnnouncementView' : IDL.Func([IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveManagerProfile' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text, ManagerRole],
@@ -557,7 +650,16 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateDoctor' : IDL.Func(
-      [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+      [
+        DoctorId,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        AreaId,
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+      ],
       [],
       [],
     ),
@@ -576,18 +678,6 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateProduct' : IDL.Func([ProductId, IDL.Text, IDL.Text], [], []),
-    'adminAddHoliday' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [HolidayId], []),
-    'adminUpdateHoliday' : IDL.Func([HolidayId, IDL.Text, IDL.Text, IDL.Text], [], []),
-    'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
-    'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
-    'adminAddAnnouncement' : IDL.Func([IDL.Text, IDL.Text, AnnouncementCategory, IDL.Opt(IDL.Text)], [AnnouncementId], []),
-    'adminUpdateAnnouncement' : IDL.Func([AnnouncementId, IDL.Text, IDL.Text, AnnouncementCategory, IDL.Bool, IDL.Opt(IDL.Text)], [IDL.Bool], []),
-    'adminDeleteAnnouncement' : IDL.Func([AnnouncementId], [IDL.Bool], []),
-    'getActiveAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
-    'getAllAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
-    'recordUserAnnouncementView' : IDL.Func([IDL.Text], [], []),
-    'hasUserSeenAnnouncementsToday' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
-
   'updateSampleDemandOrderStatus' : IDL.Func(
       [IDL.Nat, DemandOrderStatus],
       [],
@@ -597,29 +687,6 @@ export const idlService = IDL.Service({
 
 export const idlInitArgs = [];
 
-
-export const SampleSummaryItem = IDL.Record({
-  'productId' : ProductId,
-  'quantity' : IDL.Nat,
-});
-export const GiftSummaryItem = IDL.Record({
-  'giftArticleName' : IDL.Text,
-  'quantity' : IDL.Nat,
-});
-export const DoctorCallSummary = IDL.Record({
-  'date' : IDL.Text,
-  'productIds' : IDL.Vec(ProductId),
-  'samples' : IDL.Vec(SampleSummaryItem),
-  'gifts' : IDL.Vec(GiftSummaryItem),
-});
-export const RecentDoctorCallEntry = IDL.Record({
-  'date' : IDL.Text,
-  'doctorId' : DoctorId,
-  'areaId' : AreaId,
-  'productIds' : IDL.Vec(ProductId),
-  'samples' : IDL.Vec(SampleSummaryItem),
-  'gifts' : IDL.Vec(GiftSummaryItem),
-});
 export const idlFactory = ({ IDL }) => {
   const AreaId = IDL.Nat;
   const ChemistId = IDL.Nat;
@@ -634,6 +701,14 @@ export const idlFactory = ({ IDL }) => {
     'stationType' : IDL.Text,
   });
   const WorkingPlanId = IDL.Nat;
+  const AnnouncementCategory = IDL.Variant({
+    'NewGiftArticle' : IDL.Null,
+    'UpcomingProduct' : IDL.Null,
+    'LatestProduct' : IDL.Null,
+    'LatestScheme' : IDL.Null,
+  });
+  const AnnouncementId = IDL.Nat;
+  const HolidayId = IDL.Nat;
   const WorkingPlan = IDL.Record({
     'id' : WorkingPlanId,
     'content' : IDL.Text,
@@ -643,31 +718,6 @@ export const idlFactory = ({ IDL }) => {
     'workingWith' : IDL.Opt(IDL.Text),
     'stationType' : IDL.Text,
     'principalId' : IDL.Principal,
-  });
-  const HolidayId = IDL.Nat;
-  const Holiday = IDL.Record({
-    'id' : HolidayId,
-    'name' : IDL.Text,
-    'date' : IDL.Text,
-    'description' : IDL.Text,
-    'createdBy' : IDL.Principal,
-  });
-  const AnnouncementCategory = IDL.Variant({
-    'LatestProduct' : IDL.Null,
-    'UpcomingProduct' : IDL.Null,
-    'LatestScheme' : IDL.Null,
-    'NewGiftArticle' : IDL.Null,
-  });
-  const AnnouncementId = IDL.Nat;
-  const AdminAnnouncement = IDL.Record({
-    'id' : AnnouncementId,
-    'title' : IDL.Text,
-    'body' : IDL.Text,
-    'category' : AnnouncementCategory,
-    'createdAt' : IDL.Int,
-    'isActive' : IDL.Bool,
-    'createdBy' : IDL.Principal,
-    'imageUrl' : IDL.Opt(IDL.Text),
   });
   const TADASettingsV3 = IDL.Record({
     'mrTaPerKm' : IDL.Nat,
@@ -684,6 +734,11 @@ export const idlFactory = ({ IDL }) => {
     'mrDaOutStation' : IDL.Nat,
   });
   const ManagerRole = IDL.Variant({ 'ASM' : IDL.Null, 'RSM' : IDL.Null });
+  const UserProfile = IDL.Record({
+    'employeeCode' : IDL.Text,
+    'name' : IDL.Text,
+    'headQuarter' : IDL.Text,
+  });
   const LeaveType = IDL.Variant({
     'WithoutPayLeave' : IDL.Null,
     'CasualLeave' : IDL.Null,
@@ -697,11 +752,23 @@ export const idlFactory = ({ IDL }) => {
     'guest' : IDL.Null,
   });
   const DoctorInput = IDL.Record({
+    'dob' : IDL.Opt(IDL.Text),
     'station' : IDL.Text,
     'name' : IDL.Text,
+    'mobileNumber' : IDL.Opt(IDL.Text),
     'specialization' : IDL.Text,
     'areaId' : AreaId,
     'qualification' : IDL.Text,
+  });
+  const AdminAnnouncement = IDL.Record({
+    'id' : AnnouncementId,
+    'title' : IDL.Text,
+    'body' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'createdBy' : IDL.Principal,
+    'isActive' : IDL.Bool,
+    'imageUrl' : IDL.Opt(IDL.Text),
+    'category' : AnnouncementCategory,
   });
   const LocationData = IDL.Record({
     'latitude' : IDL.Float64,
@@ -750,12 +817,13 @@ export const idlFactory = ({ IDL }) => {
     'address' : IDL.Text,
     'areaId' : AreaId,
   });
-  const Doctor = IDL.Record({
+  const DoctorExtended = IDL.Record({
     'id' : DoctorId,
+    'dob' : IDL.Opt(IDL.Text),
     'station' : IDL.Text,
     'name' : IDL.Text,
-    'mobileNumber' : IDL.Opt(IDL.Text),
     'createdBy' : IDL.Principal,
+    'mobileNumber' : IDL.Opt(IDL.Text),
     'specialization' : IDL.Text,
     'areaId' : AreaId,
     'qualification' : IDL.Text,
@@ -798,6 +866,13 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'createdBy' : IDL.Principal,
   });
+  const Holiday = IDL.Record({
+    'id' : HolidayId,
+    'date' : IDL.Text,
+    'name' : IDL.Text,
+    'createdBy' : IDL.Principal,
+    'description' : IDL.Text,
+  });
   const LeaveStatus = IDL.Variant({
     'Approved' : IDL.Null,
     'Rejected' : IDL.Null,
@@ -805,13 +880,13 @@ export const idlFactory = ({ IDL }) => {
   });
   const LeaveEntry = IDL.Record({
     'status' : LeaveStatus,
+    'latitude' : IDL.Opt(IDL.Float64),
     'days' : IDL.Nat,
     'toDate' : IDL.Text,
+    'longitude' : IDL.Opt(IDL.Float64),
     'fromDate' : IDL.Text,
     'leaveType' : LeaveType,
     'reason' : IDL.Text,
-    'latitude' : IDL.Opt(IDL.Float64),
-    'longitude' : IDL.Opt(IDL.Float64),
   });
   const MRProfile = IDL.Record({
     'employeeCode' : IDL.Text,
@@ -852,11 +927,6 @@ export const idlFactory = ({ IDL }) => {
     'requestedQty' : IDL.Nat,
     'notes' : IDL.Text,
   });
-  const UserProfile = IDL.Record({
-    'employeeCode' : IDL.Text,
-    'name' : IDL.Text,
-    'headQuarter' : IDL.Text,
-  });
   const OrderStatus = IDL.Variant({
     'pending' : IDL.Null,
     'fulfilled' : IDL.Null,
@@ -870,11 +940,25 @@ export const idlFactory = ({ IDL }) => {
     'quantity' : IDL.Nat,
   });
   const DetailingEntry = IDL.Record({
+    'latitude' : IDL.Opt(IDL.Float64),
     'doctorId' : DoctorId,
     'productIds' : IDL.Vec(ProductId),
     'date' : IDL.Text,
-    'latitude' : IDL.Opt(IDL.Float64),
     'longitude' : IDL.Opt(IDL.Float64),
+  });
+  const SampleSummaryItem = IDL.Record({
+    'productId' : ProductId,
+    'quantity' : IDL.Nat,
+  });
+  const GiftSummaryItem = IDL.Record({
+    'giftArticleName' : IDL.Text,
+    'quantity' : IDL.Nat,
+  });
+  const DoctorCallSummary = IDL.Record({
+    'productIds' : IDL.Vec(ProductId),
+    'date' : IDL.Text,
+    'samples' : IDL.Vec(SampleSummaryItem),
+    'gifts' : IDL.Vec(GiftSummaryItem),
   });
   const ExpenseEntry = IDL.Record({
     'latitude' : IDL.Opt(IDL.Float64),
@@ -902,6 +986,14 @@ export const idlFactory = ({ IDL }) => {
     'productName' : IDL.Text,
     'totalAllotted' : IDL.Nat,
   });
+  const RecentDoctorCallEntry = IDL.Record({
+    'doctorId' : DoctorId,
+    'productIds' : IDL.Vec(ProductId),
+    'date' : IDL.Text,
+    'samples' : IDL.Vec(SampleSummaryItem),
+    'gifts' : IDL.Vec(GiftSummaryItem),
+    'areaId' : AreaId,
+  });
   const SampleEntry = IDL.Record({
     'doctorId' : DoctorId,
     'date' : IDL.Text,
@@ -923,7 +1015,15 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'addDoctor' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text)],
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          AreaId,
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+        ],
         [DoctorId],
         [],
       ),
@@ -947,6 +1047,16 @@ export const idlFactory = ({ IDL }) => {
     'addHeadquarter' : IDL.Func([IDL.Text], [IDL.Nat], []),
     'addProduct' : IDL.Func([IDL.Text, IDL.Text], [ProductId], []),
     'addWorkingPlan' : IDL.Func([WorkingPlanInput], [WorkingPlanId], []),
+    'adminAddAnnouncement' : IDL.Func(
+        [IDL.Text, IDL.Text, AnnouncementCategory, IDL.Opt(IDL.Text)],
+        [AnnouncementId],
+        [],
+      ),
+    'adminAddHoliday' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [HolidayId],
+        [],
+      ),
     'adminAllotSamples' : IDL.Func(
         [IDL.Principal, ProductId, IDL.Nat, IDL.Text],
         [],
@@ -962,6 +1072,8 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'adminDeleteAnnouncement' : IDL.Func([AnnouncementId], [IDL.Bool], []),
+    'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
     'adminGetAllWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
     'adminGetTADASettings' : IDL.Func([], [TADASettingsV3], ['query']),
     'adminResetAllReportData' : IDL.Func([], [], []),
@@ -970,9 +1082,35 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'adminSaveUserProfile' : IDL.Func([IDL.Principal, UserProfile], [], []),
     'adminSetTADASettings' : IDL.Func([TADASettingsV3], [], []),
+    'adminUpdateAnnouncement' : IDL.Func(
+        [
+          AnnouncementId,
+          IDL.Text,
+          IDL.Text,
+          AnnouncementCategory,
+          IDL.Bool,
+          IDL.Opt(IDL.Text),
+        ],
+        [IDL.Bool],
+        [],
+      ),
+    'adminUpdateHoliday' : IDL.Func(
+        [HolidayId, IDL.Text, IDL.Text, IDL.Text],
+        [],
+        [],
+      ),
     'applyLeave' : IDL.Func(
-        [LeaveType, IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Opt(IDL.Float64), IDL.Opt(IDL.Float64)],
+        [
+          LeaveType,
+          IDL.Text,
+          IDL.Text,
+          IDL.Nat,
+          IDL.Text,
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+        ],
         [],
         [],
       ),
@@ -996,16 +1134,26 @@ export const idlFactory = ({ IDL }) => {
     'deleteProduct' : IDL.Func([ProductId], [], []),
     'deleteWorkingPlan' : IDL.Func([WorkingPlanId], [], []),
     'emergencyRestoreAdmin' : IDL.Func([], [], []),
+    'getActiveAnnouncements' : IDL.Func(
+        [],
+        [IDL.Vec(AdminAnnouncement)],
+        ['query'],
+      ),
     'getActiveUserLocations' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, LocationData))],
         ['query'],
       ),
     'getActivitySummary' : IDL.Func([IDL.Text], [ActivitySummary], ['query']),
+    'getAllAnnouncements' : IDL.Func(
+        [],
+        [IDL.Vec(AdminAnnouncement)],
+        ['query'],
+      ),
     'getAllAreas' : IDL.Func([], [IDL.Vec(Area)], ['query']),
     'getAllCRMDemands' : IDL.Func([], [IDL.Vec(CRMDemand)], ['query']),
     'getAllChemists' : IDL.Func([], [IDL.Vec(Chemist)], ['query']),
-    'getAllDoctors' : IDL.Func([], [IDL.Vec(Doctor)], ['query']),
+    'getAllDoctors' : IDL.Func([], [IDL.Vec(DoctorExtended)], ['query']),
     'getAllGiftArticles' : IDL.Func([], [IDL.Vec(GiftArticle)], ['query']),
     'getAllGiftDemandOrders' : IDL.Func(
         [],
@@ -1018,6 +1166,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getAllHeadquarters' : IDL.Func([], [IDL.Vec(Headquarter)], ['query']),
+    'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
     'getAllLeaveApplications' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(LeaveEntry)))],
@@ -1075,7 +1224,16 @@ export const idlFactory = ({ IDL }) => {
     'getChemistOrders' : IDL.Func([], [IDL.Vec(ChemistOrder)], ['query']),
     'getChemistsByArea' : IDL.Func([AreaId], [IDL.Vec(Chemist)], ['query']),
     'getDetailingEntries' : IDL.Func([], [IDL.Vec(DetailingEntry)], ['query']),
-    'getDoctorsByArea' : IDL.Func([AreaId], [IDL.Vec(Doctor)], ['query']),
+    'getDoctorCallHistory' : IDL.Func(
+        [DoctorId],
+        [IDL.Vec(DoctorCallSummary)],
+        ['query'],
+      ),
+    'getDoctorsByArea' : IDL.Func(
+        [AreaId],
+        [IDL.Vec(DoctorExtended)],
+        ['query'],
+      ),
     'getExpenseEntries' : IDL.Func([], [IDL.Vec(ExpenseEntry)], ['query']),
     'getGPSTraces' : IDL.Func([IDL.Principal], [IDL.Vec(GPSTrace)], ['query']),
     'getLatestLocation' : IDL.Func(
@@ -1110,6 +1268,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getMyWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
+    'getRecentDoctorCalls' : IDL.Func(
+        [IDL.Nat],
+        [IDL.Vec(RecentDoctorCallEntry)],
+        ['query'],
+      ),
     'getSampleEntries' : IDL.Func([], [IDL.Vec(SampleEntry)], ['query']),
     'getTeamDetailingEntries' : IDL.Func(
         [],
@@ -1136,9 +1299,24 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(GPSTrace)],
         ['query'],
       ),
+    'hasUserSeenAnnouncementsToday' : IDL.Func(
+        [IDL.Text],
+        [IDL.Bool],
+        ['query'],
+      ),
     'isAdminInitialized' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'logDetailing' : IDL.Func([DoctorId, IDL.Text, IDL.Vec(ProductId), IDL.Opt(IDL.Float64), IDL.Opt(IDL.Float64)], [], []),
+    'logDetailing' : IDL.Func(
+        [
+          DoctorId,
+          IDL.Text,
+          IDL.Vec(ProductId),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+        ],
+        [],
+        [],
+      ),
     'logGiftDistribution' : IDL.Func(
         [DoctorId, IDL.Text, GiftArticleId, IDL.Text, IDL.Nat, IDL.Text],
         [],
@@ -1160,6 +1338,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'recordUserAnnouncementView' : IDL.Func([IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'saveManagerProfile' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, ManagerRole],
@@ -1173,7 +1352,16 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateDoctor' : IDL.Func(
-        [DoctorId, IDL.Text, IDL.Text, IDL.Text, IDL.Text, AreaId, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+        [
+          DoctorId,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          AreaId,
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+        ],
         [],
         [],
       ),
@@ -1196,27 +1384,6 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateProduct' : IDL.Func([ProductId, IDL.Text, IDL.Text], [], []),
-    'adminAddHoliday' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [HolidayId], []),
-    'adminUpdateHoliday' : IDL.Func([HolidayId, IDL.Text, IDL.Text, IDL.Text], [], []),
-    'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
-    'getAllHolidays' : IDL.Func([], [IDL.Vec(Holiday)], ['query']),
-    'adminAddAnnouncement' : IDL.Func([IDL.Text, IDL.Text, AnnouncementCategory, IDL.Opt(IDL.Text)], [AnnouncementId], []),
-    'adminUpdateAnnouncement' : IDL.Func([AnnouncementId, IDL.Text, IDL.Text, AnnouncementCategory, IDL.Bool, IDL.Opt(IDL.Text)], [IDL.Bool], []),
-    'adminDeleteAnnouncement' : IDL.Func([AnnouncementId], [IDL.Bool], []),
-    'getActiveAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
-    'getAllAnnouncements' : IDL.Func([], [IDL.Vec(AdminAnnouncement)], ['query']),
-    'recordUserAnnouncementView' : IDL.Func([IDL.Text], [], []),
-    'hasUserSeenAnnouncementsToday' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
-    'getDoctorCallHistory' : IDL.Func(
-        [DoctorId],
-        [IDL.Vec(DoctorCallSummary)],
-        ['query'],
-      ),
-    'getRecentDoctorCalls' : IDL.Func(
-        [IDL.Nat],
-        [IDL.Vec(RecentDoctorCallEntry)],
-        ['query'],
-      ),
     'updateSampleDemandOrderStatus' : IDL.Func(
         [IDL.Nat, DemandOrderStatus],
         [],

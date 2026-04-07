@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
@@ -31,13 +32,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { createActor } from "../../backend";
 import type {
   Area,
   ExpenseEntry,
   TADASettingsV3,
   WorkingPlan,
-} from "../../backend";
-import { useActor } from "../../hooks/useActor";
+} from "../../backend.d";
 
 const TA_SCALE = 100;
 
@@ -63,7 +64,7 @@ function getDaLabel(daType: DaType | string) {
 }
 
 export default function RSMWorkingDetails() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   // Working mode state

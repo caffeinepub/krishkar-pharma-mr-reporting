@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import {
   Building2,
@@ -26,15 +27,15 @@ import {
   User,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { createActor } from "../backend";
 import type {
   DetailingEntry,
-  Doctor,
+  DoctorExtended as Doctor,
   MRProfile,
   ManagerProfile,
   Product,
   UserProfile,
-} from "../backend";
-import { useActor } from "../hooks/useActor";
+} from "../backend.d";
 import { loadXlsx } from "../lib/xlsxLoader";
 
 export interface MRCallDetailsPageProps {
@@ -144,7 +145,7 @@ function groupEntriesByDate(
 export default function MRCallDetailsPage({
   viewerRole,
 }: MRCallDetailsPageProps) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const enabled = !!actor && !isFetching;
   const { start, end } = getLast15DaysRange();
   const [hqFilter, setHqFilter] = useState<string>("all");

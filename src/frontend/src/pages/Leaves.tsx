@@ -18,13 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CalendarOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { LeaveType } from "../backend";
-import type { LeaveEntry } from "../backend";
-import { useActor } from "../hooks/useActor";
+import { createActor } from "../backend";
+import { LeaveType } from "../backend.d";
+import type { LeaveEntry } from "../backend.d";
 
 async function captureGPSForLeave(): Promise<{
   lat: number;
@@ -87,7 +88,7 @@ function statusBadge(status: LeaveStatus) {
 }
 
 export default function Leaves() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [leaveType, setLeaveType] = useState<LeaveType>(LeaveType.CasualLeave);
@@ -127,8 +128,8 @@ export default function Leaves() {
     mutationFn: async () => {
       if (!actor) throw new Error("No actor");
       const gps = await captureGPSForLeave();
-      const lat: [] | [number] = gps ? [gps.lat] : [];
-      const lng: [] | [number] = gps ? [gps.lng] : [];
+      const lat: number | null = gps ? gps.lat : null;
+      const lng: number | null = gps ? gps.lng : null;
       await actor.applyLeave(
         leaveType,
         fromDate,

@@ -1,6 +1,6 @@
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useEffect, useRef } from "react";
-import type { LocationData } from "../backend";
-import { useActor } from "./useActor";
+import { createActor } from "../backend";
 
 const UPDATE_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
 
@@ -19,7 +19,7 @@ async function getCurrentPosition(): Promise<GeolocationPosition | null> {
 }
 
 export function useGPSUpdater(userRole = "MR") {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const actorRef = useRef(actor);
   actorRef.current = actor;
 
@@ -41,15 +41,14 @@ export function useGPSUpdater(userRole = "MR") {
         } catch {
           // silently ignore
         }
-        const location: LocationData = {
+        await actorRef.current.updateLatestLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
           userName,
           userRole,
           timestamp: BigInt(Date.now()) * BigInt(1_000_000), // ms -> ns
-        };
-        await actorRef.current.updateLatestLocation(location);
+        });
       } catch {
         // Fail silently — never show UI errors for GPS
       }

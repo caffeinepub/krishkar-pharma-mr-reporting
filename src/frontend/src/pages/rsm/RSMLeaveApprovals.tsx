@@ -2,10 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
 
 const LeaveStatus = {
   Pending: "Pending" as const,
@@ -15,7 +16,7 @@ const LeaveStatus = {
 type LeaveStatus = (typeof LeaveStatus)[keyof typeof LeaveStatus];
 
 export default function RSMLeaveApprovals() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const { data: teamLeaves = [], isLoading } = useQuery({

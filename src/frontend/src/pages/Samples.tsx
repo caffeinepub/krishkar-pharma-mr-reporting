@@ -20,11 +20,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FlaskConical, Loader2, Package, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useActor } from "../hooks/useActor";
+import { createActor } from "../backend";
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "Approved") {
@@ -49,7 +50,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function Samples() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [demandForm, setDemandForm] = useState({

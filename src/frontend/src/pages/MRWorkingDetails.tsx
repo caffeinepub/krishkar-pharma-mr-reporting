@@ -20,6 +20,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
@@ -39,18 +40,18 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { createActor } from "../backend";
 import type {
   DoctorCallSummary,
   MRProfile,
   ManagerAreaAssignment,
   ManagerProfile,
   WorkingPlan,
-} from "../backend";
-import { ManagerRole } from "../backend";
-import { useActor } from "../hooks/useActor";
+} from "../backend.d";
+import { ManagerRole } from "../backend.d";
 
 export default function MRWorkingDetails() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
@@ -216,8 +217,8 @@ export default function MRWorkingDetails() {
         newDoctorStation,
         newDoctorSpec,
         BigInt(newDoctorAreaId),
-        newDoctorMobile ? [newDoctorMobile] : [],
-        newDoctorDOB ? [newDoctorDOB] : [],
+        newDoctorMobile ? newDoctorMobile : null,
+        newDoctorDOB ? newDoctorDOB : null,
       );
     },
     onSuccess: () => {

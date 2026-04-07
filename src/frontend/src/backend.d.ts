@@ -18,6 +18,12 @@ export interface MRProfile {
     assignedAreas: Array<AreaId>;
     headQuarter: string;
 }
+export interface Product {
+    id: ProductId;
+    code: string;
+    name: string;
+    createdBy: Principal;
+}
 export interface GiftDistribution {
     id: GiftDistributionId;
     doctorId: DoctorId;
@@ -27,6 +33,19 @@ export interface GiftDistribution {
     giftArticleId: GiftArticleId;
     quantity: bigint;
     doctorName: string;
+}
+export interface SampleSummaryItem {
+    productId: ProductId;
+    quantity: bigint;
+}
+export interface DoctorInput {
+    dob?: string;
+    station: string;
+    name: string;
+    mobileNumber?: string;
+    specialization: string;
+    areaId: AreaId;
+    qualification: string;
 }
 export interface CRMDemand {
     id: CRMDemandId;
@@ -40,14 +59,15 @@ export interface CRMDemand {
     raiserName: string;
     adminRemarks: string;
 }
-export interface DoctorInput {
-    station: string;
-    name: string;
-    mobileNumber?: string;
-    dob?: [] | [string];
-    specialization: string;
-    areaId: AreaId;
-    qualification: string;
+export interface AdminAnnouncement {
+    id: AnnouncementId;
+    title: string;
+    body: string;
+    createdAt: bigint;
+    createdBy: Principal;
+    isActive: boolean;
+    imageUrl?: string;
+    category: AnnouncementCategory;
 }
 export interface WorkingPlan {
     id: WorkingPlanId;
@@ -66,6 +86,7 @@ export interface GPSTrace {
     timestamp: bigint;
     accuracy: number;
 }
+export type AnnouncementId = bigint;
 export interface WorkingPlanInput {
     content: string;
     date: string;
@@ -86,17 +107,6 @@ export type CRMDemandId = bigint;
 export interface ManagerAreaAssignment {
     areaIds: Array<AreaId>;
 }
-export interface Doctor {
-    id: DoctorId;
-    station: string;
-    name: string;
-    mobileNumber?: string;
-    dob?: [] | [string];
-    createdBy: Principal;
-    specialization: string;
-    areaId: AreaId;
-    qualification: string;
-}
 export interface GiftDemandOrder {
     id: GiftDemandOrderId;
     status: GiftDemandOrderStatus;
@@ -107,6 +117,14 @@ export interface GiftDemandOrder {
     giftArticleId: GiftArticleId;
     quantity: bigint;
     adminRemarks: string;
+}
+export interface RecentDoctorCallEntry {
+    doctorId: DoctorId;
+    productIds: Array<ProductId>;
+    date: string;
+    samples: Array<SampleSummaryItem>;
+    gifts: Array<GiftSummaryItem>;
+    areaId: AreaId;
 }
 export interface ExpenseEntry {
     latitude?: number;
@@ -126,6 +144,19 @@ export interface SampleBalance {
     productName: string;
     totalAllotted: bigint;
 }
+export interface DoctorExtended {
+    id: DoctorId;
+    dob?: string;
+    station: string;
+    name: string;
+    createdBy: Principal;
+    mobileNumber?: string;
+    specialization: string;
+    areaId: AreaId;
+    qualification: string;
+}
+export type HolidayId = bigint;
+export type GiftArticleId = bigint;
 export interface Chemist {
     id: ChemistId;
     contact: string;
@@ -134,52 +165,7 @@ export interface Chemist {
     address: string;
     areaId: AreaId;
 }
-export type GiftArticleId = bigint;
 export type WorkingPlanId = bigint;
-
-export type AnnouncementCategory = { 'LatestProduct': null } | { 'UpcomingProduct': null } | { 'LatestScheme': null } | { 'NewGiftArticle': null };
-export type AnnouncementId = bigint;
-export interface AdminAnnouncement {
-  id: AnnouncementId;
-  title: string;
-  body: string;
-  category: AnnouncementCategory;
-  createdAt: bigint;
-  isActive: boolean;
-  createdBy: Principal;
-  imageUrl: [] | [string];
-}
-export type HolidayId = bigint;
-export interface Holiday {
-    id: HolidayId;
-    name: string;
-    date: string;
-    description: string;
-    createdBy: Principal;
-}
-
-export interface SampleSummaryItem {
-    productId: ProductId;
-    quantity: bigint;
-}
-export interface GiftSummaryItem {
-    giftArticleName: string;
-    quantity: bigint;
-}
-export interface DoctorCallSummary {
-    date: string;
-    productIds: Array<ProductId>;
-    samples: Array<SampleSummaryItem>;
-    gifts: Array<GiftSummaryItem>;
-}
-export interface RecentDoctorCallEntry {
-    date: string;
-    doctorId: DoctorId;
-    areaId: AreaId;
-    productIds: Array<ProductId>;
-    samples: Array<SampleSummaryItem>;
-    gifts: Array<GiftSummaryItem>;
-}
 export interface SampleEntry {
     doctorId: DoctorId;
     date: string;
@@ -189,10 +175,10 @@ export interface SampleEntry {
 export type GiftDemandOrderId = bigint;
 export type DoctorId = bigint;
 export interface DetailingEntry {
+    latitude?: number;
     doctorId: DoctorId;
     productIds: Array<ProductId>;
     date: string;
-    latitude?: number;
     longitude?: number;
 }
 export type ChemistId = bigint;
@@ -216,13 +202,13 @@ export interface Headquarter {
 }
 export interface LeaveEntry {
     status: LeaveStatus;
+    latitude?: number;
     days: bigint;
     toDate: string;
+    longitude?: number;
     fromDate: string;
     leaveType: LeaveType;
     reason: string;
-    latitude: [] | [number];
-    longitude: [] | [number];
 }
 export interface ChemistOrder {
     status: OrderStatus;
@@ -239,6 +225,10 @@ export interface ActivitySummary {
     doctorsVisited: bigint;
     chemistOrders: bigint;
 }
+export interface GiftSummaryItem {
+    giftArticleName: string;
+    quantity: bigint;
+}
 export interface TADASettingsV3 {
     mrTaPerKm: bigint;
     mrDaHQ: bigint;
@@ -253,6 +243,12 @@ export interface TADASettingsV3 {
     asmDaExStation: bigint;
     mrDaOutStation: bigint;
 }
+export interface DoctorCallSummary {
+    productIds: Array<ProductId>;
+    date: string;
+    samples: Array<SampleSummaryItem>;
+    gifts: Array<GiftSummaryItem>;
+}
 export interface Area {
     id: AreaId;
     name: string;
@@ -261,6 +257,13 @@ export interface Area {
 }
 export type AreaId = bigint;
 export type ProductId = bigint;
+export interface Holiday {
+    id: HolidayId;
+    date: string;
+    name: string;
+    createdBy: Principal;
+    description: string;
+}
 export type GiftDistributionId = bigint;
 export interface SampleAllotment {
     id: bigint;
@@ -275,11 +278,11 @@ export interface UserProfile {
     name: string;
     headQuarter: string;
 }
-export interface Product {
-    id: ProductId;
-    code: string;
-    name: string;
-    createdBy: Principal;
+export enum AnnouncementCategory {
+    NewGiftArticle = "NewGiftArticle",
+    UpcomingProduct = "UpcomingProduct",
+    LatestProduct = "LatestProduct",
+    LatestScheme = "LatestScheme"
 }
 export enum DemandOrderStatus {
     Approved = "Approved",
@@ -310,22 +313,29 @@ export interface backendInterface {
     addArea(name: string, headquarterId: bigint): Promise<AreaId>;
     addChemist(name: string, areaId: AreaId, address: string, contact: string): Promise<ChemistId>;
     addChemistOrder(chemistId: ChemistId, date: string, productId: ProductId, quantity: bigint, scheme: string): Promise<void>;
-    addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string], dob: [] | [string]): Promise<DoctorId>;
+    addDoctor(name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: string | null, dob: string | null): Promise<DoctorId>;
     addExpenseWithGeoTag(date: string, kmTraveled: bigint, daAmount: bigint, notes: string, taAmountOpt: bigint | null, workingArea: string, daType: string, latitude: number | null, longitude: number | null): Promise<void>;
     addGPSTrace(latitude: number, longitude: number, accuracy: number): Promise<void>;
     addGiftArticle(name: string, description: string): Promise<GiftArticleId>;
     addHeadquarter(name: string): Promise<bigint>;
     addProduct(name: string, code: string): Promise<ProductId>;
     addWorkingPlan(input: WorkingPlanInput): Promise<WorkingPlanId>;
+    adminAddAnnouncement(title: string, body: string, category: AnnouncementCategory, imageUrl: string | null): Promise<AnnouncementId>;
+    adminAddHoliday(name: string, date: string, description: string): Promise<HolidayId>;
     adminAllotSamples(target: Principal, productId: ProductId, quantity: bigint, date: string): Promise<void>;
     adminAssignManagerAreas(target: Principal, areaIds: Array<AreaId>): Promise<void>;
     adminCreateOrUpdateMRProfile(mrPrincipal: Principal, employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
+    adminDeleteAnnouncement(id: AnnouncementId): Promise<boolean>;
+    adminDeleteHoliday(id: HolidayId): Promise<void>;
     adminGetAllWorkingPlans(): Promise<Array<WorkingPlan>>;
     adminGetTADASettings(): Promise<TADASettingsV3>;
     adminResetAllReportData(): Promise<void>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
+    adminSaveUserProfile(target: Principal, profile: UserProfile): Promise<void>;
     adminSetTADASettings(settings: TADASettingsV3): Promise<void>;
-    applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string, lat: [] | [number], lng: [] | [number]): Promise<void>;
+    adminUpdateAnnouncement(id: AnnouncementId, title: string, body: string, category: AnnouncementCategory, isActive: boolean, imageUrl: string | null): Promise<boolean>;
+    adminUpdateHoliday(id: HolidayId, name: string, date: string, description: string): Promise<void>;
+    applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string, lat: number | null, lng: number | null): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkAddDoctors(doctorsInput: Array<DoctorInput>): Promise<Array<DoctorId>>;
     createOrUpdateMRProfile(employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
@@ -338,16 +348,19 @@ export interface backendInterface {
     deleteProduct(id: ProductId): Promise<void>;
     deleteWorkingPlan(planId: WorkingPlanId): Promise<void>;
     emergencyRestoreAdmin(): Promise<void>;
+    getActiveAnnouncements(): Promise<Array<AdminAnnouncement>>;
     getActiveUserLocations(): Promise<Array<[Principal, LocationData]>>;
     getActivitySummary(date: string): Promise<ActivitySummary>;
+    getAllAnnouncements(): Promise<Array<AdminAnnouncement>>;
     getAllAreas(): Promise<Array<Area>>;
     getAllCRMDemands(): Promise<Array<CRMDemand>>;
     getAllChemists(): Promise<Array<Chemist>>;
-    getAllDoctors(): Promise<Array<Doctor>>;
+    getAllDoctors(): Promise<Array<DoctorExtended>>;
     getAllGiftArticles(): Promise<Array<GiftArticle>>;
     getAllGiftDemandOrders(): Promise<Array<GiftDemandOrder>>;
     getAllGiftDistributions(): Promise<Array<GiftDistribution>>;
     getAllHeadquarters(): Promise<Array<Headquarter>>;
+    getAllHolidays(): Promise<Array<Holiday>>;
     getAllLeaveApplications(): Promise<Array<[Principal, Array<LeaveEntry>]>>;
     getAllMRProfiles(): Promise<Array<[Principal, MRProfile]>>;
     getAllManagerProfiles(): Promise<Array<[Principal, ManagerProfile]>>;
@@ -367,7 +380,8 @@ export interface backendInterface {
     getChemistOrders(): Promise<Array<ChemistOrder>>;
     getChemistsByArea(areaId: AreaId): Promise<Array<Chemist>>;
     getDetailingEntries(): Promise<Array<DetailingEntry>>;
-    getDoctorsByArea(areaId: AreaId): Promise<Array<Doctor>>;
+    getDoctorCallHistory(doctorId: DoctorId): Promise<Array<DoctorCallSummary>>;
+    getDoctorsByArea(areaId: AreaId): Promise<Array<DoctorExtended>>;
     getExpenseEntries(): Promise<Array<ExpenseEntry>>;
     getGPSTraces(user: Principal): Promise<Array<GPSTrace>>;
     getLatestLocation(user: Principal): Promise<LocationData | null>;
@@ -382,14 +396,14 @@ export interface backendInterface {
     getMySampleBalance(): Promise<Array<SampleBalance>>;
     getMySampleDemandOrders(): Promise<Array<SampleDemandOrder>>;
     getMyWorkingPlans(): Promise<Array<WorkingPlan>>;
-    getSampleEntries(): Promise<Array<SampleEntry>>;
-    getDoctorCallHistory(doctorId: DoctorId): Promise<Array<DoctorCallSummary>>;
     getRecentDoctorCalls(days: bigint): Promise<Array<RecentDoctorCallEntry>>;
+    getSampleEntries(): Promise<Array<SampleEntry>>;
     getTeamDetailingEntries(): Promise<Array<[Principal, Array<DetailingEntry>]>>;
     getTeamExpenseEntries(): Promise<Array<[Principal, Array<ExpenseEntry>]>>;
     getTeamLeaveApplications(): Promise<Array<[Principal, Array<LeaveEntry>]>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getUserTraceBetweenTimes(user: Principal, startTime: bigint, endTime: bigint): Promise<Array<GPSTrace>>;
+    hasUserSeenAnnouncementsToday(dateKey: string): Promise<boolean>;
     isAdminInitialized(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>, latitude: number | null, longitude: number | null): Promise<void>;
@@ -398,12 +412,12 @@ export interface backendInterface {
     raiseCRMDemand(doctorId: DoctorId, doctorName: string, amount: bigint, notes: string, date: string, raiserName: string): Promise<void>;
     raiseGiftDemandOrder(giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, notes: string, date: string): Promise<void>;
     raiseSampleDemandOrder(productId: ProductId, requestedQty: bigint, date: string, notes: string): Promise<void>;
-    adminSaveUserProfile(target: Principal, profile: UserProfile): Promise<void>;
+    recordUserAnnouncementView(dateKey: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveManagerProfile(name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     updateArea(id: AreaId, name: string, headquarterId: bigint): Promise<void>;
     updateCRMDemandStatus(demandId: CRMDemandId, newStatus: CRMDemandStatus, adminRemarks: string): Promise<void>;
-    updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: [] | [string], dob: [] | [string]): Promise<void>;
+    updateDoctor(id: DoctorId, name: string, qualification: string, station: string, specialization: string, areaId: AreaId, mobileNumber: string | null, dob: string | null): Promise<void>;
     updateGiftArticle(id: GiftArticleId, name: string, description: string): Promise<void>;
     updateGiftDemandOrderStatus(orderId: GiftDemandOrderId, newStatus: GiftDemandOrderStatus, adminRemarks: string): Promise<void>;
     updateHeadquarter(id: bigint, name: string): Promise<void>;
@@ -412,15 +426,4 @@ export interface backendInterface {
     updateLeaveStatusByManager(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;
     updateProduct(id: ProductId, name: string, code: string): Promise<void>;
     updateSampleDemandOrderStatus(orderId: bigint, newStatus: DemandOrderStatus): Promise<void>;
-    adminAddHoliday(name: string, date: string, description: string): Promise<HolidayId>;
-    adminUpdateHoliday(id: HolidayId, name: string, date: string, description: string): Promise<void>;
-    adminDeleteHoliday(id: HolidayId): Promise<void>;
-    getAllHolidays(): Promise<Array<Holiday>>;
-    adminAddAnnouncement(title: string, body: string, category: AnnouncementCategory, imageUrl: [] | [string]): Promise<AnnouncementId>;
-    adminUpdateAnnouncement(id: AnnouncementId, title: string, body: string, category: AnnouncementCategory, isActive: boolean, imageUrl: [] | [string]): Promise<boolean>;
-    adminDeleteAnnouncement(id: AnnouncementId): Promise<boolean>;
-    getActiveAnnouncements(): Promise<Array<AdminAnnouncement>>;
-    getAllAnnouncements(): Promise<Array<AdminAnnouncement>>;
-    recordUserAnnouncementView(dateKey: string): Promise<void>;
-    hasUserSeenAnnouncementsToday(dateKey: string): Promise<boolean>;
 }

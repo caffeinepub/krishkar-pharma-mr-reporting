@@ -16,11 +16,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useActor } from "@/hooks/useActor";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { CalendarDays, Loader2, MapPin, User2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { ManagerProfile, UserProfile, WorkingPlan } from "../../backend";
+import { createActor } from "../../backend";
+import type { ManagerProfile, UserProfile, WorkingPlan } from "../../backend.d";
 
 interface MonthOption {
   value: string;
@@ -43,7 +44,7 @@ function getMonthOptions(): MonthOption[] {
 }
 
 export default function AdminWorkingPlans() {
-  const { actor } = useActor();
+  const { actor } = useActor(createActor);
   const [plans, setPlans] = useState<WorkingPlan[]>([]);
   const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(false);

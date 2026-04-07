@@ -2,9 +2,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import { Download, FileSpreadsheet } from "lucide-react";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
 import { loadXlsx } from "../../lib/xlsxLoader";
 
 async function exportToExcel(
@@ -83,7 +84,7 @@ function ReportCard({
 }
 
 export default function AdminReports() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const enabled = !!actor && !isFetching;
 
   const { data: mrProfiles = [], isLoading: loadingMR } = useQuery({

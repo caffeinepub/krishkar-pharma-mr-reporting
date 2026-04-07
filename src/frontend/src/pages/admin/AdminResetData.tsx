@@ -1,10 +1,11 @@
+import { useActor } from "@caffeineai/core-infrastructure";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
 
 export default function AdminResetData() {
-  const { actor } = useActor();
+  const { actor } = useActor(createActor);
   const [confirmText, setConfirmText] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);

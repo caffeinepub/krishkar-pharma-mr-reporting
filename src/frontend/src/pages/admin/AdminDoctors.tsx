@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -48,8 +49,8 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import type { Doctor } from "../../backend.d";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
+import type { DoctorExtended as Doctor } from "../../backend.d";
 import { loadXlsx } from "../../lib/xlsxLoader";
 
 interface DoctorForm {
@@ -84,7 +85,7 @@ interface ParsedRow {
 }
 
 export default function AdminDoctors() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -125,8 +126,8 @@ export default function AdminDoctors() {
         form.station,
         form.specialization,
         BigInt(form.areaId),
-        form.mobileNumber ? [form.mobileNumber] : [],
-        form.dob ? [form.dob] : [],
+        form.mobileNumber ? form.mobileNumber : null,
+        form.dob ? form.dob : null,
       );
     },
     onSuccess: () => {
@@ -149,8 +150,8 @@ export default function AdminDoctors() {
         form.station,
         form.specialization,
         BigInt(form.areaId),
-        form.mobileNumber ? [form.mobileNumber] : [],
-        form.dob ? [form.dob] : [],
+        form.mobileNumber ? form.mobileNumber : null,
+        form.dob ? form.dob : null,
       );
     },
     onSuccess: () => {
@@ -187,7 +188,7 @@ export default function AdminDoctors() {
           specialization: r.specialization,
           areaId: BigInt(r.areaId as number),
           mobileNumber: r.mobileNumber || undefined,
-          dob: r.dob ? [r.dob] : [],
+          dob: r.dob || undefined,
         })),
       );
       return result.length;
@@ -209,8 +210,8 @@ export default function AdminDoctors() {
       station: doc.station,
       specialization: doc.specialization,
       areaId: doc.areaId.toString(),
-      mobileNumber: doc.mobileNumber?.[0] ?? "",
-      dob: doc.dob?.[0] ?? "",
+      mobileNumber: doc.mobileNumber ?? "",
+      dob: doc.dob ?? "",
     });
   };
 
@@ -497,9 +498,9 @@ export default function AdminDoctors() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-gray-600 text-sm">
-                        {doc.mobileNumber?.[0] ?? "—"}
+                        {doc.mobileNumber ?? "—"}
                         <TableCell className="text-gray-600 text-sm">
-                          {doc.dob?.[0] ?? "—"}
+                          {doc.dob ?? "—"}
                         </TableCell>
                       </TableCell>
                       <TableCell>

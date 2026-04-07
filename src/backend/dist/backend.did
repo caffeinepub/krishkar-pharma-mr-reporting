@@ -1,0 +1,546 @@
+type WorkingPlanInput = 
+ record {
+   content: text;
+   date: text;
+   stationType: text;
+   workingMode: text;
+   workingWith: opt text;
+ };
+type WorkingPlanId = nat;
+type WorkingPlan = 
+ record {
+   content: text;
+   createdAt: int;
+   date: text;
+   id: WorkingPlanId;
+   principalId: principal;
+   stationType: text;
+   workingMode: text;
+   workingWith: opt text;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserProfile = 
+ record {
+   employeeCode: text;
+   headQuarter: text;
+   name: text;
+ };
+type TADASettingsV3 = 
+ record {
+   asmDaExStation: nat;
+   asmDaHQ: nat;
+   asmDaOutStation: nat;
+   asmTaPerKm: nat;
+   mrDaExStation: nat;
+   mrDaHQ: nat;
+   mrDaOutStation: nat;
+   mrTaPerKm: nat;
+   rsmDaExStation: nat;
+   rsmDaHQ: nat;
+   rsmDaOutStation: nat;
+   rsmTaPerKm: nat;
+ };
+type SampleSummaryItem = 
+ record {
+   productId: ProductId;
+   quantity: nat;
+ };
+type SampleEntry = 
+ record {
+   date: text;
+   doctorId: DoctorId;
+   productId: ProductId;
+   quantity: nat;
+ };
+type SampleDemandOrder = 
+ record {
+   date: text;
+   id: nat;
+   mrPrincipal: principal;
+   notes: text;
+   productId: ProductId;
+   requestedQty: nat;
+   status: DemandOrderStatus;
+ };
+type SampleBalance = 
+ record {
+   balance: nat;
+   productId: ProductId;
+   productName: text;
+   totalAllotted: nat;
+   totalDistributed: nat;
+ };
+type SampleAllotment = 
+ record {
+   allocatedBy: principal;
+   date: text;
+   id: nat;
+   productId: ProductId;
+   quantity: nat;
+   targetPrincipal: principal;
+ };
+type RecentDoctorCallEntry = 
+ record {
+   areaId: AreaId;
+   date: text;
+   doctorId: DoctorId;
+   gifts: vec GiftSummaryItem;
+   productIds: vec ProductId;
+   samples: vec SampleSummaryItem;
+ };
+type ProductId = nat;
+type Product = 
+ record {
+   code: text;
+   createdBy: principal;
+   id: ProductId;
+   name: text;
+ };
+type OrderStatus = 
+ variant {
+   fulfilled;
+   pending;
+ };
+type ManagerRole = 
+ variant {
+   ASM;
+   RSM;
+ };
+type ManagerProfile = 
+ record {
+   employeeCode: text;
+   headQuarter: text;
+   managerRole: ManagerRole;
+   name: text;
+ };
+type ManagerAreaAssignment = record {areaIds: vec AreaId;};
+type MRProfile = 
+ record {
+   assignedAreas: vec AreaId;
+   employeeCode: text;
+   headQuarter: text;
+ };
+type LocationData = 
+ record {
+   accuracy: float64;
+   latitude: float64;
+   longitude: float64;
+   timestamp: int;
+   userName: text;
+   userRole: text;
+ };
+type LeaveType = 
+ variant {
+   CasualLeave;
+   EarnedLeave;
+   PrivilegeLeave;
+   SickLeave;
+   WithoutPayLeave;
+ };
+type LeaveStatus = 
+ variant {
+   Approved;
+   Pending;
+   Rejected;
+ };
+type LeaveEntry = 
+ record {
+   days: nat;
+   fromDate: text;
+   latitude: opt float64;
+   leaveType: LeaveType;
+   longitude: opt float64;
+   reason: text;
+   status: LeaveStatus;
+   toDate: text;
+ };
+type HolidayId = nat;
+type Holiday = 
+ record {
+   createdBy: principal;
+   date: text;
+   description: text;
+   id: HolidayId;
+   name: text;
+ };
+type Headquarter = 
+ record {
+   createdBy: principal;
+   id: nat;
+   name: text;
+ };
+type GiftSummaryItem = 
+ record {
+   giftArticleName: text;
+   quantity: nat;
+ };
+type GiftDistributionId = nat;
+type GiftDistribution = 
+ record {
+   date: text;
+   distributedBy: principal;
+   doctorId: DoctorId;
+   doctorName: text;
+   giftArticleId: GiftArticleId;
+   giftArticleName: text;
+   id: GiftDistributionId;
+   quantity: nat;
+ };
+type GiftDemandOrderStatus = 
+ variant {
+   Approved;
+   Pending;
+   Rejected;
+ };
+type GiftDemandOrderId = nat;
+type GiftDemandOrder = 
+ record {
+   adminRemarks: text;
+   date: text;
+   giftArticleId: GiftArticleId;
+   giftArticleName: text;
+   id: GiftDemandOrderId;
+   mrPrincipal: principal;
+   notes: text;
+   quantity: nat;
+   status: GiftDemandOrderStatus;
+ };
+type GiftArticleId = nat;
+type GiftArticle = 
+ record {
+   description: text;
+   id: GiftArticleId;
+   name: text;
+ };
+type GPSTrace = 
+ record {
+   accuracy: float64;
+   createdBy: principal;
+   latitude: float64;
+   longitude: float64;
+   timestamp: int;
+ };
+type ExpenseEntry = 
+ record {
+   daAmount: nat;
+   daType: text;
+   date: text;
+   kmTraveled: nat;
+   latitude: opt float64;
+   longitude: opt float64;
+   notes: text;
+   taAmount: nat;
+   workingArea: text;
+ };
+type DoctorInput = 
+ record {
+   areaId: AreaId;
+   dob: opt text;
+   mobileNumber: opt text;
+   name: text;
+   qualification: text;
+   specialization: text;
+   station: text;
+ };
+type DoctorId = nat;
+type DoctorExtended = 
+ record {
+   areaId: AreaId;
+   createdBy: principal;
+   dob: opt text;
+   id: DoctorId;
+   mobileNumber: opt text;
+   name: text;
+   qualification: text;
+   specialization: text;
+   station: text;
+ };
+type DoctorCallSummary = 
+ record {
+   date: text;
+   gifts: vec GiftSummaryItem;
+   productIds: vec ProductId;
+   samples: vec SampleSummaryItem;
+ };
+type DetailingEntry = 
+ record {
+   date: text;
+   doctorId: DoctorId;
+   latitude: opt float64;
+   longitude: opt float64;
+   productIds: vec ProductId;
+ };
+type DemandOrderStatus = 
+ variant {
+   Approved;
+   Pending;
+   Rejected;
+ };
+type ChemistOrder = 
+ record {
+   chemistId: ChemistId;
+   date: text;
+   productId: ProductId;
+   quantity: nat;
+   scheme: text;
+   status: OrderStatus;
+ };
+type ChemistId = nat;
+type Chemist = 
+ record {
+   address: text;
+   areaId: AreaId;
+   contact: text;
+   createdBy: principal;
+   id: ChemistId;
+   name: text;
+ };
+type CRMDemandStatus = 
+ variant {
+   Approved;
+   Pending;
+   Rejected;
+ };
+type CRMDemandId = nat;
+type CRMDemand = 
+ record {
+   adminRemarks: text;
+   amount: nat;
+   date: text;
+   doctorId: DoctorId;
+   doctorName: text;
+   id: CRMDemandId;
+   notes: text;
+   raisedBy: principal;
+   raiserName: text;
+   status: CRMDemandStatus;
+ };
+type AreaId = nat;
+type Area = 
+ record {
+   createdBy: principal;
+   headquarterId: nat;
+   id: AreaId;
+   name: text;
+ };
+type AnnouncementId = nat;
+type AnnouncementCategory = 
+ variant {
+   LatestProduct;
+   LatestScheme;
+   NewGiftArticle;
+   UpcomingProduct;
+ };
+type AdminAnnouncement = 
+ record {
+   body: text;
+   category: AnnouncementCategory;
+   createdAt: int;
+   createdBy: principal;
+   id: AnnouncementId;
+   imageUrl: opt text;
+   isActive: bool;
+   title: text;
+ };
+type ActivitySummary = 
+ record {
+   chemistOrders: nat;
+   dailyExpense: nat;
+   doctorsVisited: nat;
+   leaveBalance: vec record {
+                       LeaveType;
+                       nat;
+                     };
+   samplesGiven: nat;
+ };
+service : {
+  _initializeAccessControlWithSecret: (userSecret: text) -> ();
+  addArea: (name: text, headquarterId: nat) -> (AreaId);
+  addChemist: (name: text, areaId: AreaId, address: text, contact: text) ->
+   (ChemistId);
+  addChemistOrder: (chemistId: ChemistId, date: text, productId: ProductId,
+   quantity: nat, scheme: text) -> ();
+  addDoctor: (name: text, qualification: text, station: text, specialization:
+   text, areaId: AreaId, mobileNumber: opt text, dob: opt text) -> (DoctorId);
+  addExpenseWithGeoTag: (date: text, kmTraveled: nat, daAmount: nat, notes:
+   text, taAmountOpt: opt nat, workingArea: text, daType: text, latitude:
+   opt float64, longitude: opt float64) -> ();
+  addGPSTrace: (latitude: float64, longitude: float64, accuracy: float64) ->
+   ();
+  addGiftArticle: (name: text, description: text) -> (GiftArticleId);
+  addHeadquarter: (name: text) -> (nat);
+  addProduct: (name: text, code: text) -> (ProductId);
+  addWorkingPlan: (input: WorkingPlanInput) -> (WorkingPlanId);
+  adminAddAnnouncement: (title: text, body: text, category:
+   AnnouncementCategory, imageUrl: opt text) -> (AnnouncementId);
+  adminAddHoliday: (name: text, date: text, description: text) -> (HolidayId);
+  adminAllotSamples: (target: principal, productId: ProductId, quantity: 
+   nat, date: text) -> ();
+  adminAssignManagerAreas: (target: principal, areaIds: vec AreaId) -> ();
+  adminCreateOrUpdateMRProfile: (mrPrincipal: principal, employeeCode: 
+   text, headQuarter: text, assignedAreas: vec AreaId) -> ();
+  adminDeleteAnnouncement: (id: AnnouncementId) -> (bool);
+  adminDeleteHoliday: (id: HolidayId) -> ();
+  adminGetAllWorkingPlans: () -> (vec WorkingPlan) query;
+  adminGetTADASettings: () -> (TADASettingsV3) query;
+  adminResetAllReportData: () -> ();
+  adminSaveManagerProfile: (target: principal, name: text, employeeCode:
+   text, headQuarter: text, managerRole: ManagerRole) -> ();
+  adminSaveUserProfile: (target: principal, profile: UserProfile) -> ();
+  adminSetTADASettings: (settings: TADASettingsV3) -> ();
+  adminUpdateAnnouncement: (id: AnnouncementId, title: text, body: text,
+   category: AnnouncementCategory, isActive: bool, imageUrl: opt text) ->
+   (bool);
+  adminUpdateHoliday: (id: HolidayId, name: text, date: text, description:
+   text) -> ();
+  applyLeave: (leaveType: LeaveType, fromDate: text, toDate: text, days: 
+   nat, reason: text, lat: opt float64, lng: opt float64) -> ();
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  bulkAddDoctors: (doctorsInput: vec DoctorInput) -> (vec DoctorId);
+  createOrUpdateMRProfile: (employeeCode: text, headQuarter: text,
+   assignedAreas: vec AreaId) -> ();
+  deleteArea: (id: AreaId) -> ();
+  deleteDoctor: (id: DoctorId) -> ();
+  deleteGiftArticle: (id: GiftArticleId) -> ();
+  deleteHeadquarter: (id: nat) -> ();
+  deleteMRProfile: (mrPrincipal: principal) -> ();
+  deleteManagerProfile: (target: principal) -> ();
+  deleteProduct: (id: ProductId) -> ();
+  deleteWorkingPlan: (planId: WorkingPlanId) -> ();
+  emergencyRestoreAdmin: () -> ();
+  getActiveAnnouncements: () -> (vec AdminAnnouncement) query;
+  getActiveUserLocations: () -> (vec record {
+                                       principal;
+                                       LocationData;
+                                     }) query;
+  getActivitySummary: (date: text) -> (ActivitySummary) query;
+  getAllAnnouncements: () -> (vec AdminAnnouncement) query;
+  getAllAreas: () -> (vec Area) query;
+  getAllCRMDemands: () -> (vec CRMDemand) query;
+  getAllChemists: () -> (vec Chemist) query;
+  getAllDoctors: () -> (vec DoctorExtended) query;
+  getAllGiftArticles: () -> (vec GiftArticle) query;
+  getAllGiftDemandOrders: () -> (vec GiftDemandOrder) query;
+  getAllGiftDistributions: () -> (vec GiftDistribution) query;
+  getAllHeadquarters: () -> (vec Headquarter) query;
+  getAllHolidays: () -> (vec Holiday) query;
+  getAllLeaveApplications: () ->
+   (vec record {
+          principal;
+          vec LeaveEntry;
+        }) query;
+  getAllMRProfiles: () -> (vec record {
+                                 principal;
+                                 MRProfile;
+                               }) query;
+  getAllManagerProfiles: () -> (vec record {
+                                      principal;
+                                      ManagerProfile;
+                                    }) query;
+  getAllPendingUsers: () -> (vec principal) query;
+  getAllProducts: () -> (vec Product) query;
+  getAllSampleAllotments: () -> (vec SampleAllotment) query;
+  getAllSampleDemandOrders: () -> (vec SampleDemandOrder) query;
+  getAllUserLatestLocations: () ->
+   (vec record {
+          principal;
+          LocationData;
+        }) query;
+  getAllUserLatestLocationsByRole: () ->
+   (vec record {
+          principal;
+          LocationData;
+        }) query;
+  getAllUserProfiles: () -> (vec record {
+                                   principal;
+                                   UserProfile;
+                                 }) query;
+  getCallerRoleInfo: () ->
+   (record {
+      baseRole: text;
+      managerRole: opt text;
+    }) query;
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getChemistOrders: () -> (vec ChemistOrder) query;
+  getChemistsByArea: (areaId: AreaId) -> (vec Chemist) query;
+  getDetailingEntries: () -> (vec DetailingEntry) query;
+  getDoctorCallHistory: (doctorId: DoctorId) -> (vec DoctorCallSummary) query;
+  getDoctorsByArea: (areaId: AreaId) -> (vec DoctorExtended) query;
+  getExpenseEntries: () -> (vec ExpenseEntry) query;
+  getGPSTraces: (user: principal) -> (vec GPSTrace) query;
+  getLatestLocation: (user: principal) -> (opt LocationData) query;
+  getLeaveHistory: () -> (vec LeaveEntry) query;
+  getMRProfile: () -> (MRProfile) query;
+  getManagerAreas: (target: principal) -> (ManagerAreaAssignment) query;
+  getManagerProfile: () -> (opt ManagerProfile) query;
+  getMyAllotments: () -> (vec SampleAllotment) query;
+  getMyCRMDemands: () -> (vec CRMDemand) query;
+  getMyGiftDemandOrders: () -> (vec GiftDemandOrder) query;
+  getMyGiftDistributions: () -> (vec GiftDistribution) query;
+  getMySampleBalance: () -> (vec SampleBalance) query;
+  getMySampleDemandOrders: () -> (vec SampleDemandOrder) query;
+  getMyWorkingPlans: () -> (vec WorkingPlan) query;
+  getRecentDoctorCalls: (days: nat) -> (vec RecentDoctorCallEntry) query;
+  getSampleEntries: () -> (vec SampleEntry) query;
+  getTeamDetailingEntries: () ->
+   (vec record {
+          principal;
+          vec DetailingEntry;
+        }) query;
+  getTeamExpenseEntries: () ->
+   (vec record {
+          principal;
+          vec ExpenseEntry;
+        }) query;
+  getTeamLeaveApplications: () ->
+   (vec record {
+          principal;
+          vec LeaveEntry;
+        }) query;
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  getUserTraceBetweenTimes: (user: principal, startTime: int, endTime:
+   int) -> (vec GPSTrace) query;
+  hasUserSeenAnnouncementsToday: (dateKey: text) -> (bool) query;
+  isAdminInitialized: () -> (bool) query;
+  isCallerAdmin: () -> (bool) query;
+  logDetailing: (doctorId: DoctorId, date: text, productIds: vec ProductId,
+   latitude: opt float64, longitude: opt float64) -> ();
+  logGiftDistribution: (doctorId: DoctorId, doctorName: text, giftArticleId:
+   GiftArticleId, giftArticleName: text, quantity: nat, date: text) -> ();
+  logSample: (doctorId: DoctorId, date: text, productId: ProductId, quantity:
+   nat) -> ();
+  raiseCRMDemand: (doctorId: DoctorId, doctorName: text, amount: nat, notes:
+   text, date: text, raiserName: text) -> ();
+  raiseGiftDemandOrder: (giftArticleId: GiftArticleId, giftArticleName: 
+   text, quantity: nat, notes: text, date: text) -> ();
+  raiseSampleDemandOrder: (productId: ProductId, requestedQty: nat, date:
+   text, notes: text) -> ();
+  recordUserAnnouncementView: (dateKey: text) -> ();
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  saveManagerProfile: (name: text, employeeCode: text, headQuarter: text,
+   managerRole: ManagerRole) -> ();
+  updateArea: (id: AreaId, name: text, headquarterId: nat) -> ();
+  updateCRMDemandStatus: (demandId: CRMDemandId, newStatus: CRMDemandStatus,
+   adminRemarks: text) -> ();
+  updateDoctor: (id: DoctorId, name: text, qualification: text, station:
+   text, specialization: text, areaId: AreaId, mobileNumber: opt text, dob:
+   opt text) -> ();
+  updateGiftArticle: (id: GiftArticleId, name: text, description: text) -> ();
+  updateGiftDemandOrderStatus: (orderId: GiftDemandOrderId, newStatus:
+   GiftDemandOrderStatus, adminRemarks: text) -> ();
+  updateHeadquarter: (id: nat, name: text) -> ();
+  updateLatestLocation: (location: LocationData) -> ();
+  updateLeaveStatus: (mrPrincipal: principal, leaveIndex: nat, newStatus:
+   LeaveStatus) -> ();
+  updateLeaveStatusByManager: (mrPrincipal: principal, leaveIndex: nat,
+   newStatus: LeaveStatus) -> ();
+  updateProduct: (id: ProductId, name: text, code: text) -> ();
+  updateSampleDemandOrderStatus: (orderId: nat, newStatus:
+   DemandOrderStatus) -> ();
+}

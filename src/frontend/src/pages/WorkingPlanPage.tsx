@@ -21,11 +21,12 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useActor } from "@/hooks/useActor";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { CalendarPlus, Loader2, MapPin, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { WorkingPlan } from "../backend";
+import { createActor } from "../backend";
+import type { WorkingPlan } from "../backend.d";
 
 type MonthFilter = "current" | "next";
 
@@ -53,7 +54,7 @@ function getMonthRange(filter: MonthFilter): {
 }
 
 export default function WorkingPlanPage() {
-  const { actor } = useActor();
+  const { actor } = useActor(createActor);
   const [monthFilter, setMonthFilter] = useState<MonthFilter>("current");
   const [plans, setPlans] = useState<WorkingPlan[]>([]);
   const [loading, setLoading] = useState(false);

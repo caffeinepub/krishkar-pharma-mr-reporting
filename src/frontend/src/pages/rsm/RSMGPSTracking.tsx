@@ -10,11 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import type { Principal } from "@icp-sdk/core/principal";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, MapPin, Navigation, Users } from "lucide-react";
-import type { LocationData } from "../../backend";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
+import type { LocationData } from "../../backend.d";
 
 function getRelativeTime(tsNs: bigint): string {
   const tsMs = Number(tsNs / BigInt(1_000_000));
@@ -50,7 +51,7 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 export default function RSMGPSTracking() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const enabled = !!actor && !isFetching;
 
   const {

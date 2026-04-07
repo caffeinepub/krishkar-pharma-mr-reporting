@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
@@ -20,10 +21,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { ActivitySummary } from "../backend";
+import { createActor } from "../backend";
+import type { ActivitySummary } from "../backend.d";
 import AnnouncementPopup from "../components/AnnouncementPopup";
 import HolidayCalendarWidget from "../components/HolidayCalendarWidget";
-import { useActor } from "../hooks/useActor";
 
 const weeklyData = [
   { day: "Mon", doctors: 4, samples: 6, orders: 2 },
@@ -124,7 +125,7 @@ const legendItems = [
 export default function Dashboard({
   onAddWorkingDetails,
 }: { onAddWorkingDetails?: () => void }) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const today = new Date().toISOString().split("T")[0];
 
   const { data: summary, isLoading } = useQuery<ActivitySummary>({

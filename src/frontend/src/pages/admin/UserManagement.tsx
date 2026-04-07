@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { Principal } from "@icp-sdk/core/principal";
 import type { Principal as PrincipalType } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -45,11 +46,11 @@ import {
 import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { createActor } from "../../backend";
 import { ManagerRole, type UserRole } from "../../backend.d";
-import { useActor } from "../../hooks/useActor";
 
 export default function UserManagement() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [principalInput, setPrincipalInput] = useState("");

@@ -1,5 +1,6 @@
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
-import { useActor } from "./useActor";
+import { createActor } from "../backend";
 
 export type AppRole = "admin" | "user" | "rsm" | "asm" | "guest" | null;
 
@@ -24,7 +25,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 export function useUserRole() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
 
   const {
     data: role,

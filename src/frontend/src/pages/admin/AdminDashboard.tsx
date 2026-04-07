@@ -1,13 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, MapPin, Package, Users } from "lucide-react";
+import { createActor } from "../../backend";
 import AnnouncementPopup from "../../components/AnnouncementPopup";
 import HolidayCalendarWidget from "../../components/HolidayCalendarWidget";
-import { useActor } from "../../hooks/useActor";
 
 export default function AdminDashboard() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
 
   const { data: mrProfiles, isLoading: loadingMR } = useQuery({
     queryKey: ["admin", "mrProfiles"],

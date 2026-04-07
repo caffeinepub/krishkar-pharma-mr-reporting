@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import { Package } from "lucide-react";
-import type { Product } from "../backend";
-import { useActor } from "../hooks/useActor";
+import { createActor } from "../backend";
+import type { Product } from "../backend.d";
 
 export default function Products() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["products"],

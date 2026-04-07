@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Edit2,
@@ -40,7 +41,7 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
 
 type AnnouncementCategory =
   | { LatestProduct: null }
@@ -127,7 +128,7 @@ const defaultForm: FormState = {
 };
 
 export default function AdminAnnouncements() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
   const [showDialog, setShowDialog] = useState(false);
   const [editItem, setEditItem] = useState<AdminAnnouncement | null>(null);

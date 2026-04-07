@@ -19,11 +19,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, Edit2, Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
 
 type HolidayId = bigint;
 interface Holiday {
@@ -61,7 +62,7 @@ interface HolidayFormState {
 const emptyForm: HolidayFormState = { name: "", date: "", description: "" };
 
 export default function AdminHolidays() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);

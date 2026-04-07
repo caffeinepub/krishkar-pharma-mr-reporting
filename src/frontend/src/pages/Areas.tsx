@@ -8,13 +8,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Loader2, MapPin } from "lucide-react";
+import { createActor } from "../backend";
 import type { Area, Headquarter, MRProfile } from "../backend.d";
-import { useActor } from "../hooks/useActor";
 
 export default function Areas() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
 
   const enabled = !!actor && !isFetching;
 

@@ -7,6 +7,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
@@ -17,14 +18,14 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { useMemo } from "react";
+import { createActor } from "../backend";
 import type {
   Area,
-  Doctor,
+  DoctorExtended as Doctor,
   DoctorId,
   Product,
   RecentDoctorCallEntry,
-} from "../backend";
-import { useActor } from "../hooks/useActor";
+} from "../backend.d";
 
 function getLast15DaysRange(): { start: string; end: string; dates: string[] } {
   const end = new Date();
@@ -141,7 +142,7 @@ function CallEntryRow({ entry, products }: CallEntryRowProps) {
 }
 
 export default function DoctorCallHistoryPage() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const enabled = !!actor && !isFetching;
   const { start, end } = getLast15DaysRange();
 

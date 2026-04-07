@@ -17,6 +17,21 @@ export interface ActivitySummary {
   'doctorsVisited' : bigint,
   'chemistOrders' : bigint,
 }
+export interface AdminAnnouncement {
+  'id' : AnnouncementId,
+  'title' : string,
+  'body' : string,
+  'createdAt' : bigint,
+  'createdBy' : Principal,
+  'isActive' : boolean,
+  'imageUrl' : [] | [string],
+  'category' : AnnouncementCategory,
+}
+export type AnnouncementCategory = { 'NewGiftArticle' : null } |
+  { 'UpcomingProduct' : null } |
+  { 'LatestProduct' : null } |
+  { 'LatestScheme' : null };
+export type AnnouncementId = bigint;
 export interface Area {
   'id' : AreaId,
   'name' : string,
@@ -61,29 +76,35 @@ export type DemandOrderStatus = { 'Approved' : null } |
   { 'Rejected' : null } |
   { 'Pending' : null };
 export interface DetailingEntry {
+  'latitude' : [] | [number],
   'doctorId' : DoctorId,
   'productIds' : Array<ProductId>,
   'date' : string,
-  'latitude' : [] | [number],
   'longitude' : [] | [number],
 }
-export interface Doctor {
+export interface DoctorCallSummary {
+  'productIds' : Array<ProductId>,
+  'date' : string,
+  'samples' : Array<SampleSummaryItem>,
+  'gifts' : Array<GiftSummaryItem>,
+}
+export interface DoctorExtended {
   'id' : DoctorId,
+  'dob' : [] | [string],
   'station' : string,
   'name' : string,
-  'mobileNumber' : [] | [string],
-  'dob' : [] | [string],
   'createdBy' : Principal,
+  'mobileNumber' : [] | [string],
   'specialization' : string,
   'areaId' : AreaId,
   'qualification' : string,
 }
 export type DoctorId = bigint;
 export interface DoctorInput {
+  'dob' : [] | [string],
   'station' : string,
   'name' : string,
   'mobileNumber' : [] | [string],
-  'dob' : [] | [string],
   'specialization' : string,
   'areaId' : AreaId,
   'qualification' : string,
@@ -138,20 +159,32 @@ export interface GiftDistribution {
   'doctorName' : string,
 }
 export type GiftDistributionId = bigint;
+export interface GiftSummaryItem {
+  'giftArticleName' : string,
+  'quantity' : bigint,
+}
 export interface Headquarter {
   'id' : bigint,
   'name' : string,
   'createdBy' : Principal,
 }
+export interface Holiday {
+  'id' : HolidayId,
+  'date' : string,
+  'name' : string,
+  'createdBy' : Principal,
+  'description' : string,
+}
+export type HolidayId = bigint;
 export interface LeaveEntry {
   'status' : LeaveStatus,
+  'latitude' : [] | [number],
   'days' : bigint,
   'toDate' : string,
+  'longitude' : [] | [number],
   'fromDate' : string,
   'leaveType' : LeaveType,
   'reason' : string,
-  'latitude' : [] | [number],
-  'longitude' : [] | [number],
 }
 export type LeaveStatus = { 'Approved' : null } |
   { 'Rejected' : null } |
@@ -192,6 +225,14 @@ export interface Product {
   'createdBy' : Principal,
 }
 export type ProductId = bigint;
+export interface RecentDoctorCallEntry {
+  'doctorId' : DoctorId,
+  'productIds' : Array<ProductId>,
+  'date' : string,
+  'samples' : Array<SampleSummaryItem>,
+  'gifts' : Array<GiftSummaryItem>,
+  'areaId' : AreaId,
+}
 export interface SampleAllotment {
   'id' : bigint,
   'date' : string,
@@ -219,6 +260,10 @@ export interface SampleDemandOrder {
 export interface SampleEntry {
   'doctorId' : DoctorId,
   'date' : string,
+  'productId' : ProductId,
+  'quantity' : bigint,
+}
+export interface SampleSummaryItem {
   'productId' : ProductId,
   'quantity' : bigint,
 }
@@ -255,56 +300,12 @@ export interface WorkingPlan {
   'principalId' : Principal,
 }
 export type WorkingPlanId = bigint;
-
-export type AnnouncementCategory = { 'LatestProduct' : null } | { 'UpcomingProduct' : null } | { 'LatestScheme' : null } | { 'NewGiftArticle' : null };
-export type AnnouncementId = bigint;
-export interface AdminAnnouncement {
-  'id' : AnnouncementId,
-  'title' : string,
-  'body' : string,
-  'category' : AnnouncementCategory,
-  'createdAt' : bigint,
-  'isActive' : boolean,
-  'createdBy' : Principal,
-  'imageUrl' : [] | [string],
-}
-export type HolidayId = bigint;
-export interface Holiday {
-  'id' : HolidayId,
-  'name' : string,
-  'date' : string,
-  'description' : string,
-  'createdBy' : Principal,
-}
 export interface WorkingPlanInput {
   'content' : string,
   'date' : string,
   'workingMode' : string,
   'workingWith' : [] | [string],
   'stationType' : string,
-}
-
-export interface SampleSummaryItem {
-  productId: ProductId;
-  quantity: bigint;
-}
-export interface GiftSummaryItem {
-  giftArticleName: string;
-  quantity: bigint;
-}
-export interface DoctorCallSummary {
-  date: string;
-  productIds: Array<ProductId>;
-  samples: Array<SampleSummaryItem>;
-  gifts: Array<GiftSummaryItem>;
-}
-export interface RecentDoctorCallEntry {
-  date: string;
-  doctorId: DoctorId;
-  areaId: AreaId;
-  productIds: Array<ProductId>;
-  samples: Array<SampleSummaryItem>;
-  gifts: Array<GiftSummaryItem>;
 }
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
@@ -314,7 +315,10 @@ export interface _SERVICE {
     [ChemistId, string, ProductId, bigint, string],
     undefined
   >,
-  'addDoctor' : ActorMethod<[string, string, string, string, AreaId, [] | [string], [] | [string]], DoctorId>,
+  'addDoctor' : ActorMethod<
+    [string, string, string, string, AreaId, [] | [string], [] | [string]],
+    DoctorId
+  >,
   'addExpenseWithGeoTag' : ActorMethod<
     [
       string,
@@ -334,6 +338,11 @@ export interface _SERVICE {
   'addHeadquarter' : ActorMethod<[string], bigint>,
   'addProduct' : ActorMethod<[string, string], ProductId>,
   'addWorkingPlan' : ActorMethod<[WorkingPlanInput], WorkingPlanId>,
+  'adminAddAnnouncement' : ActorMethod<
+    [string, string, AnnouncementCategory, [] | [string]],
+    AnnouncementId
+  >,
+  'adminAddHoliday' : ActorMethod<[string, string, string], HolidayId>,
   'adminAllotSamples' : ActorMethod<
     [Principal, ProductId, bigint, string],
     undefined
@@ -346,6 +355,8 @@ export interface _SERVICE {
     [Principal, string, string, Array<AreaId>],
     undefined
   >,
+  'adminDeleteAnnouncement' : ActorMethod<[AnnouncementId], boolean>,
+  'adminDeleteHoliday' : ActorMethod<[HolidayId], undefined>,
   'adminGetAllWorkingPlans' : ActorMethod<[], Array<WorkingPlan>>,
   'adminGetTADASettings' : ActorMethod<[], TADASettingsV3>,
   'adminResetAllReportData' : ActorMethod<[], undefined>,
@@ -353,7 +364,23 @@ export interface _SERVICE {
     [Principal, string, string, string, ManagerRole],
     undefined
   >,
+  'adminSaveUserProfile' : ActorMethod<[Principal, UserProfile], undefined>,
   'adminSetTADASettings' : ActorMethod<[TADASettingsV3], undefined>,
+  'adminUpdateAnnouncement' : ActorMethod<
+    [
+      AnnouncementId,
+      string,
+      string,
+      AnnouncementCategory,
+      boolean,
+      [] | [string],
+    ],
+    boolean
+  >,
+  'adminUpdateHoliday' : ActorMethod<
+    [HolidayId, string, string, string],
+    undefined
+  >,
   'applyLeave' : ActorMethod<
     [LeaveType, string, string, bigint, string, [] | [number], [] | [number]],
     undefined
@@ -373,16 +400,19 @@ export interface _SERVICE {
   'deleteProduct' : ActorMethod<[ProductId], undefined>,
   'deleteWorkingPlan' : ActorMethod<[WorkingPlanId], undefined>,
   'emergencyRestoreAdmin' : ActorMethod<[], undefined>,
+  'getActiveAnnouncements' : ActorMethod<[], Array<AdminAnnouncement>>,
   'getActiveUserLocations' : ActorMethod<[], Array<[Principal, LocationData]>>,
   'getActivitySummary' : ActorMethod<[string], ActivitySummary>,
+  'getAllAnnouncements' : ActorMethod<[], Array<AdminAnnouncement>>,
   'getAllAreas' : ActorMethod<[], Array<Area>>,
   'getAllCRMDemands' : ActorMethod<[], Array<CRMDemand>>,
   'getAllChemists' : ActorMethod<[], Array<Chemist>>,
-  'getAllDoctors' : ActorMethod<[], Array<Doctor>>,
+  'getAllDoctors' : ActorMethod<[], Array<DoctorExtended>>,
   'getAllGiftArticles' : ActorMethod<[], Array<GiftArticle>>,
   'getAllGiftDemandOrders' : ActorMethod<[], Array<GiftDemandOrder>>,
   'getAllGiftDistributions' : ActorMethod<[], Array<GiftDistribution>>,
   'getAllHeadquarters' : ActorMethod<[], Array<Headquarter>>,
+  'getAllHolidays' : ActorMethod<[], Array<Holiday>>,
   'getAllLeaveApplications' : ActorMethod<
     [],
     Array<[Principal, Array<LeaveEntry>]>
@@ -411,7 +441,8 @@ export interface _SERVICE {
   'getChemistOrders' : ActorMethod<[], Array<ChemistOrder>>,
   'getChemistsByArea' : ActorMethod<[AreaId], Array<Chemist>>,
   'getDetailingEntries' : ActorMethod<[], Array<DetailingEntry>>,
-  'getDoctorsByArea' : ActorMethod<[AreaId], Array<Doctor>>,
+  'getDoctorCallHistory' : ActorMethod<[DoctorId], Array<DoctorCallSummary>>,
+  'getDoctorsByArea' : ActorMethod<[AreaId], Array<DoctorExtended>>,
   'getExpenseEntries' : ActorMethod<[], Array<ExpenseEntry>>,
   'getGPSTraces' : ActorMethod<[Principal], Array<GPSTrace>>,
   'getLatestLocation' : ActorMethod<[Principal], [] | [LocationData]>,
@@ -426,6 +457,7 @@ export interface _SERVICE {
   'getMySampleBalance' : ActorMethod<[], Array<SampleBalance>>,
   'getMySampleDemandOrders' : ActorMethod<[], Array<SampleDemandOrder>>,
   'getMyWorkingPlans' : ActorMethod<[], Array<WorkingPlan>>,
+  'getRecentDoctorCalls' : ActorMethod<[bigint], Array<RecentDoctorCallEntry>>,
   'getSampleEntries' : ActorMethod<[], Array<SampleEntry>>,
   'getTeamDetailingEntries' : ActorMethod<
     [],
@@ -444,9 +476,13 @@ export interface _SERVICE {
     [Principal, bigint, bigint],
     Array<GPSTrace>
   >,
+  'hasUserSeenAnnouncementsToday' : ActorMethod<[string], boolean>,
   'isAdminInitialized' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'logDetailing' : ActorMethod<[DoctorId, string, Array<ProductId>, [] | [number], [] | [number]], undefined>,
+  'logDetailing' : ActorMethod<
+    [DoctorId, string, Array<ProductId>, [] | [number], [] | [number]],
+    undefined
+  >,
   'logGiftDistribution' : ActorMethod<
     [DoctorId, string, GiftArticleId, string, bigint, string],
     undefined
@@ -464,7 +500,7 @@ export interface _SERVICE {
     [ProductId, bigint, string, string],
     undefined
   >,
-  'adminSaveUserProfile' : ActorMethod<[Principal, UserProfile], undefined>,
+  'recordUserAnnouncementView' : ActorMethod<[string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveManagerProfile' : ActorMethod<
     [string, string, string, ManagerRole],
@@ -476,7 +512,16 @@ export interface _SERVICE {
     undefined
   >,
   'updateDoctor' : ActorMethod<
-    [DoctorId, string, string, string, string, AreaId, [] | [string], [] | [string]],
+    [
+      DoctorId,
+      string,
+      string,
+      string,
+      string,
+      AreaId,
+      [] | [string],
+      [] | [string],
+    ],
     undefined
   >,
   'updateGiftArticle' : ActorMethod<[GiftArticleId, string, string], undefined>,
@@ -495,20 +540,6 @@ export interface _SERVICE {
     undefined
   >,
   'updateProduct' : ActorMethod<[ProductId, string, string], undefined>,
-  'adminAddHoliday' : ActorMethod<[string, string, string], HolidayId>,
-  'adminUpdateHoliday' : ActorMethod<[HolidayId, string, string, string], undefined>,
-  'adminDeleteHoliday' : ActorMethod<[HolidayId], undefined>,
-  'getAllHolidays' : ActorMethod<[], Array<Holiday>>,
-  'adminAddAnnouncement' : ActorMethod<[string, string, AnnouncementCategory, [] | [string]], AnnouncementId>,
-  'adminUpdateAnnouncement' : ActorMethod<[AnnouncementId, string, string, AnnouncementCategory, boolean, [] | [string]], boolean>,
-  'adminDeleteAnnouncement' : ActorMethod<[AnnouncementId], boolean>,
-  'getActiveAnnouncements' : ActorMethod<[], Array<AdminAnnouncement>>,
-  'getAllAnnouncements' : ActorMethod<[], Array<AdminAnnouncement>>,
-  'recordUserAnnouncementView' : ActorMethod<[string], undefined>,
-  'hasUserSeenAnnouncementsToday' : ActorMethod<[string], boolean>,
-
-  'getDoctorCallHistory' : ActorMethod<[DoctorId], Array<DoctorCallSummary>>,
-  'getRecentDoctorCalls' : ActorMethod<[bigint], Array<RecentDoctorCallEntry>>,
   'updateSampleDemandOrderStatus' : ActorMethod<
     [bigint, DemandOrderStatus],
     undefined

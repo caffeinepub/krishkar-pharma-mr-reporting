@@ -20,11 +20,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, IndianRupee, Loader2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useActor } from "../../hooks/useActor";
+import { createActor } from "../../backend";
 
 function StatusBadge({ status }: { status: string }) {
   const s = String(status);
@@ -50,7 +51,7 @@ function StatusBadge({ status }: { status: string }) {
 type ActionType = "Approved" | "Rejected";
 
 export default function AdminCRMApprovals() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
   const enabled = !!actor && !isFetching;
   const [filter, setFilter] = useState<

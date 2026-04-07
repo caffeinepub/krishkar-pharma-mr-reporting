@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -22,10 +23,9 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
+import { createActor } from "../../backend";
 import AnnouncementPopup from "../../components/AnnouncementPopup";
 import HolidayCalendarWidget from "../../components/HolidayCalendarWidget";
-import { useActor } from "../../hooks/useActor";
-import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 const LeaveStatus = {
   Pending: "Pending" as const,
@@ -35,7 +35,7 @@ const LeaveStatus = {
 type LeaveStatus = (typeof LeaveStatus)[keyof typeof LeaveStatus];
 
 export default function RSMDashboard() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const { identity } = useInternetIdentity();
   const queryClient = useQueryClient();
 

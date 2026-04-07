@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import {
   CalendarCheck,
   CalendarOff,
@@ -15,7 +16,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useGPSUpdater } from "../../hooks/useGPSUpdater";
-import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 import Leaves from "../Leaves";
 import MRCallDetailsPage from "../MRCallDetailsPage";
 import WorkingPlanPage from "../WorkingPlanPage";

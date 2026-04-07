@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarOff,
@@ -19,10 +20,9 @@ import {
   User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createActor } from "./backend";
 import AccessPendingScreen from "./components/AccessPendingScreen";
-import { useActor } from "./hooks/useActor";
 import { useGPSUpdater } from "./hooks/useGPSUpdater";
-import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useUserRole } from "./hooks/useUserRole";
 import Areas from "./pages/Areas";
 import Chemists from "./pages/Chemists";
@@ -155,7 +155,7 @@ function MRLayout() {
   );
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
-  const { actor } = useActor();
+  const { actor } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const handleNav = (page: Page) => {

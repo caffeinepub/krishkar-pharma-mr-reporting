@@ -25,15 +25,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { FlaskConical, Loader2, Stethoscope } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Area, Doctor, MRProfile, Product } from "../backend";
-import { useActor } from "../hooks/useActor";
+import { createActor } from "../backend";
+import type {
+  Area,
+  DoctorExtended as Doctor,
+  MRProfile,
+  Product,
+} from "../backend.d";
 
 export default function Doctors() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
 
   const [filterAreaId, setFilterAreaId] = useState<string>("all");
   const [showDetailing, setShowDetailing] = useState(false);

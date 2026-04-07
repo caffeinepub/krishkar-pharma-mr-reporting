@@ -2,10 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
-import { useActor } from "../hooks/useActor";
+import { createActor } from "../backend";
 
 function formatDate(dateStr: string) {
   const d = new Date(`${dateStr}T00:00:00`);
@@ -36,7 +37,7 @@ function isPast(dateStr: string) {
 const MAX_VISIBLE = 6;
 
 export default function HolidayCalendarWidget() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const [expanded, setExpanded] = useState(false);
 
   const { data: holidays, isLoading } = useQuery({

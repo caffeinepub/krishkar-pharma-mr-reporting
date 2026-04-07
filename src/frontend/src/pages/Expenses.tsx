@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Car,
@@ -29,8 +30,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { Area, ExpenseEntry, MRProfile, TADASettingsV3 } from "../backend";
-import { useActor } from "../hooks/useActor";
+import { createActor } from "../backend";
+import type {
+  Area,
+  ExpenseEntry,
+  MRProfile,
+  TADASettingsV3,
+} from "../backend.d";
 
 // TA is stored as paise (x100) in the backend to preserve 2 decimal places
 const TA_SCALE = 100;
@@ -59,7 +65,7 @@ async function captureGPS(): Promise<{ lat: number; lng: number } | null> {
 }
 
 export default function Expenses() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);

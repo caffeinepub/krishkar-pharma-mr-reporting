@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -34,12 +35,12 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import type { Area, Chemist, Product } from "../backend";
-import { useActor } from "../hooks/useActor";
+import { createActor } from "../backend";
+import type { Area, Chemist, Product } from "../backend.d";
 import { loadXlsx } from "../lib/xlsxLoader";
 
 export default function Chemists() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useActor(createActor);
   const queryClient = useQueryClient();
 
   const [filterAreaId, setFilterAreaId] = useState<string>("all");
