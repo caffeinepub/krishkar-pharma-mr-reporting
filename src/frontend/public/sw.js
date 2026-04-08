@@ -1,82 +1,102 @@
 // Krishkar Pharma MR Reporting - Service Worker
-const CACHE_NAME = 'krishkar-mr-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
+const CACHE_NAME = 'krishkar-pwa-v1';
+const PRECACHE_ASSETS = [
+  './',
+  './index.html',
 ];
 
-// Install: pre-cache shell
+// ICP/Internet Identity domains to always bypass
+const ICP_DOMAINS = [
+  '.ic0.app',
+  '.icp0.io',
+  '.internetcomputer.org',
+  'identity.ic0.app',
+  'raw.ic0.app',
+  'icp-api.io',
+];
+
+function isIcpUrl(url) {
+  return ICP_DOMAINS.some((domain) => url.includes(domain));
+}
+
+// Install: pre-cache shell assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    }).catch(() => {
-      // Silently fail if pre-caching fails (e.g. offline during install)
+      return cache.addAll(PRECACHE_ASSETS);
+    }).then(() => {
+      return self.skipWaiting();
+    }).catch((err) => {
+      console.warn('[SW] Pre-cache failed:', err);
+      return self.skipWaiting();
     })
   );
-  self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: delete old caches and claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
           .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
+          .map((key) => {
+            console.log('[SW] Deleting old cache:', key);
+            return caches.delete(key);
+          })
       )
-    )
+    ).then(() => {
+      return self.clients.claim();
+    })
   );
-  self.clients.claim();
 });
 
-// Fetch: network-first strategy (always try network, fall back to cache)
+// Fetch: cache-first for static assets, bypass ICP entirely
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip non-http requests (chrome-extension, etc)
+  // Skip non-http(s) requests
   if (!event.request.url.startsWith('http')) return;
 
-  // Skip ICP API calls - always go to network
-  if (event.request.url.includes('/api/')) return;
-  if (event.request.url.includes('identity.ic0.app')) return;
-  if (event.request.url.includes('identity.internetcomputer.org')) return;
-  if (event.request.url.includes('icp-api.io')) return;
+  // Skip all ICP/Internet Identity URLs - let them go directly to network
+  if (isIcpUrl(event.request.url)) return;
+
+  // Skip ICP API calls
+  if (event.request.url.includes('/api/v2/')) return;
+  if (event.request.url.includes('/api/v3/')) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cache successful responses for static assets
-        if (response && response.status === 200) {
-          const responseClone = response.clone();
-          const url = event.request.url;
-          // Only cache static assets (images, fonts, js, css)
-          if (
-            url.includes('/assets/') ||
-            url.endsWith('.js') ||
-            url.endsWith('.css') ||
-            url.endsWith('.png') ||
-            url.endsWith('.jpg') ||
-            url.endsWith('.woff2')
-          ) {
+    caches.match(event.request).then((cached) => {
+      if (cached) {
+        // Return from cache, then refresh in background
+        fetch(event.request).then((response) => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, responseClone);
             });
           }
+          return response;
+        }).catch(() => {/* network unavailable, cached version already returned */});
+        return cached;
+      }
+
+      // Not in cache — fetch from network
+      return fetch(event.request).then((response) => {
+        if (response && response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
         }
         return response;
-      })
-      .catch(() => {
-        // Network failed, try cache
-        return caches.match(event.request).then((cached) => {
-          if (cached) return cached;
-          // For navigation requests, return cached index.html
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-        });
-      })
+      }).catch(() => {
+        // Network failed and nothing in cache
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+      });
+    })
   );
 });
