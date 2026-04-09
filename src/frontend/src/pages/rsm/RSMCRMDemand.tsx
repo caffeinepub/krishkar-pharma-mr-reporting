@@ -20,12 +20,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IndianRupee, Loader2, PlusCircle, Search, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "../../backend";
+import { useCallerPrincipal } from "../../hooks/useCallerPrincipal";
 
 function StatusBadge({ status }: { status: string }) {
   const s = String(status);
@@ -50,7 +51,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function RSMCRMDemand() {
   const { actor, isFetching } = useActor(createActor);
-  const { identity } = useInternetIdentity();
+  const callerPrincipal = useCallerPrincipal();
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
 
@@ -94,10 +95,10 @@ export default function RSMCRMDemand() {
   const { data: managerAreas } = useQuery({
     queryKey: ["manager-areas"],
     queryFn: async () => {
-      if (!actor || !identity) return { areaIds: [] };
-      return actor.getManagerAreas(identity.getPrincipal());
+      if (!actor || !callerPrincipal) return { areaIds: [] };
+      return actor.getManagerAreas(callerPrincipal);
     },
-    enabled: enabled && !!identity,
+    enabled: enabled && !!callerPrincipal,
   });
 
   const assignedAreaIds = useMemo(

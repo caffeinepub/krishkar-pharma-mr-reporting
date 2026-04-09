@@ -3,28 +3,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Building,
-  Copy,
-  Loader2,
-  Lock,
-  MapPin,
-  Save,
-  User,
-} from "lucide-react";
+import { Building, Loader2, Lock, MapPin, Save, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "../backend";
 import type { UserProfile } from "../backend.d";
+import { getSession } from "../lib/sessionManager";
 
 export default function MRProfile() {
   const { actor, isFetching } = useActor(createActor);
-  const { identity } = useInternetIdentity();
   const queryClient = useQueryClient();
 
-  const principalId = identity?.getPrincipal().toString() ?? "";
+  const session = getSession();
+  const userId = session?.userId ?? "";
 
   const { data: profile, isLoading } = useQuery<UserProfile | null>({
     queryKey: ["user-profile"],
@@ -78,11 +71,6 @@ export default function MRProfile() {
       toast.error(err.message || "Failed to save profile"),
   });
 
-  const copyPrincipal = () => {
-    navigator.clipboard.writeText(principalId);
-    toast.success("Principal ID copied to clipboard");
-  };
-
   if (isLoading) {
     return (
       <div
@@ -96,7 +84,7 @@ export default function MRProfile() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      {/* Principal ID Card */}
+      {/* User ID Card */}
       <Card className="bg-blue-50 border border-blue-200 shadow-sm rounded-xl">
         <CardHeader className="border-b border-blue-100 pb-4">
           <div className="flex items-center gap-3">
@@ -105,28 +93,19 @@ export default function MRProfile() {
             </div>
             <div>
               <CardTitle className="text-base font-semibold text-blue-900">
-                Your Principal ID
+                Your User ID
               </CardTitle>
               <p className="text-xs text-blue-500 mt-0.5">
-                Share this with your Admin to get role access
+                Your login username for this system
               </p>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-5">
           <div className="flex items-center gap-2">
-            <code className="flex-1 text-xs bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-blue-800 font-mono break-all">
-              {principalId || "Not available"}
+            <code className="flex-1 text-sm bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-blue-800 font-mono">
+              {userId || "Not available"}
             </code>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={copyPrincipal}
-              className="flex-shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100"
-              disabled={!principalId}
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
           </div>
         </CardContent>
       </Card>

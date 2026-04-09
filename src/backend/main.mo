@@ -14,6 +14,8 @@ import Text "mo:core/Text";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import CustomAuth "authentication/CustomAuth";
+import MixinCustomAuth "authentication/MixinCustomAuth";
 
 // Actor migration specification
 
@@ -530,6 +532,10 @@ actor {
   // === Authorization ===
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  // === Custom Username/Password Authentication ===
+  let customAuthState = CustomAuth.initState();
+  include MixinCustomAuth(customAuthState);
 
   // === GPS FUNCTIONALITY ===
 

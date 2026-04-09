@@ -242,6 +242,19 @@ type SampleEntry__394273684 =
     productId : ProductId__779996770;
     quantity : Nat
   };
+type SessionInfo__426670987 =
+  {expiryNanos : Int; principalId : Text; userId : Text};
+type StoredUser__672999460 =
+  {
+    createdAt : Int;
+    hashedPassword : Text;
+    hq : Text;
+    isActive : Bool;
+    mustChangePassword : Bool;
+    principalId : Text;
+    role : Text;
+    userId : Text
+  };
 type UserProfile__491224006 =
   {employeeCode : Text; headQuarter : Text; name : Text};
 type UserRole__521596351 = {#admin; #guest; #user};
@@ -292,6 +305,12 @@ actor {
     {
       var root : Node__46230540<CRMDemandId__440495838, CRMDemand__317332516>;
       var size : Nat__490723111
+    };
+  stable customAuthState :
+    {
+      var defaultAdminCreated : Bool;
+      sessions : Map__605269027<Text, SessionInfo__426670987>;
+      users : Map__605269027<Text, StoredUser__672999460>
     };
   stable detailingEntries :
     {

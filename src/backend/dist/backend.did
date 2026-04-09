@@ -45,6 +45,15 @@ type TADASettingsV3 =
    rsmDaOutStation: nat;
    rsmTaPerKm: nat;
  };
+type StaffAccountInfo = 
+ record {
+   hq: text;
+   isActive: bool;
+   mustChangePassword: bool;
+   name: text;
+   role: text;
+   userId: text;
+ };
 type SampleSummaryItem = 
  record {
    productId: ProductId;
@@ -384,11 +393,26 @@ service : {
   adminAssignManagerAreas: (target: principal, areaIds: vec AreaId) -> ();
   adminCreateOrUpdateMRProfile: (mrPrincipal: principal, employeeCode: 
    text, headQuarter: text, assignedAreas: vec AreaId) -> ();
+  adminCreateStaffAccount: (adminToken: text, userId: text, tempPassword:
+   text, role: text, hq: text) -> (variant {
+                                     err: text;
+                                     ok: text;
+                                   });
   adminDeleteAnnouncement: (id: AnnouncementId) -> (bool);
   adminDeleteHoliday: (id: HolidayId) -> ();
+  adminGetAllStaffAccounts: (adminToken: text) ->
+   (variant {
+      err: text;
+      ok: vec StaffAccountInfo;
+    });
   adminGetAllWorkingPlans: () -> (vec WorkingPlan) query;
   adminGetTADASettings: () -> (TADASettingsV3) query;
   adminResetAllReportData: () -> ();
+  adminResetStaffPassword: (adminToken: text, userId: text, newTempPassword:
+   text) -> (variant {
+               err: text;
+               ok: text;
+             });
   adminSaveManagerProfile: (target: principal, name: text, employeeCode:
    text, headQuarter: text, managerRole: ManagerRole) -> ();
   adminSaveUserProfile: (target: principal, profile: UserProfile) -> ();
@@ -398,10 +422,30 @@ service : {
    (bool);
   adminUpdateHoliday: (id: HolidayId, name: text, date: text, description:
    text) -> ();
+  adminUpdateStaffAccount: (adminToken: text, userId: text, newRole:
+   opt text, newHQ: opt text, isActive: opt bool) ->
+   (variant {
+      err: text;
+      ok: text;
+    });
   applyLeave: (leaveType: LeaveType, fromDate: text, toDate: text, days: 
    nat, reason: text, lat: opt float64, lng: opt float64) -> ();
   assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  authenticateUser: (userId: text, password: text) ->
+   (variant {
+      err: text;
+      ok: record {
+            role: text;
+            sessionToken: text;
+            userId: text;
+          };
+    });
   bulkAddDoctors: (doctorsInput: vec DoctorInput) -> (vec DoctorId);
+  changePassword: (token: text, oldPassword: text, newPassword: text) ->
+   (variant {
+      err: text;
+      ok: text;
+    });
   createOrUpdateMRProfile: (employeeCode: text, headQuarter: text,
    assignedAreas: vec AreaId) -> ();
   deleteArea: (id: AreaId) -> ();
@@ -515,6 +559,10 @@ service : {
    GiftArticleId, giftArticleName: text, quantity: nat, date: text) -> ();
   logSample: (doctorId: DoctorId, date: text, productId: ProductId, quantity:
    nat) -> ();
+  logoutUser: (token: text) -> (variant {
+                                  err: text;
+                                  ok: text;
+                                });
   raiseCRMDemand: (doctorId: DoctorId, doctorName: text, amount: nat, notes:
    text, date: text, raiserName: text) -> ();
   raiseGiftDemandOrder: (giftArticleId: GiftArticleId, giftArticleName: 
@@ -543,4 +591,12 @@ service : {
   updateProduct: (id: ProductId, name: text, code: text) -> ();
   updateSampleDemandOrderStatus: (orderId: nat, newStatus:
    DemandOrderStatus) -> ();
+  validateSession: (token: text) ->
+   (variant {
+      err: text;
+      ok: record {
+            principalId: text;
+            userId: text;
+          };
+    });
 }

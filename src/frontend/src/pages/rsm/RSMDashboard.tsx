@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { createActor } from "../../backend";
 import AnnouncementPopup from "../../components/AnnouncementPopup";
 import HolidayCalendarWidget from "../../components/HolidayCalendarWidget";
+import { useCallerPrincipal } from "../../hooks/useCallerPrincipal";
 
 const LeaveStatus = {
   Pending: "Pending" as const,
@@ -36,7 +37,7 @@ type LeaveStatus = (typeof LeaveStatus)[keyof typeof LeaveStatus];
 
 export default function RSMDashboard() {
   const { actor, isFetching } = useActor(createActor);
-  const { identity } = useInternetIdentity();
+  const callerPrincipal = useCallerPrincipal();
   const queryClient = useQueryClient();
 
   const { data: teamLeaves = [], isLoading: loadingLeaves } = useQuery({
@@ -96,10 +97,10 @@ export default function RSMDashboard() {
   const { data: managerAreas } = useQuery({
     queryKey: ["rsm", "managerAreas"],
     queryFn: async () => {
-      if (!actor || !identity) return null;
-      return actor.getManagerAreas(identity.getPrincipal());
+      if (!actor || !callerPrincipal) return null;
+      return actor.getManagerAreas(callerPrincipal);
     },
-    enabled: !!actor && !isFetching && !!identity,
+    enabled: !!actor && !isFetching && !!callerPrincipal,
   });
 
   const { mutate: updateLeaveStatus } = useMutation({

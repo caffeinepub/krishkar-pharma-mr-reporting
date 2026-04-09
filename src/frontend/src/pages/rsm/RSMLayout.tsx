@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import {
   CalendarCheck,
   CalendarOff,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useGPSUpdater } from "../../hooks/useGPSUpdater";
+import { getSession } from "../../lib/sessionManager";
 import Leaves from "../Leaves";
 import MRCallDetailsPage from "../MRCallDetailsPage";
 import WorkingPlanPage from "../WorkingPlanPage";
@@ -62,27 +62,21 @@ const pageTitles: Record<RSMPage, string> = {
   "staff-gps": "Staff GPS Tracking",
 };
 
-export default function RSMLayout() {
-  const { identity, clear } = useInternetIdentity();
+export default function RSMLayout({ onLogout }: { onLogout: () => void }) {
   const [currentPage, setCurrentPage] = useState<RSMPage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(
     () => typeof window !== "undefined" && window.innerWidth >= 768,
   );
 
-  // Silently track GPS location in background
-  useGPSUpdater("RSM");
+  const session = getSession();
+  const userId = session?.userId ?? "RSM";
 
-  const principal = identity?.getPrincipal().toString() ?? "";
-  const shortPrincipal =
-    principal.length > 12
-      ? `${principal.slice(0, 8)}...${principal.slice(-4)}`
-      : principal;
+  useGPSUpdater("RSM");
 
   const handleNav = (page: RSMPage) => {
     setCurrentPage(page);
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
+    if (typeof window !== "undefined" && window.innerWidth < 768)
       setSidebarOpen(false);
-    }
   };
 
   const renderPage = () => {
@@ -110,7 +104,6 @@ export default function RSMLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -122,11 +115,7 @@ export default function RSMLayout() {
         />
       )}
       <aside
-        className={`flex flex-col flex-shrink-0 transition-all duration-300 fixed inset-y-0 left-0 z-50 w-64 md:relative md:inset-y-auto md:left-auto md:z-auto ${
-          sidebarOpen
-            ? "translate-x-0 md:w-64"
-            : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden"
-        }`}
+        className={`flex flex-col flex-shrink-0 transition-all duration-300 fixed inset-y-0 left-0 z-50 w-64 md:relative md:inset-y-auto md:left-auto md:z-auto ${sidebarOpen ? "translate-x-0 md:w-64" : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden"}`}
         style={{
           background: "linear-gradient(180deg, #0B2F6B 0%, #06224F 100%)",
         }}
@@ -163,11 +152,7 @@ export default function RSMLayout() {
                 type="button"
                 data-ocid={`rsm_nav.${item.id}.link`}
                 onClick={() => handleNav(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-[#0E5AA7] text-white shadow-lg"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium transition-all ${isActive ? "bg-[#0E5AA7] text-white shadow-lg" : "text-white/70 hover:text-white hover:bg-white/10"}`}
               >
                 <Icon className="flex-shrink-0" size={18} />
                 {item.label}
@@ -183,13 +168,12 @@ export default function RSMLayout() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-white text-xs font-semibold truncate">
-                  RSM User
+                  {userId}
                 </p>
                 <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
                   RSM
                 </span>
               </div>
-              <p className="text-white/50 text-xs truncate">{shortPrincipal}</p>
             </div>
           </div>
           <Button
@@ -197,7 +181,7 @@ export default function RSMLayout() {
             variant="ghost"
             size="sm"
             className="w-full text-white/70 hover:text-white hover:bg-white/10 justify-start gap-2 text-xs"
-            onClick={clear}
+            onClick={onLogout}
           >
             <LogOut size={14} /> Logout
           </Button>

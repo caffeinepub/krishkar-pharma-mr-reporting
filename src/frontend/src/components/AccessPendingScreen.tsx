@@ -1,32 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock, Loader2, LogOut, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Clock, Loader2, LogOut, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "../backend";
-
-const RECOVERY_PRINCIPAL =
-  "grbwb-eomkl-kudk6-gg5mh-ye5qx-b6cqs-7apa2-lus3n-b5lpa-sqbtx-tqe";
+import { clearSession } from "../lib/sessionManager";
 
 export default function AccessPendingScreen() {
-  const { identity, clear } = useInternetIdentity();
   const { actor } = useActor(createActor);
   const queryClient = useQueryClient();
-  const principal = identity?.getPrincipal().toString() ?? "Unknown";
 
   const [adminToken, setAdminToken] = useState("");
   const [isInitializing, setIsInitializing] = useState(false);
   const [adminAlreadySetup, setAdminAlreadySetup] = useState<boolean | null>(
     null,
   );
-  const [isRestoring, setIsRestoring] = useState(false);
-  const [restoreError, setRestoreError] = useState<string | null>(null);
 
-  const isRecoveryPrincipal = principal === RECOVERY_PRINCIPAL;
-
-  // Check if admin is already initialized so we can hide the setup panel for regular users
   useEffect(() => {
     if (!actor) return;
     actor
@@ -57,21 +48,9 @@ export default function AccessPendingScreen() {
     }
   };
 
-  const handleRestoreAdmin = async () => {
-    if (!actor) return;
-    setIsRestoring(true);
-    setRestoreError(null);
-    try {
-      await (actor as any).emergencyRestoreAdmin();
-      toast.success("Admin access restored! Reloading...");
-      await queryClient.invalidateQueries({ queryKey: ["userRole"] });
-      window.location.reload();
-    } catch (err: any) {
-      setRestoreError(
-        err?.message ?? "Failed to restore admin access. Please try again.",
-      );
-      setIsRestoring(false);
-    }
+  const handleLogout = () => {
+    clearSession();
+    window.location.reload();
   };
 
   return (
@@ -96,69 +75,21 @@ export default function AccessPendingScreen() {
         </h1>
         <p className="text-sm text-gray-500 mt-1">MR Reporting System</p>
 
-        {/* Admin Recovery Banner — shown only for the recovery principal */}
-        {isRecoveryPrincipal && (
-          <div
-            data-ocid="admin.recovery.panel"
-            className="mt-6 bg-amber-50 border border-amber-300 rounded-xl p-4 text-left"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0" />
-              <span className="text-amber-900 font-bold text-sm">
-                Admin Access Recovery
-              </span>
-            </div>
-            <p className="text-amber-800 text-xs mb-3">
-              Your account was previously the system Admin. Click below to
-              restore your Admin access.
-            </p>
-            <Button
-              data-ocid="admin.recovery.primary_button"
-              onClick={handleRestoreAdmin}
-              disabled={isRestoring}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
-            >
-              {isRestoring ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Restoring...
-                </>
-              ) : (
-                "Restore Admin Access"
-              )}
-            </Button>
-            {restoreError && (
-              <p className="text-red-600 text-xs font-medium mt-2">
-                {restoreError}
-              </p>
-            )}
+        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Clock className="w-5 h-5 text-amber-600" />
+            <span className="text-amber-800 font-semibold text-sm">
+              Access Pending
+            </span>
           </div>
-        )}
-
-        {!isRecoveryPrincipal && (
-          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock className="w-5 h-5 text-amber-600" />
-              <span className="text-amber-800 font-semibold text-sm">
-                Access Pending
-              </span>
-            </div>
-            <p className="text-amber-700 text-sm">
-              Your account is awaiting admin approval. Please contact your
-              administrator to get access.
-            </p>
-          </div>
-        )}
-
-        <div className="mt-5 bg-gray-50 rounded-lg p-3 text-left">
-          <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">
-            Your Principal ID
+          <p className="text-amber-700 text-sm">
+            Your account is awaiting admin approval. Please contact your
+            administrator to get access.
           </p>
-          <code className="text-xs text-gray-600 break-all">{principal}</code>
         </div>
 
-        {/* Admin initialization — only shown when no admin has been set up yet and not recovery principal */}
-        {!isRecoveryPrincipal && adminAlreadySetup === false && (
+        {/* Admin initialization — only shown when no admin has been set up yet */}
+        {adminAlreadySetup === false && (
           <div className="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4 text-left">
             <div className="flex items-center gap-2 mb-3">
               <ShieldCheck className="w-4 h-4 text-blue-600" />
@@ -168,7 +99,7 @@ export default function AccessPendingScreen() {
             </div>
             <p className="text-xs text-blue-700 mb-3">
               If you are the app owner, enter the admin secret token below to
-              claim the Admin role and unlock full access.
+              claim the Admin role.
             </p>
             <Input
               type="password"
@@ -193,14 +124,10 @@ export default function AccessPendingScreen() {
         <Button
           data-ocid="access_pending.button"
           className="w-full mt-5 bg-[#0D5BA6] hover:bg-[#0a4f96] text-white font-semibold rounded-xl gap-2"
-          onClick={clear}
+          onClick={handleLogout}
         >
           <LogOut className="w-4 h-4" /> Logout
         </Button>
-
-        <p className="text-xs text-gray-400 mt-4">
-          Share your Principal ID with your admin for account activation.
-        </p>
       </div>
     </div>
   );

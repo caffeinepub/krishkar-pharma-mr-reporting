@@ -1,6 +1,7 @@
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useEffect, useRef } from "react";
 import { createActor } from "../backend";
+import { getSession } from "../lib/sessionManager";
 
 const UPDATE_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
 
@@ -19,12 +20,14 @@ async function getCurrentPosition(): Promise<GeolocationPosition | null> {
 }
 
 export function useGPSUpdater(userRole = "MR") {
-  const { actor, isFetching } = useActor(createActor);
+  const { actor } = useActor(createActor);
   const actorRef = useRef(actor);
   actorRef.current = actor;
+  const userRoleRef = useRef(userRole);
+  userRoleRef.current = userRole;
 
   useEffect(() => {
-    if (!actor || isFetching) return;
+    if (!actor) return;
 
     let cancelled = false;
 
@@ -33,36 +36,29 @@ export function useGPSUpdater(userRole = "MR") {
       try {
         const pos = await getCurrentPosition();
         if (!pos || cancelled) return;
-        // Try to get user profile for the name
-        let userName = "";
-        try {
-          const profile = await actorRef.current.getCallerUserProfile();
-          userName = profile?.name ?? "";
-        } catch {
-          // silently ignore
-        }
+
+        const session = getSession();
+        const userName = session?.userId ?? "";
+
         await actorRef.current.updateLatestLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
           userName,
-          userRole,
-          timestamp: BigInt(Date.now()) * BigInt(1_000_000), // ms -> ns
+          userRole: userRoleRef.current,
+          timestamp: BigInt(Date.now()) * BigInt(1_000_000),
         });
       } catch {
-        // Fail silently — never show UI errors for GPS
+        // Fail silently
       }
     }
 
-    // Send immediately on mount
     sendLocation();
-
-    // Then every 3 minutes
     const interval = setInterval(sendLocation, UPDATE_INTERVAL_MS);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [actor, isFetching, userRole]);
+  }, [actor]);
 }

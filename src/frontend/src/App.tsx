@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
-import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
-import { useQueryClient } from "@tanstack/react-query";
+import { useActor } from "@caffeineai/core-infrastructure";
 import {
   CalendarOff,
   ClipboardList,
+  Eye,
+  EyeOff,
   FlaskConical,
   History,
   LayoutDashboard,
@@ -14,16 +17,17 @@ import {
   Menu,
   Package,
   Receipt,
-  ShieldAlert,
   ShoppingBag,
   Stethoscope,
   User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { createActor } from "./backend";
-import AccessPendingScreen from "./components/AccessPendingScreen";
+import { useState } from "react";
+import { toast } from "sonner";
+import { createActor } from "./backend"; // used by useActor
 import { useGPSUpdater } from "./hooks/useGPSUpdater";
+import { useSessionAuth } from "./hooks/useSessionAuth";
 import { useUserRole } from "./hooks/useUserRole";
+import { getSession } from "./lib/sessionManager";
 import Areas from "./pages/Areas";
 import Chemists from "./pages/Chemists";
 import Dashboard from "./pages/Dashboard";
@@ -39,9 +43,6 @@ import WorkingPlanPage from "./pages/WorkingPlanPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import ASMLayout from "./pages/asm/ASMLayout";
 import RSMLayout from "./pages/rsm/RSMLayout";
-
-const RECOVERY_PRINCIPAL =
-  "grbwb-eomkl-kudk6-gg5mh-ye5qx-b6cqs-7apa2-lus3n-b5lpa-sqbtx-tqe";
 
 type Page =
   | "dashboard"
@@ -87,8 +88,152 @@ const pageTitles: Record<Page, string> = {
   samples: "Sample Management",
 };
 
-function LoginScreen() {
-  const { login, isLoggingIn, isInitializing } = useInternetIdentity();
+function ChangePasswordForm({ onDone }: { onDone: () => void }) {
+  const { actor } = useActor(createActor);
+  const [oldPw, setOldPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const session = getSession();
+
+  const handleSubmit = async () => {
+    if (!session || !actor) return;
+    if (newPw.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await actor.changePassword(session.token, oldPw, newPw);
+      if (result.__kind__ === "err") {
+        toast.error(result.err);
+      } else {
+        toast.success("Password changed successfully!");
+        onDone();
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to change password",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        background: "linear-gradient(135deg, #0B2F6B 0%, #06224F 100%)",
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full">
+        <div className="flex justify-center mb-4">
+          <img
+            src="/assets/generated/krishkar-logo-transparent.dim_200x200.png"
+            alt="Krishkar"
+            className="w-14 h-14 object-contain"
+          />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 text-center mb-1">
+          Change Your Password
+        </h2>
+        <p className="text-sm text-gray-500 text-center mb-6">
+          You must set a new password before continuing
+        </p>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="old-pw">Current Password</Label>
+            <div className="relative mt-1">
+              <Input
+                id="old-pw"
+                type={showOld ? "text" : "password"}
+                value={oldPw}
+                onChange={(e) => setOldPw(e.target.value)}
+                placeholder="Current password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowOld(!showOld)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showOld ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="new-pw">New Password</Label>
+            <div className="relative mt-1">
+              <Input
+                id="new-pw"
+                type={showNew ? "text" : "password"}
+                value={newPw}
+                onChange={(e) => setNewPw(e.target.value)}
+                placeholder="At least 6 characters"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="confirm-pw">Confirm New Password</Label>
+            <Input
+              id="confirm-pw"
+              type="password"
+              value={confirmPw}
+              onChange={(e) => setConfirmPw(e.target.value)}
+              placeholder="Repeat new password"
+              className="mt-1"
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            />
+          </div>
+          <Button
+            data-ocid="change_password.submit_button"
+            className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white font-semibold"
+            onClick={handleSubmit}
+            disabled={loading || !oldPw || !newPw || !confirmPw}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Updating...
+              </>
+            ) : (
+              "Set New Password"
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({ onLogin }: { onLogin: () => void }) {
+  const { login, isLoading, error, clearError } = useSessionAuth();
+  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
+  const handleLogin = async () => {
+    clearError();
+    const success = await login(userId, password);
+    if (success) onLogin();
+  };
+
   return (
     <div
       className="min-h-screen flex items-center justify-center"
@@ -107,87 +252,92 @@ function LoginScreen() {
         <h1 className="text-xl font-bold text-gray-900 mt-3">
           Krishkar Pharmaceuticals
         </h1>
-        <p className="text-sm text-gray-500 mt-1 mb-2">MR Reporting System</p>
-
-        <div className="flex gap-2 justify-center mb-6 mt-4 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
-            <User size={11} /> MR Login
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full font-medium">
-            📊 RSM Login
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-full font-medium">
-            🗂 ASM Login
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
-            🛡 Admin Login
-          </span>
-        </div>
-
-        <Button
-          data-ocid="login.primary_button"
-          className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white font-semibold py-3 rounded-xl"
-          onClick={login}
-          disabled={isLoggingIn || isInitializing}
-        >
-          {isLoggingIn || isInitializing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait...
-            </>
-          ) : (
-            "Login to Continue"
+        <p className="text-sm text-gray-500 mt-1 mb-6">MR Reporting System</p>
+        <div className="space-y-4 text-left">
+          <div>
+            <Label htmlFor="login-userid">User ID</Label>
+            <Input
+              id="login-userid"
+              data-ocid="login.userid.input"
+              className="mt-1"
+              placeholder="Enter your User ID"
+              value={userId}
+              onChange={(e) => {
+                setUserId(e.target.value);
+                clearError();
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              autoComplete="username"
+            />
+          </div>
+          <div>
+            <Label htmlFor="login-password">Password</Label>
+            <div className="relative mt-1">
+              <Input
+                id="login-password"
+                data-ocid="login.password.input"
+                type={showPw ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clearError();
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                className="pr-10"
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          {error && (
+            <p className="text-sm text-red-600 text-center font-medium">
+              {error}
+            </p>
           )}
-        </Button>
-        <p className="text-xs text-gray-400 mt-4">
-          Your role (MR, ASM, RSM or Admin) will be detected automatically after
-          login.
+          <Button
+            data-ocid="login.primary_button"
+            className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white font-semibold py-3 rounded-xl"
+            onClick={handleLogin}
+            disabled={isLoading || !userId.trim() || !password}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Login"
+            )}
+          </Button>
+        </div>
+        <p className="text-xs text-gray-400 mt-5">
+          Contact your Admin if you don't have login credentials.
         </p>
       </div>
     </div>
   );
 }
 
-function MRLayout() {
-  const { identity, clear } = useInternetIdentity();
+function MRLayout({ onLogout }: { onLogout: () => void }) {
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(
     () => typeof window !== "undefined" && window.innerWidth >= 768,
   );
-  const [isRestoring, setIsRestoring] = useState<boolean>(false);
-  const [restoreError, setRestoreError] = useState<string | null>(null);
-  const { actor } = useActor(createActor);
-  const queryClient = useQueryClient();
+  const session = getSession();
+  const userId = session?.userId ?? "";
+  useGPSUpdater("MR");
 
   const handleNav = (page: Page) => {
     setCurrentPage(page);
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
+    if (typeof window !== "undefined" && window.innerWidth < 768)
       setSidebarOpen(false);
-    }
-  };
-
-  // Silently track GPS location in background
-  useGPSUpdater("MR");
-
-  const principal = identity?.getPrincipal().toString() ?? "";
-  const shortPrincipal =
-    principal.length > 12
-      ? `${principal.slice(0, 8)}...${principal.slice(-4)}`
-      : principal;
-
-  const handleRestoreAdmin = async () => {
-    setIsRestoring(true);
-    setRestoreError(null);
-    try {
-      if (!actor) throw new Error("Not connected");
-      await actor.emergencyRestoreAdmin();
-      await queryClient.invalidateQueries({ queryKey: ["userRole"] });
-      window.location.reload();
-    } catch (err: any) {
-      setRestoreError(
-        err?.message ?? "Failed to restore admin access. Please try again.",
-      );
-      setIsRestoring(false);
-    }
   };
 
   const renderPage = () => {
@@ -225,8 +375,6 @@ function MRLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
-      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -238,16 +386,11 @@ function MRLayout() {
         />
       )}
       <aside
-        className={`flex flex-col flex-shrink-0 transition-all duration-300 fixed inset-y-0 left-0 z-50 w-64 md:relative md:inset-y-auto md:left-auto md:z-auto ${
-          sidebarOpen
-            ? "translate-x-0 md:w-64"
-            : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden"
-        }`}
+        className={`flex flex-col flex-shrink-0 transition-all duration-300 fixed inset-y-0 left-0 z-50 w-64 md:relative md:inset-y-auto md:left-auto md:z-auto ${sidebarOpen ? "translate-x-0 md:w-64" : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden"}`}
         style={{
           background: "linear-gradient(180deg, #0B2F6B 0%, #06224F 100%)",
         }}
       >
-        {/* Brand */}
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0 p-1">
@@ -267,8 +410,6 @@ function MRLayout() {
             </div>
           </div>
         </div>
-
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <p className="text-white/40 text-xs font-semibold uppercase tracking-widest px-2 mb-3">
             Navigation
@@ -282,11 +423,7 @@ function MRLayout() {
                 type="button"
                 data-ocid={`nav.${item.id}.link`}
                 onClick={() => handleNav(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-[#0E5AA7] text-white shadow-lg"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium transition-all ${isActive ? "bg-[#0E5AA7] text-white shadow-lg" : "text-white/70 hover:text-white hover:bg-white/10"}`}
               >
                 <Icon className="flex-shrink-0" size={18} />
                 {item.label}
@@ -294,8 +431,6 @@ function MRLayout() {
             );
           })}
         </nav>
-
-        {/* User */}
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
@@ -304,13 +439,12 @@ function MRLayout() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-white text-xs font-semibold truncate">
-                  MR User
+                  {userId || "MR User"}
                 </p>
                 <span className="text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
                   MR
                 </span>
               </div>
-              <p className="text-white/50 text-xs truncate">{shortPrincipal}</p>
             </div>
           </div>
           <Button
@@ -318,16 +452,13 @@ function MRLayout() {
             variant="ghost"
             size="sm"
             className="w-full text-white/70 hover:text-white hover:bg-white/10 justify-start gap-2 text-xs"
-            onClick={clear}
+            onClick={onLogout}
           >
             <LogOut size={14} /> Logout
           </Button>
         </div>
       </aside>
-
-      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Header */}
         <header className="bg-white border-b border-[#E5EAF2] px-4 md:px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <button
@@ -359,60 +490,9 @@ function MRLayout() {
             </p>
           </div>
         </header>
-
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto p-3 md:p-6">
-          {principal === RECOVERY_PRINCIPAL && (
-            <div
-              data-ocid="admin.recovery.panel"
-              className="mb-6 border border-amber-300 bg-amber-50 rounded-xl p-5 flex flex-col gap-3 shadow-sm"
-            >
-              <div className="flex items-start gap-3">
-                <ShieldAlert
-                  className="text-amber-600 flex-shrink-0 mt-0.5"
-                  size={22}
-                />
-                <div>
-                  <h2 className="text-amber-900 font-bold text-base">
-                    Admin Access Recovery
-                  </h2>
-                  <p className="text-amber-800 text-sm mt-1">
-                    Your account was previously the system Admin. Click the
-                    button below to restore your Admin access.
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button
-                  data-ocid="admin.recovery.primary_button"
-                  onClick={handleRestoreAdmin}
-                  disabled={isRestoring}
-                  className="self-start bg-amber-600 hover:bg-amber-700 text-white font-semibold px-5 py-2 rounded-lg"
-                >
-                  {isRestoring ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Restoring...
-                    </>
-                  ) : (
-                    "Restore Admin Access"
-                  )}
-                </Button>
-                {restoreError && (
-                  <p
-                    data-ocid="admin.recovery.error_state"
-                    className="text-red-600 text-sm font-medium"
-                  >
-                    {restoreError}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
           {renderPage()}
         </main>
-
-        {/* Footer */}
         <footer className="bg-white border-t border-[#E5EAF2] px-4 md:px-6 py-3 flex-shrink-0">
           <p className="text-xs text-gray-400 text-center">
             © {new Date().getFullYear()}. Built with ❤️ using{" "}
@@ -427,81 +507,39 @@ function MRLayout() {
           </p>
         </footer>
       </div>
-
       <Toaster />
     </div>
   );
 }
 
-function RoleRouter() {
-  const { role, isLoading } = useUserRole();
-  const [elapsed, setElapsed] = useState(0);
-  const { clear } = useInternetIdentity();
-
-  // Track elapsed seconds so we can show a warming-up message early
-  // and only show the hard timeout after 60s.
-  useEffect(() => {
-    if (!isLoading && role !== null) return;
-    const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
-    return () => clearInterval(interval);
-  }, [isLoading, role]);
-
-  const timedOut = elapsed >= 60 && (isLoading || role === null);
-
-  if (timedOut) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 p-6">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
-          <p className="text-gray-700 font-semibold text-base mb-2">
-            Connection Timeout
-          </p>
-          <p className="text-gray-500 text-sm mb-5">
-            Unable to reach the server. Please check your internet connection
-            and try again.
-          </p>
-          <Button
-            onClick={clear}
-            className="w-full bg-[#0D5BA6] hover:bg-[#0a4f96] text-white"
-          >
-            Logout and Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading || role === null) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm text-gray-500">
-          {elapsed > 10
-            ? "Starting up, please wait..."
-            : "Detecting your role..."}
+function RoleRouter({ onLogout }: { onLogout: () => void }) {
+  const { role } = useUserRole();
+  if (role === "admin") return <AdminLayout onLogout={onLogout} />;
+  if (role === "rsm") return <RSMLayout onLogout={onLogout} />;
+  if (role === "asm") return <ASMLayout onLogout={onLogout} />;
+  if (role === "user") return <MRLayout onLogout={onLogout} />;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <p className="text-gray-600 mb-4">
+          Unknown role. Please contact Admin.
         </p>
-        {elapsed > 10 && (
-          <p className="text-xs text-gray-400 max-w-xs text-center">
-            The server may be waking up. This can take up to 30 seconds on first
-            use.
-          </p>
-        )}
+        <Button onClick={onLogout}>Logout</Button>
       </div>
-    );
-  }
-
-  if (role === "admin") return <AdminLayout />;
-  if (role === "rsm") return <RSMLayout />;
-  if (role === "asm") return <ASMLayout />;
-  if (role === "user") return <MRLayout />;
-
-  // guest
-  return <AccessPendingScreen />;
+    </div>
+  );
 }
 
 export default function App() {
-  const { identity, isInitializing } = useInternetIdentity();
+  const {
+    isAuthenticated,
+    isLoading,
+    mustChangePassword,
+    setMustChangePassword,
+    logout,
+  } = useSessionAuth();
 
-  if (isInitializing) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -509,14 +547,23 @@ export default function App() {
     );
   }
 
-  if (!identity) {
+  if (!isAuthenticated) {
     return (
       <>
-        <LoginScreen />
+        <LoginScreen onLogin={() => window.location.reload()} />
         <Toaster />
       </>
     );
   }
 
-  return <RoleRouter />;
+  if (mustChangePassword) {
+    return (
+      <>
+        <ChangePasswordForm onDone={() => setMustChangePassword(false)} />
+        <Toaster />
+      </>
+    );
+  }
+
+  return <RoleRouter onLogout={logout} />;
 }

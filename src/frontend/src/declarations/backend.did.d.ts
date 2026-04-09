@@ -267,6 +267,14 @@ export interface SampleSummaryItem {
   'productId' : ProductId,
   'quantity' : bigint,
 }
+export interface StaffAccountInfo {
+  'hq' : string,
+  'userId' : string,
+  'name' : string,
+  'role' : string,
+  'isActive' : boolean,
+  'mustChangePassword' : boolean,
+}
 export interface TADASettingsV3 {
   'mrTaPerKm' : bigint,
   'mrDaHQ' : bigint,
@@ -355,11 +363,26 @@ export interface _SERVICE {
     [Principal, string, string, Array<AreaId>],
     undefined
   >,
+  'adminCreateStaffAccount' : ActorMethod<
+    [string, string, string, string, string],
+    { 'ok' : string } |
+      { 'err' : string }
+  >,
   'adminDeleteAnnouncement' : ActorMethod<[AnnouncementId], boolean>,
   'adminDeleteHoliday' : ActorMethod<[HolidayId], undefined>,
+  'adminGetAllStaffAccounts' : ActorMethod<
+    [string],
+    { 'ok' : Array<StaffAccountInfo> } |
+      { 'err' : string }
+  >,
   'adminGetAllWorkingPlans' : ActorMethod<[], Array<WorkingPlan>>,
   'adminGetTADASettings' : ActorMethod<[], TADASettingsV3>,
   'adminResetAllReportData' : ActorMethod<[], undefined>,
+  'adminResetStaffPassword' : ActorMethod<
+    [string, string, string],
+    { 'ok' : string } |
+      { 'err' : string }
+  >,
   'adminSaveManagerProfile' : ActorMethod<
     [Principal, string, string, string, ManagerRole],
     undefined
@@ -381,12 +404,27 @@ export interface _SERVICE {
     [HolidayId, string, string, string],
     undefined
   >,
+  'adminUpdateStaffAccount' : ActorMethod<
+    [string, string, [] | [string], [] | [string], [] | [boolean]],
+    { 'ok' : string } |
+      { 'err' : string }
+  >,
   'applyLeave' : ActorMethod<
     [LeaveType, string, string, bigint, string, [] | [number], [] | [number]],
     undefined
   >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'authenticateUser' : ActorMethod<
+    [string, string],
+    { 'ok' : { 'userId' : string, 'role' : string, 'sessionToken' : string } } |
+      { 'err' : string }
+  >,
   'bulkAddDoctors' : ActorMethod<[Array<DoctorInput>], Array<DoctorId>>,
+  'changePassword' : ActorMethod<
+    [string, string, string],
+    { 'ok' : string } |
+      { 'err' : string }
+  >,
   'createOrUpdateMRProfile' : ActorMethod<
     [string, string, Array<AreaId>],
     undefined
@@ -488,6 +526,7 @@ export interface _SERVICE {
     undefined
   >,
   'logSample' : ActorMethod<[DoctorId, string, ProductId, bigint], undefined>,
+  'logoutUser' : ActorMethod<[string], { 'ok' : string } | { 'err' : string }>,
   'raiseCRMDemand' : ActorMethod<
     [DoctorId, string, bigint, string, string, string],
     undefined
@@ -543,6 +582,11 @@ export interface _SERVICE {
   'updateSampleDemandOrderStatus' : ActorMethod<
     [bigint, DemandOrderStatus],
     undefined
+  >,
+  'validateSession' : ActorMethod<
+    [string],
+    { 'ok' : { 'userId' : string, 'principalId' : string } } |
+      { 'err' : string }
   >,
 }
 export declare const idlService: IDL.ServiceClass;

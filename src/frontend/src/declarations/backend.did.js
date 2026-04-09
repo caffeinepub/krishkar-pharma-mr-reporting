@@ -29,6 +29,14 @@ export const AnnouncementCategory = IDL.Variant({
 });
 export const AnnouncementId = IDL.Nat;
 export const HolidayId = IDL.Nat;
+export const StaffAccountInfo = IDL.Record({
+  'hq' : IDL.Text,
+  'userId' : IDL.Text,
+  'name' : IDL.Text,
+  'role' : IDL.Text,
+  'isActive' : IDL.Bool,
+  'mustChangePassword' : IDL.Bool,
+});
 export const WorkingPlan = IDL.Record({
   'id' : WorkingPlanId,
   'content' : IDL.Text,
@@ -390,11 +398,26 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'adminCreateStaffAccount' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [],
+    ),
   'adminDeleteAnnouncement' : IDL.Func([AnnouncementId], [IDL.Bool], []),
   'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
+  'adminGetAllStaffAccounts' : IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Vec(StaffAccountInfo), 'err' : IDL.Text })],
+      [],
+    ),
   'adminGetAllWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
   'adminGetTADASettings' : IDL.Func([], [TADASettingsV3], ['query']),
   'adminResetAllReportData' : IDL.Func([], [], []),
+  'adminResetStaffPassword' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [],
+    ),
   'adminSaveManagerProfile' : IDL.Func(
       [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
       [],
@@ -419,6 +442,17 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'adminUpdateStaffAccount' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Bool),
+      ],
+      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [],
+    ),
   'applyLeave' : IDL.Func(
       [
         LeaveType,
@@ -433,7 +467,26 @@ export const idlService = IDL.Service({
       [],
     ),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'authenticateUser' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [
+        IDL.Variant({
+          'ok' : IDL.Record({
+            'userId' : IDL.Text,
+            'role' : IDL.Text,
+            'sessionToken' : IDL.Text,
+          }),
+          'err' : IDL.Text,
+        }),
+      ],
+      [],
+    ),
   'bulkAddDoctors' : IDL.Func([IDL.Vec(DoctorInput)], [IDL.Vec(DoctorId)], []),
+  'changePassword' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [],
+    ),
   'createOrUpdateMRProfile' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Vec(AreaId)],
       [],
@@ -621,6 +674,11 @@ export const idlService = IDL.Service({
       [],
     ),
   'logSample' : IDL.Func([DoctorId, IDL.Text, ProductId, IDL.Nat], [], []),
+  'logoutUser' : IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [],
+    ),
   'raiseCRMDemand' : IDL.Func(
       [DoctorId, IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
       [],
@@ -683,6 +741,16 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'validateSession' : IDL.Func(
+      [IDL.Text],
+      [
+        IDL.Variant({
+          'ok' : IDL.Record({ 'userId' : IDL.Text, 'principalId' : IDL.Text }),
+          'err' : IDL.Text,
+        }),
+      ],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -709,6 +777,14 @@ export const idlFactory = ({ IDL }) => {
   });
   const AnnouncementId = IDL.Nat;
   const HolidayId = IDL.Nat;
+  const StaffAccountInfo = IDL.Record({
+    'hq' : IDL.Text,
+    'userId' : IDL.Text,
+    'name' : IDL.Text,
+    'role' : IDL.Text,
+    'isActive' : IDL.Bool,
+    'mustChangePassword' : IDL.Bool,
+  });
   const WorkingPlan = IDL.Record({
     'id' : WorkingPlanId,
     'content' : IDL.Text,
@@ -1072,11 +1148,26 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'adminCreateStaffAccount' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+        [],
+      ),
     'adminDeleteAnnouncement' : IDL.Func([AnnouncementId], [IDL.Bool], []),
     'adminDeleteHoliday' : IDL.Func([HolidayId], [], []),
+    'adminGetAllStaffAccounts' : IDL.Func(
+        [IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Vec(StaffAccountInfo), 'err' : IDL.Text })],
+        [],
+      ),
     'adminGetAllWorkingPlans' : IDL.Func([], [IDL.Vec(WorkingPlan)], ['query']),
     'adminGetTADASettings' : IDL.Func([], [TADASettingsV3], ['query']),
     'adminResetAllReportData' : IDL.Func([], [], []),
+    'adminResetStaffPassword' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+        [],
+      ),
     'adminSaveManagerProfile' : IDL.Func(
         [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, ManagerRole],
         [],
@@ -1101,6 +1192,17 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'adminUpdateStaffAccount' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Bool),
+        ],
+        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+        [],
+      ),
     'applyLeave' : IDL.Func(
         [
           LeaveType,
@@ -1115,9 +1217,28 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'authenticateUser' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [
+          IDL.Variant({
+            'ok' : IDL.Record({
+              'userId' : IDL.Text,
+              'role' : IDL.Text,
+              'sessionToken' : IDL.Text,
+            }),
+            'err' : IDL.Text,
+          }),
+        ],
+        [],
+      ),
     'bulkAddDoctors' : IDL.Func(
         [IDL.Vec(DoctorInput)],
         [IDL.Vec(DoctorId)],
+        [],
+      ),
+    'changePassword' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
         [],
       ),
     'createOrUpdateMRProfile' : IDL.Func(
@@ -1323,6 +1444,11 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'logSample' : IDL.Func([DoctorId, IDL.Text, ProductId, IDL.Nat], [], []),
+    'logoutUser' : IDL.Func(
+        [IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+        [],
+      ),
     'raiseCRMDemand' : IDL.Func(
         [DoctorId, IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
         [],
@@ -1387,6 +1513,19 @@ export const idlFactory = ({ IDL }) => {
     'updateSampleDemandOrderStatus' : IDL.Func(
         [IDL.Nat, DemandOrderStatus],
         [],
+        [],
+      ),
+    'validateSession' : IDL.Func(
+        [IDL.Text],
+        [
+          IDL.Variant({
+            'ok' : IDL.Record({
+              'userId' : IDL.Text,
+              'principalId' : IDL.Text,
+            }),
+            'err' : IDL.Text,
+          }),
+        ],
         [],
       ),
   });

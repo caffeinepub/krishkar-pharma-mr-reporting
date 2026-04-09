@@ -18,12 +18,7 @@ export interface MRProfile {
     assignedAreas: Array<AreaId>;
     headQuarter: string;
 }
-export interface Product {
-    id: ProductId;
-    code: string;
-    name: string;
-    createdBy: Principal;
-}
+export type GiftDistributionId = bigint;
 export interface GiftDistribution {
     id: GiftDistributionId;
     doctorId: DoctorId;
@@ -200,6 +195,14 @@ export interface Headquarter {
     name: string;
     createdBy: Principal;
 }
+export interface StaffAccountInfo {
+    hq: string;
+    userId: string;
+    name: string;
+    role: string;
+    isActive: boolean;
+    mustChangePassword: boolean;
+}
 export interface LeaveEntry {
     status: LeaveStatus;
     latitude?: number;
@@ -264,7 +267,6 @@ export interface Holiday {
     createdBy: Principal;
     description: string;
 }
-export type GiftDistributionId = bigint;
 export interface SampleAllotment {
     id: bigint;
     date: string;
@@ -277,6 +279,12 @@ export interface UserProfile {
     employeeCode: string;
     name: string;
     headQuarter: string;
+}
+export interface Product {
+    id: ProductId;
+    code: string;
+    name: string;
+    createdBy: Principal;
 }
 export enum AnnouncementCategory {
     NewGiftArticle = "NewGiftArticle",
@@ -325,19 +333,65 @@ export interface backendInterface {
     adminAllotSamples(target: Principal, productId: ProductId, quantity: bigint, date: string): Promise<void>;
     adminAssignManagerAreas(target: Principal, areaIds: Array<AreaId>): Promise<void>;
     adminCreateOrUpdateMRProfile(mrPrincipal: Principal, employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
+    adminCreateStaffAccount(adminToken: string, userId: string, tempPassword: string, role: string, hq: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     adminDeleteAnnouncement(id: AnnouncementId): Promise<boolean>;
     adminDeleteHoliday(id: HolidayId): Promise<void>;
+    adminGetAllStaffAccounts(adminToken: string): Promise<{
+        __kind__: "ok";
+        ok: Array<StaffAccountInfo>;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     adminGetAllWorkingPlans(): Promise<Array<WorkingPlan>>;
     adminGetTADASettings(): Promise<TADASettingsV3>;
     adminResetAllReportData(): Promise<void>;
+    adminResetStaffPassword(adminToken: string, userId: string, newTempPassword: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     adminSaveManagerProfile(target: Principal, name: string, employeeCode: string, headQuarter: string, managerRole: ManagerRole): Promise<void>;
     adminSaveUserProfile(target: Principal, profile: UserProfile): Promise<void>;
     adminSetTADASettings(settings: TADASettingsV3): Promise<void>;
     adminUpdateAnnouncement(id: AnnouncementId, title: string, body: string, category: AnnouncementCategory, isActive: boolean, imageUrl: string | null): Promise<boolean>;
     adminUpdateHoliday(id: HolidayId, name: string, date: string, description: string): Promise<void>;
+    adminUpdateStaffAccount(adminToken: string, userId: string, newRole: string | null, newHQ: string | null, isActive: boolean | null): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     applyLeave(leaveType: LeaveType, fromDate: string, toDate: string, days: bigint, reason: string, lat: number | null, lng: number | null): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    authenticateUser(userId: string, password: string): Promise<{
+        __kind__: "ok";
+        ok: {
+            userId: string;
+            role: string;
+            sessionToken: string;
+        };
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     bulkAddDoctors(doctorsInput: Array<DoctorInput>): Promise<Array<DoctorId>>;
+    changePassword(token: string, oldPassword: string, newPassword: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     createOrUpdateMRProfile(employeeCode: string, headQuarter: string, assignedAreas: Array<AreaId>): Promise<void>;
     deleteArea(id: AreaId): Promise<void>;
     deleteDoctor(id: DoctorId): Promise<void>;
@@ -409,6 +463,13 @@ export interface backendInterface {
     logDetailing(doctorId: DoctorId, date: string, productIds: Array<ProductId>, latitude: number | null, longitude: number | null): Promise<void>;
     logGiftDistribution(doctorId: DoctorId, doctorName: string, giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, date: string): Promise<void>;
     logSample(doctorId: DoctorId, date: string, productId: ProductId, quantity: bigint): Promise<void>;
+    logoutUser(token: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     raiseCRMDemand(doctorId: DoctorId, doctorName: string, amount: bigint, notes: string, date: string, raiserName: string): Promise<void>;
     raiseGiftDemandOrder(giftArticleId: GiftArticleId, giftArticleName: string, quantity: bigint, notes: string, date: string): Promise<void>;
     raiseSampleDemandOrder(productId: ProductId, requestedQty: bigint, date: string, notes: string): Promise<void>;
@@ -426,4 +487,14 @@ export interface backendInterface {
     updateLeaveStatusByManager(mrPrincipal: Principal, leaveIndex: bigint, newStatus: LeaveStatus): Promise<void>;
     updateProduct(id: ProductId, name: string, code: string): Promise<void>;
     updateSampleDemandOrderStatus(orderId: bigint, newStatus: DemandOrderStatus): Promise<void>;
+    validateSession(token: string): Promise<{
+        __kind__: "ok";
+        ok: {
+            userId: string;
+            principalId: string;
+        };
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
 }
