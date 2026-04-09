@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
@@ -11,6 +11,107 @@ BigInt.prototype.toJSON = function () {
 declare global {
   interface BigInt {
     toJSON(): string;
+  }
+}
+
+// ── Top-level Error Boundary ──────────────────────────────────────────────────
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  errorMessage: string;
+}
+
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: "" };
+  }
+
+  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+    const msg =
+      error instanceof Error ? error.message : "An unexpected error occurred.";
+    return { hasError: true, errorMessage: msg };
+  }
+
+  componentDidCatch(error: unknown, info: React.ErrorInfo) {
+    console.error("[AppErrorBoundary] Caught error:", error, info);
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, errorMessage: "" });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "linear-gradient(135deg, #0B2F6B 0%, #06224F 100%)",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "16px",
+              padding: "32px",
+              maxWidth: "360px",
+              width: "100%",
+              textAlign: "center",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div style={{ fontSize: "40px", marginBottom: "12px" }}>⚠️</div>
+            <h2
+              style={{
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#111",
+                marginBottom: "8px",
+              }}
+            >
+              Unable to Load App
+            </h2>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#666",
+                marginBottom: "20px",
+                lineHeight: "1.5",
+              }}
+            >
+              The app encountered an error connecting to the server. Please
+              check your internet connection and try again.
+            </p>
+            <button
+              type="button"
+              onClick={this.handleRetry}
+              style={{
+                background: "#0D5BA6",
+                color: "#fff",
+                border: "none",
+                borderRadius: "10px",
+                padding: "10px 24px",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer",
+                width: "100%",
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
   }
 }
 
@@ -147,13 +248,21 @@ function PWAInstallBanner() {
 
 // ── App Root ──────────────────────────────────────────────────────────────────
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <App />
-    <PWAInstallBanner />
-  </QueryClientProvider>,
+  <AppErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <App />
+      <PWAInstallBanner />
+    </QueryClientProvider>
+  </AppErrorBoundary>,
 );
 
 // ── Service Worker Registration ───────────────────────────────────────────────

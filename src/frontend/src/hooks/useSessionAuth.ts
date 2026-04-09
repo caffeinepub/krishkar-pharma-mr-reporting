@@ -1,5 +1,5 @@
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createActor } from "../backend";
 import { clearSession, getSession, saveSession } from "../lib/sessionManager";
 
@@ -26,25 +26,55 @@ export function useSessionAuth(): SessionAuthState {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // useActor is always called unconditionally (hooks rules). The actor may be
+  // null if the canisterId is invalid (e.g. env.json has 'undefined' as value).
   const { actor } = useActor(createActor);
+
+  // Safety valve: if isLoading is still true after 8 seconds, force it to
+  // false so the login screen always renders — even when the actor never
+  // initializes due to a bad canisterId in env.json.
+  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    loadingTimerRef.current = setTimeout(() => {
+      setIsLoading((prev) => {
+        if (prev) {
+          console.warn(
+            "[useSessionAuth] Loading timed out — forcing login screen",
+          );
+          return false;
+        }
+        return prev;
+      });
+    }, 8000);
+    return () => {
+      if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    };
+  }, []);
 
   // On mount: restore session from localStorage
   useEffect(() => {
-    const session = getSession();
-    if (session) {
-      setIsAuthenticated(true);
-      setUserId(session.userId);
-      setSessionToken(session.token);
-      setMustChangePasswordState(session.mustChangePassword);
-      setRole(session.role);
+    try {
+      const session = getSession();
+      if (session) {
+        setIsAuthenticated(true);
+        setUserId(session.userId);
+        setSessionToken(session.token);
+        setMustChangePasswordState(session.mustChangePassword);
+        setRole(session.role);
+      }
+    } catch (e) {
+      console.warn("[useSessionAuth] Failed to restore session:", e);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const login = useCallback(
     async (inputUserId: string, password: string): Promise<boolean> => {
       if (!actor) {
-        setError("Not connected to server. Please try again.");
+        setError(
+          "Unable to connect to server. Please refresh the page and try again.",
+        );
         return false;
       }
       setIsLoading(true);
@@ -84,10 +114,14 @@ export function useSessionAuth(): SessionAuthState {
   );
 
   const logout = useCallback(() => {
-    const session = getSession();
-    if (session?.token && actor) {
-      // Best-effort backend logout — don't await
-      actor.logoutUser(session.token).catch(() => {});
+    try {
+      const session = getSession();
+      if (session?.token && actor) {
+        // Best-effort backend logout — don't await
+        actor.logoutUser(session.token).catch(() => {});
+      }
+    } catch {
+      // Ignore logout errors
     }
     clearSession();
     setIsAuthenticated(false);
@@ -102,10 +136,14 @@ export function useSessionAuth(): SessionAuthState {
 
   const setMustChangePassword = useCallback((value: boolean) => {
     setMustChangePasswordState(value);
-    const session = getSession();
-    if (session) {
-      session.mustChangePassword = value;
-      localStorage.setItem("mr_session", JSON.stringify(session));
+    try {
+      const session = getSession();
+      if (session) {
+        session.mustChangePassword = value;
+        localStorage.setItem("mr_session", JSON.stringify(session));
+      }
+    } catch {
+      // Ignore storage errors
     }
   }, []);
 

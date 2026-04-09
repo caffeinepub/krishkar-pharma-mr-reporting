@@ -21,7 +21,7 @@ import {
   Stethoscope,
   User,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "./backend"; // used by useActor
 import { useGPSUpdater } from "./hooks/useGPSUpdater";
@@ -539,10 +539,29 @@ export default function App() {
     logout,
   } = useSessionAuth();
 
-  if (isLoading) {
+  // Hard safety: if still loading after 10s, force-show login screen.
+  // This prevents a permanent blank/spinner if useSessionAuth stalls.
+  const [forceShow, setForceShow] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setForceShow(true), 10000);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (isLoading && !forceShow) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{
+          background: "linear-gradient(135deg, #0B2F6B 0%, #06224F 100%)",
+        }}
+      >
+        <img
+          src="/assets/generated/krishkar-logo-transparent.dim_200x200.png"
+          alt="Krishkar"
+          className="w-16 h-16 object-contain mb-4 opacity-90"
+        />
+        <Loader2 className="w-8 h-8 animate-spin text-white" />
+        <p className="text-white/70 text-sm mt-3">Loading...</p>
       </div>
     );
   }
